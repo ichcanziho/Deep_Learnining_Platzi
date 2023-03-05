@@ -439,7 +439,55 @@ eficiente ciertos problemas, pero en general tener mayor cantidad de neuronas fa
 el XOR es indispensable tener varias. 
 
 ## 1.7 Arquitectura de una red neuronal
+
+La arquitectura de la red puede ser dividida en tres partes:
+
+- La capa de entrada en donde los datos son introducidos.
+- Las capas ocultas, que se encuentran entre la capa de salida y la capa de entrada. Las capas ocultas son quienes hacen las operaciones matemáticas.
+- La cada de salida que hace una predicción
+
+Dentro de la arquitectura de la red neuronal ocurren muchas operaciones de producto punto entre las entradas de cada perceptron con sus respectivos pesos. Estas operaciones son lineales.
+
+Las funciones de activación son la solución al colapso de las linealidades de las capas de la red neuronal.
+
+![red1](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/red0.png)
+
+> ### Notas adicionales:
+
+- Todas las capas que estan entre la capa de entrada y la de salida son conocidas como `hidden layers` sin importar cuantas sean.
+- Las capas más cercanas a las de la entrada obtienen características más generales del problema, entre más profunda la capa
+más específica es la característica aprendida.
+- Las últimas capas tienden más al overfitting.
+
+Nuestras redes neuronales van a tener varias `m` variables de entrada, a su vez una capa tendrá `n` cantidad de neuronas.
+ 
+![red2](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/red2.png)
+
+Podemos observar como entonces la cantidad de multiplicaciones está dada por `m x n` dicho de otra manera, todas las neuronas
+se multiplican por todas las variables de la capa anterior.
+
+![red3](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/red3.png)
+
+Esta multiplicación es conocida en matemáticas como: `producto punto entre una matriz y un vector`
+
+Finalmente, para tener nuestra salida de la multiplicación es necesario añadir el bias:
+
+![red4](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/red4.png)
+
+Sin embargo, hasta este preciso momento aún hay un área de oportunidad enorme:
+
+![red5.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/red5.png)
+
+Si yo comienzo a apilar varías capas de redes neuronales todas y cada una de ellas a su salida tienen una función lineal
+y la suma de varias funciones lineales es otra función lineal, esto NO tiene mucho sentido porque entonces toda la información de
+en medio pierde funcionalidad. La solución a esto es que las salidas de estas capas intermedias NO sea lineal, y para ello
+usaremos `funciones de activación`.
+
 ## 1.8 Funciones de activación
+
+Las `funciones de activación` permiten quitar la linealidad a nuestras salidas de las neuronas. Estas funciones pueden
+ser **discretas** (tener un conjunto finito de valores) o **continuas** (estar dentro de un intervalo de valores)
+
 ## 1.9 Función de pérdida (Loss Function)
 ## 1.10 Descenso del gradiente
 ## 1.11 Backpropagation
