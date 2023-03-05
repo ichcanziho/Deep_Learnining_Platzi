@@ -137,7 +137,260 @@ de deep learning**
 
 
 ## 1.4 Tu primer red neuronal con Keras
+
+El objetivo de esta y la próxima clase serán utilizar el dataset de MNIST el cual contiene 60,000 imágenes de números escritos
+a mano, cada imagen es de 64x64 píxeles y a su vez cada imagen contiene una etiqueta con el valor real del número.
+
+Empecemos por definir los objetivos de esta práctica:
+
+1. Utilizar datasets pre-cargados de Keras
+2. Familiarizarnos con los shapes de los datos de entrenamiento y validación de un dataset de DL
+3. Crear un simple Modelo Secuencial de 1 capa y Multiples Salidas
+4. Compilar el modelo con ciertos parámetros
+5. Ver el resumen de la configuración de nuestro Modelo
+6. Modificar los datos de entrenamiento y validación para hacerlos más manejables por el modelo de DL
+7. Entrenar a nuestra red neuronal
+8. Evaluar el rendimiento de nuestra red neuronal con datos de validación
+9. Guardar el modelo para usarlo después
+
+> El código completo de esta sección se encuentra [aquí](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/primer%20red%20neuronal/load.py)
+
+Empecemos por cargar las librerías necesarias:
+
+```python
+# Estas librerias solo son necesario importarlas porque estoy corriendo de forma local el código
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# Empiezan las librerias que vamos a utilizar para crear nuestro modelo de DEEP LEARNING
+from keras import layers, models
+from keras.utils import to_categorical
+from keras.datasets import mnist
+import matplotlib.pyplot as plt
+```
+
+### 1: Utilizar dataset pre-cargados de keras
+
+```python
+(train_data, train_labels), (test_data, test_labels) = mnist.load_data()
+```
+
+Keras cuenta con una sección de datasets para poder aprender DL, y sus datasets ya cuentan con una función muy útil llamada
+`load_data()` la cuál permite cargar 4 particiones de la misma:
+
+- `Train data`: Contiene datos de entrada para entrenar a tu modelo.
+- `Train labels`: Contiene la clasificación de cada uno de los datos de `Train data`.
+- `Test data`: Es una partición de datos con características similares a  `Train data` pero que el modelo de DL NO conoció durante el proceso de entrenamiento.
+- `Test labels`: Corresponde a la clasificación de los datos de `Test data`.
+
+### 2: Familiarizarnos con los shapes de los datos de entrenamiento y validación de un dataset de DL
+
+Para cualquier ejercicio de DL es indispensable conocer la distribución de nuestros datos de entrenamiento y testing asi como
+conocer la forma de cada uno de los elementos que lo componen, en este caso veremos 
+
+```python
+print("Train data shape:", train_data.shape)
+print("Train data example shape:", train_data[0].shape)
+print("Train label shape:", train_labels.shape)
+print("Train label example shape:", train_labels[0].shape)
+print("Test data shape:", test_data.shape)
+print("Test data example shape:", test_data[0].shape)
+print("Test label shape:", test_labels.shape)
+print("Test label example shape:", test_labels[0].shape)
+```
+Respuesta esperada:
+```
+Train data shape: (60000, 28, 28)
+Train data example shape: (28, 28)
+Train label shape: (60000,)
+Train label example shape: ()
+Test data shape: (10000, 28, 28)
+Test data example shape: (28, 28)
+Test label shape: (10000,)
+Test label example shape: ()
+```
+
+Podemos observar que nuestros datos de entrenamiento constan de un conjunto de 60,000 muestras de imágenes de 28x28, mientras que
+el conjunto de testing es de 10,000 muestras. Podemos observar que tanto en train como test los datos en este caso imágenes 
+tienen las mismas dimensiones. Adicionalmente, vemos como las `labels` de ambos conjuntos son arreglos unidimencionales, pues
+solamente guardan la etiqueta con el nombre de la clase, en este caso un número.
+
+Podemos observar cómo luce un valor del conjunto de entrenamiento tanto su dato como su label.
+
+```python
+plt.imshow(train_data[0])
+plt.savefig("outputs/numero.png")
+print(train_labels[0])
+```
+
+Respuesta esperada:
+![numero](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/primer%20red%20neuronal/outputs/numero.png)
+```commandline
+5
+```
+
+### 3: Crear un simple Modelo Secuencial de 1 capa y Multiples Salidas
+
+En este preciso momento del curso NO nos enfocaremos en dar mucha información de qué significa cada uno de los parámetros 
+del objeto `model` de la clase `models.Sequential()` pero es un ejemplo ilustrativo de lo simple que puede ser crear modelos 
+de DL con keras.
+
+```python
+model = models.Sequential()
+model.add(layers.Dense(512, activation="relu", input_shape=(28*28, )))
+model.add(layers.Dense(10, activation="softmax"))
+```
+
+En 3 simples líneas de código hemos definido la arquitectura de un modelo de DL para la clasificación de los números decimales.
+En este momento del curso, lo único que debemos entender es lo siguiente: 
+`input_shape(28*28, )`Indica que la entrada de la red neuronal tendré 728 neuronas, una para cada pixel de la imagen.
+`layerse.Dense(10, )` El 10 es debido a que queremos que la última capa, la de clasificación clasifique entre 10 posibles
+clases, los números del (0,9).
+
+### 4: Compilar el modelo con ciertos parámetros
+
+A pesar de que ya hemos creado la arquitectura del modelo de Deep Learning, aún es necesario indicar ciertos parámetros que 
+modificaran la forma en que la red neuronal es entrenada, estros parámetros son:  `optimizer`, `loss`, `metrics`. Estos 
+conceptos serán definidos más adelante. 
+
+De forma muy simple: 
+- `optimizer`: Es el algoritmo matemático que será utilizado para cambiar la distribución de pesos y bias de las neuronas. Este es el punto donde la red "va aprendiendo iteración tras iteración"
+- `loss`: Es la forma que tenemos para definir que tan lejos o cerca estamos de nuestro objetivo a optimizar.
+- `metrics`: Nos permite evaluar el rendimiento de nuestra red tanto en el training set como en el testing set.
+
+Cada uno de estos parámetros tiene diferentes configuraciones, y más adelante serán explicados y definidos.
+
+```python
+model.compile(optimizer="rmsprop",
+              loss="categorical_crossentropy",
+              metrics="accuracy")
+```
+
+### 5: Ver el resumen de la configuración de nuestro Modelo
+
+Algo realmente útil en Deep Learning es poder ver un resumen de la arquitectura de nuestra red neuronal.
+
+```python
+print(model.summary())
+```
+
+Respuesta esperada:
+```
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ dense (Dense)               (None, 512)               401920    
+                                                                 
+ dense_1 (Dense)             (None, 10)                5130      
+                                                                 
+=================================================================
+Total params: 407,050
+Trainable params: 407,050
+Non-trainable params: 0
+```
+### 6: Modificar los datos de entrenamiento y validación para hacerlos más manejables por el modelo de DL
+Para este momento nosotros ya tenemos el modelo listo para empezar a ser entrenado. Sin embargo, antes de ponerles los datos
+de data train y data train label podemos hacer un par de ajustes matemáticos que permitan a la red trabajar de mejor manera
+con los datos de entrada.
+
+```python
+
+x_train = train_data.reshape((60000, 28*28))
+x_train = x_train.astype("float32")/255
+
+x_test = test_data.reshape((10000, 28*28))
+x_test = x_test.astype("float32")/255
+
+print(x_train[0].shape)
+```
+Respuesta esperada:
+```
+(784,)
+```
+
+En esta clase no se explica realmente el porqué de estas transformaciones, sin embargo la forma trivial de explicar
+por qué hacemos esto es la siguiente:
+
+Al momento de crear la arquitectura de nuestra red, la entrada de información tiene que ser un vector unidimensional. Sin embargo,
+directamente nuestras imágenes son de 2 dimensiones, por eso el primer paso es transformar la forma del `train_data` a una forma
+que tenga `60,000` muestras, pero cada una de esas muestras sea un vector de 1 dimensión de `784` valores.
+
+Para las imágenes del dataset que estamos usando, están codificadas a 8 bits, eso significa que la cantidad de niveles de gris posibles son 2^8 = 256, por tanto, el mínimo nivel es 0 (negro puro) y 255 (blanco puro). Es importante resaltar que existen imágenes a 16 bits (por ejm las imágenes médicas de mamografías), en este caso se tendría 2^16 = 65536 niveles de gris, que irían desde 0 (negro puro) hasta 65535 (blanco puro).
+
+Dado entonces que sabemos que las imágenes tienen 8 bits, podemos normalizar los datos de entrada dividiendo entre el número
+más grande de esta forma pasamos de una escala de [0, 255] a una de [0, 1] y las redes neuronales trabajan más cómodamente 
+con números en decimal que con enteros. 
+
 ## 1.5 Entrenando el modelo de tu primer red neuronal
+
+### 7: Entrenar a nuestra red neuronal
+Ahora que nuestros datos de entrenamiento y testing tienen un mejor formato, podemos entrenar a nuestra red neuronal.
+Lo único que cabe destacar aquí por el momento es que: `epochs`: es la cantidad de iteraciones que queremos que el modelo 
+pueda realizar para irse optimizando. `batch_size`: de forma muy sencilla, es que como el dataset es muy grande `60,000`
+es más conveniente irse entrenando de forma paralela con conjuntos más pequeños de 128 datos que los 60,000 al mismo tiempo.
+
+```python
+model.fit(x_train, y_train, epochs=5, batch_size=128)
+```
+Respuesta esperada:
+```
+Epoch 1/5
+469/469 [==============================] - 2s 1ms/step - loss: 0.2679 - accuracy: 0.9237
+Epoch 2/5
+469/469 [==============================] - 1s 1ms/step - loss: 0.1073 - accuracy: 0.9686
+Epoch 3/5
+469/469 [==============================] - 1s 2ms/step - loss: 0.0709 - accuracy: 0.9793
+Epoch 4/5
+469/469 [==============================] - 1s 1ms/step - loss: 0.0499 - accuracy: 0.9851
+Epoch 5/5
+469/469 [==============================] - 1s 1ms/step - loss: 0.0385 - accuracy: 0.9883
+```
+
+### 8: Evaluar el rendimiento de nuestra red neuronal con datos de validación
+
+Ahora que hemos visto que el accuracy de nuestro modelo sobre los datos de entrenamiento es de 0.9883 vamos a ponerlo a prueba
+con los datos de testing que NO ha visto mientras era entrenado.
+
+```python
+model.evaluate(x_test, y_test)
+```
+Valor esperado:
+```
+313/313 [==============================] - 0s 853us/step - loss: 0.0710 - accuracy: 0.9773
+```
+Excelente nuestro modelo ha obtenido `0.9773` puntos de accuracy sobre un dataset desconocido.
+
+### 9: Guardar el modelo para usarlo después
+
+Finalmente como paso extra, podemos exportar el modelo con todos los pesos, arquitectura y su compilación para cargar después
+y ponerlo a clasificar lo que nosotros queramos.
+
+```python
+model.save("Model/numeros.h5")
+```
+
+Ahora en un archivo diferente podemos cargar el modelo y ponerlo a clasificar:
+
+```python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from keras.models import load_model
+from keras.datasets import mnist
+from keras.utils import to_categorical
+
+model = load_model("Model/numeros.h5")
+(_, _), (test_data, test_labels) = mnist.load_data()
+x_test = test_data.reshape((10000, 28*28))
+x_test = x_test.astype("float32")/255
+y_test = to_categorical(test_labels)
+model.evaluate(x_test, y_test)
+```
+
+Respuesta esperada:
+```
+313/313 [==============================] - 1s 854us/step - loss: 0.0710 - accuracy: 0.9773
+```
+
 ## 1.6 La neurona: una pequeña y poderosa herramienta
 ## 1.7 Arquitectura de una red neuronal
 ## 1.8 Funciones de activación
