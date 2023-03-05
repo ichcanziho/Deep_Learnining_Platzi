@@ -153,7 +153,7 @@ Empecemos por definir los objetivos de esta práctica:
 8. Evaluar el rendimiento de nuestra red neuronal con datos de validación
 9. Guardar el modelo para usarlo después
 
-> El código completo de esta sección se encuentra [aquí](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/primer%20red%20neuronal/load.py)
+> El código completo de esta sección se encuentra [aquí](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/primer%20red%20neuronal/main.py)
 
 Empecemos por cargar las librerías necesarias:
 
@@ -392,6 +392,52 @@ Respuesta esperada:
 ```
 
 ## 1.6 La neurona: una pequeña y poderosa herramienta
+
+La neurona, también llamado perceptrón (nacido en los años 50’s) está inspirado en las redes neuronales biológicas.
+
+El funcionamiento del perceptrón se describe de la siguiente manera:
+
+- Se realiza una suma ponderada de las entradas con los pesos (weights w). Esto da como resultado una salida lineal.
+
+- Esta salida se pasa por una función de activación que introduce no linealidades al perceptrón.
+
+- Si el modelo no satisface de forma adecuada el problema entonces se itera. Se itera actualizando los pesos hasta resolver el problema.
+
+![neurona1](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/neurona1.png)
+
+Vemos como la Neurona simplemente toma variables de entrada `X1 - X2` a cada una de estas variables la acompaña su respectivo peso
+`WX1 - WX2` La neurona es la suma ponderada entre la multiplicación de las entradas `Xs` y los pesos `Ws` adicionalmente a esta 
+secuencia de sumas se le suma un elemento de Bias `b` que puede estar o no acompañado de su peso `Wb`.
+
+![neurona2](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/neurona2.png)
+
+El bias de la neurona le permite a la misma tener más elasticidad. Por ejemplo si tenemos una función que en un punto específico
+da 0 (véase) la función 2x^2 cuando X es 0 entonces f(x) es 0; sin embargo, si le añadimos un Bias la función va a estar recorrida
+B unidades.
+
+![neurona3](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/neurona3.png)
+
+Las neuronas por sí mismas nos permiten solucionar problemas, por ejemplo con una correcta distribución de Pesos y Bias
+podemos crear una compuerta lógica AND asignado los valores de (2, 1, -3) a sus (WX1, WX2, BX) respectivamente. Sin embargo,
+cabe destacar que es Necesaria una `Función de activación` que me permite `deformar` la salida lineal. De esta manera nuestra función
+puede ser algo como `0 if z <=0 else 1`de modo que si z es negativa o 0 entonces la salida será 0 de otro modo será 1.
+
+![escalon](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/escalon.png)
+
+Sin embargo, éxisten muchos problemas que NO se pueden solucionar de forma lineal con una sola neurona, tal es el caso de la función
+XOR:
+
+![neurona4](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/neurona4.png)
+
+La cual vemos que para poder clasificar de forma correcta, necesita al menos 2 funciones lineales, es decir 2 neuronas:
+
+![neurona5](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/neurona5.png)
+
+Esto quiere decir que a mayor cantidad de neuronas tengo mayor posibilidad de responder problemas más complejos. Esto NO es 100% cierto
+para el 100% de los casos, claro que existen problemas que con una menor cantidad de neuronas pueden resolver de forma más
+eficiente ciertos problemas, pero en general tener mayor cantidad de neuronas facilita la tarea, y en algunos problemas como
+el XOR es indispensable tener varias. 
+
 ## 1.7 Arquitectura de una red neuronal
 ## 1.8 Funciones de activación
 ## 1.9 Función de pérdida (Loss Function)
