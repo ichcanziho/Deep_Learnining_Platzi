@@ -745,7 +745,7 @@ Dado que `J` es una función de 3 variables `(a, b, c)` sus derivadas parciales 
 
 `dJ/dc`
 
-Sin embargo, vemos como pudimos expresar nuestra función llendo de derecha a izquierda utilizando las variables axuiliares `u` y `v`
+Sin embargo, vemos como pudimos expresar nuestra función yendo de derecha a izquierda utilizando las variables auxiliares `u` y `v`
 
 Para calcular las derivadas parciales tenemos que hacer backpropagation. Partamos del primer bloque de la derecha
 
