@@ -490,18 +490,18 @@ ser **discretas** (tener un conjunto finito de valores) o **continuas** (estar d
 
 Algunas de las funciones de activación más utilizadas son las siguientes:
 
-![function1.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Ffunction1.png)
+![function1.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/function1.png)
 
 Pero ¿cómo sabemos qué función de activación utilizar en cada momento?
 
-![function2.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Ffunction2.png)
+![function2.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/imgs/function2.png)
 
 Esto va a depender del tipo de problema, y siempre se puede jugar con las activaciones de cada capa, sin embargo, es normalmente
 aceptado que las capas ocultas utilicen ReLU y la última dependa de si el problema es de clasificación binaria o multiple, 
 por lo general si el problema tiene más de dos clases a ser clasificadas se utilizará `Softmax` o `Sigmoid` por otro lado
 si es binaria puede ser `Sigmoid` o `step`, finalmente, si el problema es una regresión entonces basta con usar una `linear`
 
-> ### Código de esta sección [aquí](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Ffunciones%2Fmain.py)
+> ### Código de esta sección [aquí](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/funciones/main.py)
 
 ### Función Sigmoid
 
@@ -509,7 +509,7 @@ si es binaria puede ser `Sigmoid` o `step`, finalmente, si el problema es una re
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 ```
-![Sigmoid.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Ffunciones%2Fimgs%2FSigmoid.png)
+![Sigmoid.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/funciones/imgs/Sigmoid.png)
 
 ### Función Step
 
@@ -517,7 +517,7 @@ def sigmoid(x):
 def step(x):
     return np.piecewise(x, [x < 0.0, x > 0.0], [0, 1])
 ```
-![Step.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Ffunciones%2Fimgs%2FStep.png)
+![Step.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/funciones/imgs/Step.png)
 
 ### Función ReLU
 
@@ -525,14 +525,14 @@ def step(x):
 def relu(x):
     return np.maximum(0, x)
 ```
-![ReLu.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Ffunciones%2Fimgs%2FReLu.png)
+![ReLu.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/funciones/imgs/ReLu.png)
 
 ### Función Tanh
 ```python
 def tanh(x):
     return np.tanh(x)
 ```
-![Tanh.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Ffunciones%2Fimgs%2FTanh.png)
+![Tanh.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales/funciones/imgs/Tanh.png)
 
 
 
