@@ -535,8 +535,89 @@ def tanh(x):
 ![Tanh.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Ffunciones%2Fimgs%2FTanh.png)
 
 
-
 ## 1.9 Función de pérdida (Loss Function)
+
+Es importante tener muy en cuenta que: nuestra red neuronal tiene como finalidad generar una `predicción` ya sea de una 
+`regresion` (un valor continuo) o una `clasificación` (clases pre-definidas). 
+
+Con esto en cuenta, entonces una pregunta completamente lógica es: ¿cómo sabemos si la predicción fue buena o fue mala, 
+o qué tan cerca o lejos está del valor real?. Para responder esta pregunta, es que ahora cobra sentido que las redes neuronales
+necesiten tener valores conocidos para tener un marco de referencia de a dónde llegar.
+
+En el ejemplo pasado veíamos que nuestro dataset de MNIST tenía dos grandes grupos: 
+
+- Training
+  - data training
+  - label training
+- Testing
+  - data testing
+  - label testing
+
+Justamente la `data` eran los valores de entrada y las `label` eran los valores de salida o valores a predecir. Es en este 
+conjunto de valores donde encontramos los ejemplos de las respuestas correctas, que dado los valores de entrada deben llegar
+a la salida esperada de `label`. 
+
+Tomando todo esto en cuenta podemos decir que el objetivo de la red neuronal es utilizar los pesos y los bias de las capas
+del modelo para generar una salida que sea lo más similar posible a las etiquetas esperadas en `label` y no solo a una etiqueta
+sino a todas las etiquetas del conjunto de `training y testing.
+
+Es aquí cuando entra el concepto de `loss function` una función que me permite comparar que tan cerca o lejos está mi red neuronal
+respecto a mis valores reales. De acuerdo al tipo de problema existen diferentes `loss functions` pero todas tienen como objetivo
+el permitirme observar que tan buena es mi red neuronal para predecir mi variable de salida. Con base en este `coste` puedo
+ir actualizando los pesos de mis neuronas para que vayan reduciendo el coste. Esto lo veremos en la siguiente clase cuando
+hablemos de la técnica de `gradient descend`.
+
+En esta clase vamos a hablar sobre 2 de las funciones de perdida más utilizadas:
+
+**MSE - MEAN SQUARED ERROR:**
+
+Esta función de perdida está diseñada para problemas de regresiones, dónde queremos obtener un valor continuo como lo es
+el valor de una casa por ejemplo. 
+![f1.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Ff1.png)
+
+La función `MSE` toma el cuadrado de la distancia entre el valor real y la predicción para castigar con más fuerza a los valores más 
+alejados a mi predicción.
+
+**CROSS ENTROPY**
+
+Esta función de perdida está diseñada para problemas de clasificación, de forma muy simple mide la distancia entre la predicción de nuestro 
+algoritmo contra el valor real, para cada una de las clases del problema.
+
+![f2.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Ff2.png)
+
+En este ejemplo podemos observar como el valor real a predecir era el círculo marcado como su representación `one hot encoding` como
+`(1, 0, 0)` y la predicción del algoritmo fue `(0.5, 0.3, 0.2)` entonces la fórmula de `Cross Entropy` toma en cuenta el valor real
+`p(x)` y el logaritmo de la predicción `log q(x)` de esta forma podemos saber que tan buena fue nuestra predicción.
+
+En términos de programación de deep learning vamos a nombrar a nuestra predicción como `y_hat` y al valor real como `y`
+
+Vamos a implementar la función de `MSE` en python:
+
+> Código completo [perdida.py](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Ffunciones%2Fperdida.py)
+
+```python
+import numpy as np
+
+
+def mse(y: np.array, y_hat: np.array, derivative: bool = False):
+    if derivative:
+        return y_hat - y
+    else:
+        return np.mean((y_hat - y)**2)
+
+
+if __name__ == '__main__':
+    real = np.array([0, 0, 1, 1])
+    prediction = np.array([0.9, 0.5, 0.2, 0])
+    print(mse(real, prediction))
+``` 
+Valor esperado: 
+```
+0.675
+```
+Más adelante explicaremos por qué tenemos el parámetro de `derivative` y porque lo que regresa es diferente cuando la función
+está derivada respecto a cuando no lo está.
+
 ## 1.10 Descenso del gradiente
 ## 1.11 Backpropagation
 ## 1.12 Playground - Tensorflow
