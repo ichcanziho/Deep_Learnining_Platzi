@@ -686,7 +686,121 @@ del problema. En realidad la derivada va a darme la dirección en la que crece l
 en la que decrece basta con que yo la multiplique por -1. 
 
 ## 1.11 Backpropagation
+
+Backpropagation es un proceso es especialmente importante, ya que, a medida que se entrena una red neuronal, los nodos de 
+las capas intermedias son capaces de organizarse por sí mismas. De esta manera, cada uno de estos nodos son capaces de 
+aprender a reconocer distintas características de los datos de entrada.
+
+Gracias al método de backpropagation las redes neuronales son capaces de identificar patrones de datos incompletos o 
+arbitrarios y encontrar la solución más adecuada para el problema que se les haya planteado, ya que serán capaces de hallar 
+un patrón similar a las características que hayan aprendido a reconocer durante su entrenamiento. Es decir, este algoritmo 
+sirve para detectar errores en procesos que implican el uso de redes neuronales.
+
+El entrenamiento de las redes neuronales es un proceso complejo que implica distintas etapas. El método de backpropagation 
+es la cuarta etapa del proceso y, al mismo tiempo se compone de distintas fases:
+
+- `Elección de entrada y salida:` Este es el primer paso en el funcionamiento del algoritmo y es el momento en el que se determina una entrada para todo el proceso de retropropagación, desde el punto de entrada hasta la salida deseada.
+- `Configuración:` Una vez configurados los valores de entrada y de salida, el algoritmo procede a asignar una serie de valores secundarios que le permiten modificar parámetros dentro de cada capa y nodo que conforman la red neuronal.
+- `Cálculo de error:` En este paso se determina el erro total a partir del análisis de los nodos y capas de red neuronal.
+- `Minimización de errores:` Una vez detectados los errores, el algoritmo procede a minimizar su efecto en el conjunto de la red neuronal.
+- `Actualización de parámetros:` Si la tasa de error es muy alta, el método de bakcpropagation ajusta y actualiza los parámetros para reducirla lo máximo posible.
+- `Modelado para la predicción:` Tras la optimización de los errores, el método de cálculo de backpropagation evalúa las entradas de prueba adecuadas para garantizar que se obtienen el resultado deseado.
+
+![back1.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fback1.png)
+
+
+Nosotros hasta este momento entendemos que para llegar a computar la predicción las salidas de las capas anteriores en una red funcionan
+como las entradas de la siguiente capa y así hasta llegar a la última capa que será la encargada de dar la predicción final.
+
+![back2.gif](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fback2.gif)
+
+Sin embargo, el error calculado por la `cost function` viene dado únicamente por la respuesta de la última capa, y una vez que se tiene este
+error la última capa puede argumentar que ella NO tuvo la culpa sino que el error viene de la capa anterior, y así sucesivamente. 
+
+Entonces haciendo uso de derivadas parciales es como podemos ir hacia atrás capa a capa distribuyendo los cambios necesarios para ir disminuyendo
+el error, esto es en sí la forma más fácil de entender a `backpropagation`
+
+Veamos un ejemplo de derivadas parciales utilizando `Computation Graph`
+
+Dada la siguiente función:
+
+`J(a, b, c) = 3(a +bc)`
+
+Obtener las derivadas parciales `da, db, dc`. Primero debemos generar el grafo computacional de la función J. Para ello 
+utilizaremos 2 variables auxiliares siendo `v = a +bc` y `u = bc` de tal manera que podemos rescribir la fórmula de las siguientes maneras:
+
+`u = bc`
+
+`v = a + u`
+
+`J(a, b, c) = 3v = 3(a + u) = 3(a + bc)`
+
+![back3.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fback3.png)
+
+Dado que `J` es una función de 3 variables `(a, b, c)` sus derivadas parciales serían:
+
+`dJ/da`
+
+`dJ/db`
+
+`dJ/dc`
+
+Sin embargo, vemos como pudimos expresar nuestra función llendo de derecha a izquierda utilizando las variables axuiliares `u` y `v`
+
+Para calcular las derivadas parciales tenemos que hacer backpropagation. Partamos del primer bloque de la derecha
+
+`J = 3v`
+
+Entonces:
+
+`dJ/dv = 3`
+
+Tenemos nuestra primera derivada que apunta al bloque de en medio al bloque `v`. Ahora obtengamos las derivadas parciales de la función `v`:
+
+`v = a + u`
+
+Entonces:
+
+`dv/da = 1`
+
+`dv/du = 1`
+
+Ahora podemos observar que ya llegamos a la variable `a` que se puede expresar de la siguiente manera:
+
+`dJ/da = dJ/dv * dv/da`
+
+Pero nosotros YA calculamos `dJ/dv` y `dv/da` entonces ->
+
+`dJ/dv * dv/da = (3)*(1) = 3`
+
+Por lo tanto:
+
+`dJ/da = 3`
+
+Continuemos con el bloque de la función u:
+
+`u = bc`
+
+`du/db = c`
+
+`du/dc = b`
+
+Ahora ya podemos obtener las derivadas parciales de `c` y `b` con respecto a `J`:
+
+`dJ/db = dJ/dv * dv/du * du/db = (3)(1)(c) = 3c`
+
+`dJ/dc = dJ/dv * dv/du * du/dc = (3)(1)(b) = 3b`
+
+Finalmente, entonces la respuesta a la pregunta sería:
+
+`dJ/da = 1`
+
+`dJ/db = 3c`
+
+`dJ/dc = 3b`
+
 ## 1.12 Playground - Tensorflow
+
 ## 1.13 Quiz: Fundamentos en la arquitectura de redes neuronales
 
 # 2. Redes Neuronales con Python
