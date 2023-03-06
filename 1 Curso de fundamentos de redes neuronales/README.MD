@@ -619,6 +619,72 @@ Más adelante explicaremos por qué tenemos el parámetro de `derivative` y porq
 está derivada respecto a cuando no lo está.
 
 ## 1.10 Descenso del gradiente
+
+Matemáticamente hablando las funciones que son continuas también son derivables. Hablando en términos sumamente SIMPLES de entender
+y NADA FORMALES. Intuitivamente, se puede decir que una función es continua cuando en su gráfica no aparecen saltos o cuando el trazo de la gráfica no tiene "huecos".
+
+![descenso1.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso1.png)
+
+Podemos decir que (a) y (b) NO son continuas, pero (c) sí lo es. Entonces, que una función sea continua me permite que sea 
+diferenciable, y a su vez, de forma simple de explicar esto quiere decir que dado un punto que pertenezca a la función f(x)
+yo soy capaz de encontrar una recta tangente a dicho punto (una recta que únicamente va a tocar en un solo punto a dicha función)
+
+![descenso2.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso2.png)
+
+**¿Y para qué me interesa obtener está recta tangente a un punto?** 
+
+Imaginemos que yo tengo la siguiente función:
+
+![descenso3.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso3.png)
+
+Y me interesa encontrar en qué puntos la función tiene un valor máximo y un valor mínimo, en otras palabras estoy optimizando.
+Puedo usar la derivada de la función para ir obteniendo la recta pendiente en todos y cada uno de los puntos de la función en
+un rango establecido. La pendiente a su vez tendrá un cierto grado de inclinación, este puede ser una inclinación positiva o negativa
+de acuerdo a si el punto de la función se encuentra en la parte creciente o decreciente de la misma. 
+
+Sin embargo, únicamente en los puntos máximos y mínimos la pendiente de dicho punto tendrá una inclinación de 0
+
+![descenso4.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso4.png)
+
+En otras palabras, la derivada me permite encontrar los valores locales máximos y mínimos de una función cuando la derivada se hace 0.
+
+Esto es increíblemente útil en deep learning porque recordemos que lo que nosotros buscamos con las funciones de perdida es
+optimizarlas acercándolas lo más posible a 0, dicho de otra forma nuestro deseo con las funciones de perdida es que tengan
+la menor perdida posible y es justo por eso que utilizamos las derivadas de las funciones para irnos acercando poco a poco a 
+este objetivo de optimización. 
+
+Entonces justamente el algoritmo del gradiente descendiente (gradient descend) tiene como objetivo dada una función encontrar
+dónde se encuentra su mínimo local:
+
+![descenso5.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso5.gif)
+
+En este escenario hay un término muy importante conocido como `learning rate` que significa la velocidad de aprendizaje,
+en términos sencillos es el tamaño del salto que mi algoritmo de `gradient descend` tiene permiso de dar en cada iteración. 
+
+![descenso6.gif](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso6.gif)
+
+Si él `learning rate` es MUY pequeño, me puede tomar muchísimos saltos el llegar a mi punto de optimización deseado. Pero si
+él `learning rate` es demasiado grande entonces este tamaño de salto NO me va a permitir convergir a ninguno punto. 
+
+Idealmente, debo tener un `learning rate` lo suficientemente pequeño para que me asegure de que puedo convergir, pero lo suficientemente
+grande para que me tome la menor cantidad de iteraciones. En la actualidad existen métodos de optimización que NO necesitan
+especificar este parámetro por defecto. Un learning rate utilizado con bastante frecuencia es: `0.001` 
+
+Existe una gran variedad de optimizadores en la actualidad y lo más nuevos tienden a ser más eficientes y veloces al momento de encontrar
+el mínimo de una función:
+
+![descenso7.gif](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso7.gif)
+
+Finalmente, para encontrar la dirección de la derivada es necesario entender el concepto de derivadas parciales:
+
+![descenso8.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fdescenso8.png)
+
+La derivada parcial de una función de varias variables es la derivada con respecto a cada una de esas variables manteniendo 
+las otras como constantes. A final de cuentas en una red neuronal tengo funciones de muchísimas variables, y cada una de ellas
+expresa una dimensión, entonces para encontrar el descenso del gradiente debo obtener la derivada para cada una de las dimensiones
+del problema. En realidad la derivada va a darme la dirección en la que crece la función, pero si yo quiero obtener la dirección
+en la que decrece basta con que yo la multiplique por -1. 
+
 ## 1.11 Backpropagation
 ## 1.12 Playground - Tensorflow
 ## 1.13 Quiz: Fundamentos en la arquitectura de redes neuronales
