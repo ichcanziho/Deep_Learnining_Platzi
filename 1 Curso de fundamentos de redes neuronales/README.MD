@@ -835,6 +835,129 @@ Hasta la derecha podemos ver el Test loss y un gráfico que representa la clasif
 # 2. Redes Neuronales con Python
 
 ## 2.1 Dimensiones, tensores y reshape
+
+Python nos ofrece una amplia gama de tipos de datos y dimensiones con ayuda de numpy, entre ellos podemos observar:
+
+- `Escalares`: son números aislados y únicos su dimensión es 0. Ejemplo: 5, 1, 3
+- `Vectores`: en python son listas de números, su dimensión es 1. Ejemplo: [1, 2, 3]
+- `Matrices`: en python por ejemplo son los dataframes de Pandas, su dimension es 2. Ejemplo [[1, 2, 3], [4, 5 ,6]]
+- `Tensores`: Son conjuntos de datos de más de 2 dimensiones. 
+
+![dim1.png](2%20Redes%20neuronales%20con%20Python%2Fimgs%2Fdim1.png)
+
+> [código completo](2%20Redes%20neuronales%20con%20Python/dimensiones/dimensiones_tensores_reshape.py)
+
+Veamos las dimensiones de los datos con python:
+
+**1. Scalar:**
+```python
+x = np.array(42)
+print("scalar:", x, "- shape:", x.shape, "dims:", x.ndim)
+```
+Respueta esperada:
+```commandline
+scalar: 42 - shape: () dims: 0
+```
+**2. Vector:**
+```python
+x = np.array([1, 2, 3, 4, 5])
+print("vector:", x, "- shape:", x.shape, "dims:", x.ndim)
+```
+Respuesta esperada:
+```commandline
+vector: [1 2 3 4 5] - shape: (5,) dims: 1
+```
+**3. Matrix:**
+```python
+x = np.array([[1, 2, 3, 4, 5],
+              [6, 7, 8, 9, 10]])
+print("matrix:", x, "- shape:", x.shape, "dims:", x.ndim)
+```
+Respuesta esperada:
+```commandline
+matrix: [[ 1  2  3  4  5]
+         [ 6  7  8  9 10]] - shape: (2, 5) dims: 2
+```
+**4. Tensor:**
+```python
+x = np.array([[[1, 2, 3, 4, 5],
+               [6, 7, 8, 9, 10]],
+              [[1, 2, 3, 4, 5],
+               [6, 7, 8, 9, 10]],
+              [[1, 2, 3, 4, 5],
+               [6, 7, 8, 9, 10]]
+              ])
+print("Tensor:", x, "- shape:", x.shape, "dims:", x.ndim)
+```
+Respuesta esperada:
+```commandline
+Tensor: [[[ 1  2  3  4  5]
+          [ 6  7  8  9 10]]
+
+         [[ 1  2  3  4  5]
+          [ 6  7  8  9 10]]
+
+         [[ 1  2  3  4  5]
+          [ 6  7  8  9 10]]] - shape: (3, 2, 5) dims: 3
+```
+**5. Función Reshape:**
+
+```python
+x = np.array([[0, 1],
+              [2, 3],
+              [4, 5],
+              [6, 7]])
+
+print(x, x.shape)
+x = x.reshape(8, 1)
+print()
+print(x, x.shape)
+x = x.reshape(2, 4)
+print()
+print(x, x.shape)
+print()
+x = np.array([[0, 1],
+              [2, 3],
+              [4, 5],
+              [6, 7]])
+xt = x.T
+print("original:")
+print(x)
+print("transpose:")
+print(xt)
+```
+Respuesta esperada:
+```commandline
+[[0 1]
+ [2 3]
+ [4 5]
+ [6 7]] (4, 2)
+
+[[0]
+ [1]
+ [2]
+ [3]
+ [4]
+ [5]
+ [6]
+ [7]] (8, 1)
+
+[[0 1 2 3]
+ [4 5 6 7]] (2, 4)
+
+original:
+[[0 1]
+ [2 3]
+ [4 5]
+ [6 7]]
+transpose:
+[[0 2 4 6]
+ [1 3 5 7]]
+
+Process finished with exit code 0
+
+```
+
 ## 2.2 Creando nuestra red neuronal usando numpy y matemáticas
 ## 2.3 Entrenamiento forward de la red neuronal
 ## 2.4 Aplicando backpropagation y descenso del gradiente
