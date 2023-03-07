@@ -801,7 +801,36 @@ Finalmente, entonces la respuesta a la pregunta sería:
 
 ## 1.12 Playground - Tensorflow
 
+Tensorflow nos ofrece una herramienta sumamente útil que nos provee de un entorno gráfico para practicar nuestros conceptos 
+de redes neuronales en problemas de `Classification` y `Regression`: [Playground](https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=1&seed=0.87931&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false)
+
+
+![hub1.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fhub1.png)
+
+**Playground - Tensorflow**
+
+Nos permite tener acceso de forma simple e inmediata a los siguientes parámetros configurables:
+
+- Learning rate
+- Activation Function
+- Regularization
+- Regularization Rate
+- Problem Type
+
+Hasta la izquierda podemos seleccionar la distribución de datos, así como la cantidad de datos utilizada para entrenar y evaluar al modelo.
+
+Al centro vemos la arquitectura de la red, podemos configurar que entradas de datos queremos, la cantidad de capas ocultas y la cantidad
+de neuronas para cada capa.
+
+Hasta la derecha podemos ver el Test loss y un gráfico que representa la clasificación de la red.
+
 ## 1.13 Quiz: Fundamentos en la arquitectura de redes neuronales
+
+![q1p1.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fq1p1.png)
+
+![q1p2.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fq1p2.png)
+
+![q1p3.png](1%20Fundamentos%20en%20la%20arquitectura%20de%20redes%20neuronales%2Fimgs%2Fq1p3.png)
 
 # 2. Redes Neuronales con Python
 
