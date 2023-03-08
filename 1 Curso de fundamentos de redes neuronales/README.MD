@@ -975,6 +975,9 @@ propia red neuronal desde 0 sin utilizar ningún framework, solamente numpy. Tem
 10. Entrenamos el modelo
 11. Probando el modelo sobre datos nuevos
 
+> ## Nota:
+> El código completo de estas clases lo puedes encontrar [aquí]([red_neuronal.py](2%20Redes%20neuronales%20con%20Python%2Fprimer%20red%2Fred_neuronal.py))
+
 ### 1. Creación de un dataset Artificial
 
 Para este primer paso vamos a crear un dataset artificial de 2 dimensiones, esto nos permitirá gráficarlo y ver fácilmente
