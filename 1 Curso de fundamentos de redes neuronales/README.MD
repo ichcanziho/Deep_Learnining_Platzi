@@ -1286,6 +1286,45 @@ Respuesta esperada:
 # 3. Manejo de Redes Neuronales con Keras
 
 ## 3.1 Data: Train, Validation, Test
+
+**Training Dataset**
+
+> **Training Dataset:** Es la muestra de datos utilizados para entrenar al modelo.
+
+El dataset actual que utilizados para entrenar el modelo (pesos y sesgos) en el caso de una red neuronal. El modelo observa
+y aprende de este conjunto de datos.
+
+**Validation Dataset**
+
+> **Validation Dataset:** Es la muestra de datos utilizada para proveer una evaluación no sesgada de un modelo entrenado en el 
+> dataset de entrenamiento mientras ajustados los hiperparámetros. La evaluación se vuelve más sesgada a medida que la habilidad 
+> en el conjunto de datos de validación se incorpora a la configuración del modelo.
+> 
+
+El conjunto de validación se utiliza para evaluar un modelo dado, pero esto es para una evaluación frecuente. Nosotros, 
+como ingenieros de aprendizaje automático, usamos estos datos para ajustar los hiperparámetros del modelo. Por lo tanto, 
+el modelo ocasionalmente ve estos datos, pero nunca lo "aprende" de esto. Utilizamos los resultados del conjunto de validación 
+y actualizamos hiperparámetros de nivel superior. Entonces, el conjunto de validación afecta a un modelo, pero solo 
+indirectamente. El conjunto de validación también se conoce como conjunto de desarrollo o el conjunto de desarrollo. Esto
+tiene sentido, ya que este conjunto de datos ayuda durante la etapa de "desarrollo" del modelo.
+ 
+**Test Dataset**
+
+>**Test Dataset**: la muestra de datos utilizados para proporcionar una evaluación imparcial de un modelo de modelo final 
+> en el conjunto de datos de capacitación.
+
+El conjunto de datos de prueba proporciona el estándar de oro utilizado para evaluar el modelo. Solo se usa una vez que 
+un modelo está completamente entrenado (usando el tren y los conjuntos de validación). El conjunto de pruebas es generalmente 
+lo que se utiliza para evaluar modelos competidores (por ejemplo, en muchas competiciones de Kaggle, el conjunto de validación 
+se lanza inicialmente junto con el conjunto de capacitación y el conjunto de pruebas real únicamente se lanza cuando la competencia 
+está a punto de cerrar, y es El resultado del modelo en el conjunto de pruebas que decide el ganador). 
+Muchas veces el conjunto de validación se usa como conjunto de pruebas, pero no es una buena práctica. El conjunto de pruebas 
+generalmente está bien curado. Contiene datos cuidadosamente muestreados que abarcaron las diversas clases que enfrentaría el modelo, 
+cuando se utiliza en el mundo real.
+
+![datatest.gif](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fdatatest.gif)
+
+
 ## 3.2 Resolviendo un problema de clasificación binaria
 ## 3.3 Entrenamiento del modelo de clasificación binaria
 ## 3.4 Regularización - Dropout
