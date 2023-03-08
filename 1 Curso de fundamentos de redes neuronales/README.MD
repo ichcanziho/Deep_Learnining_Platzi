@@ -959,10 +959,326 @@ Process finished with exit code 0
 ```
 
 ## 2.2 Creando nuestra red neuronal usando numpy y matemáticas
+
+En estas próximas clases vamos a poner en práctica todos los conocimientos adquiridos hasta este punto del curso, implementando nuestra
+propia red neuronal desde 0 sin utilizar ningún framework, solamente numpy. Temas a ver:
+
+1. Creación de un dataset Artificial
+2. Definimos nuestras funciones de activación
+3. Función de perdida
+4. Función inicializadora de pesos
+5. Forward propagation
+6. Backpropagation
+7. Gradient descent
+8. Train Model Function
+9. Definir arquitectura de la red
+10. Entrenamos el modelo
+11. Probando el modelo sobre datos nuevos
+
+### 1. Creación de un dataset Artificial
+
+Para este primer paso vamos a crear un dataset artificial de 2 dimensiones, esto nos permitirá gráficarlo y ver fácilmente
+la distribución de clases del mismo.
+
+Nuestro dataset será creado utilizando la función `make_gaussian_quantiles` de [sklear.datasets](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_gaussian_quantiles.html)
+
+Las características de nuestro dataset artificial serán los siguientes:
+
+- `Cantidad de muestras:` n_samples = 1000
+- `Cantidad de características de entrada:` n_features = 2
+- `Cantidad de clases a predecir:` n_classes = 2
+
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_gaussian_quantiles
+
+N = 1000
+gq = make_gaussian_quantiles(mean=None, cov=0.1, n_samples=N, n_features=2, n_classes=2, shuffle=True,
+                             random_state=21)
+
+X, Y = gq
+# Esto es necesario para hacer el plot más cómodo
+Y = Y[:, np.newaxis]
+# X son las entradas de mi red, tienen 2 dimensiones, Y son las predicciones que corresponde a 2 clases.
+print(X.shape, Y.shape)
+# Muestro un scatter plot de la distribución de mis datos
+plt.scatter(X[:, 0], X[:, 1], c=Y[:, 0], s=40)
+plt.title("Problema de clasificación")
+plt.savefig("imgs/clasificacion.png")
+plt.close()
+```
+Respuesta esperada:
+```commandline
+(1000, 2) (1000, 1)
+```
+
+![clasificacion.png](2%20Redes%20neuronales%20con%20Python%2Fprimer%20red%2Fimgs%2Fclasificacion.png)
+
+Podemos observar que la salida:
+```commandline
+(1000, 2) (1000, 1)
+```
+Tenemos `(1000)` muestras de puntos coordinados `(x,y)` por eso nuestras variables de entrada: `X.shape = (1000, 2)`, mientras
+que tenemos un vector de labels `Y` que solo tienen dos clases `(0, 1)` por eso nuestra variable de salida: `Y.shape = (1000, 1)`
+
+### 2. Definimos nuestras funciones de activación
+
+Puedes repasar este tema en [Funciones de activación](#18-funciones-de-activación)
+
+```python
+def sigmoid(x, derivate=False):
+    if derivate:
+        return np.exp(-x) / ((np.exp(-x) + 1) ** 2)
+    else:
+        return 1 / (1 + np.exp(-x))
+
+
+def relu(x, derivate=False):
+    if derivate:
+        x[x <= 0] = 0
+        x[x > 0] = 1
+        return x
+    else:
+        return np.maximum(0, x)
+```
+
+Utilizaremos la función `relu` como función de activación para las capas ocultas y finalmente
+`sigmoid` como la última función de activación para la capa de clasificación.
+
+### 3. Función de perdida
+
+Puedes repasar este tema en [Función de pérdida](#19-función-de-pérdida--loss-function-)
+
+Usaremos mean squared error como función de perdida para esta red neuronal:
+
+```python
+def mse(y, y_hat, derivate=False):
+    if derivate:
+        return 2*(y_hat - y)
+    else:
+        return np.mean((y_hat - y) ** 2)
+```
+### 4. Función inicializadora de pesos
+
+Cómo hemos visto en anteriores clases, cada capa de una red neuronal está definida por una serie de pesos `W` y de sesgos `b`.
+Cuando creamos una red neuronal debemos empezar definiendo estos valores con un valor por defecto aleatorio. Eventualmente
+los procesos de optimización iran mejorando estos pesos y sesgos aleatorios.
+
+> ## Nota:
+> TODO el código de aquí en adelante está optimizado para trabajar con n cantidad de layers.
+> De forma automática los pasos de forward y backward propagation se adaptan a la cantidad n de layers.
+
+```python
+def initialize_parameters_deep(layer_dims: list) -> dict:
+    """
+    Genera un diccionario de pesos y sesgos de una red neuronal de acuerdo a su arquitectura de capas
+    :param layer_dims: lista que representa la cantidad de neuronas presente en cada capa de la red
+    :return: dict: parameters. 
+    """
+    parameters = {}
+    L = len(layer_dims)
+    for l in range(0, L - 1):
+        parameters[f'W{l + 1}'] = (np.random.rand(layer_dims[l],
+                                                  layer_dims[l + 1]) * 2) - 1  # Multiplicar por 2 y restar
+        # 1 es una forma de normalizar los datos para que vayan de -1 a 1, de esta forma encajan mejor con la
+        # distribución de datos de entrada de nuestro problema, pero tampoco es indispensable
+        parameters[f'b{l + 1}'] = (np.random.rand(1, layer_dims[l + 1]) * 2) - 1
+        print(f"Inicializando PESO W{l + 1} con dimensiones:", parameters[f'W{l + 1}'].sahpe)
+        print(f"Inicializando BIAS b{l + 1} con dimensiones:", parameters[f'b{l + 1}'].sahpe)
+
+    return parameters
+
+```
 ## 2.3 Entrenamiento forward de la red neuronal
+
+### 5. Forward Propagation
+
+Vamos primeramente a definir en términos de variables de programación algunos de los conceptos que hemos estado manejando hasta el momento.
+
+- `X` son las variables de entrada del modelo
+- `Y` son las etiquetas reales de las clases a predecir
+- `Wi` serán los pesos de la i-th capa.
+- `bi` serán los sesgos de la i-th capa.
+- `Zi` será la parte lineal del proceso de la red neuronal `np.dot(X, W) + b` de la i-th capa.
+- `Ai` será la función de activación aplicada a `Z` de la i-th capa.
+- `y_hat` es la predicción final de la red neuronal, correspondiente a `A` de la última capa.
+- `d{variable}i` representa la derivada de cierta variable por ejemplo `dW3`corresponde a la derivada de los pesos de la capa 3.
+
+Programamos un paso de nuestra función de forward propagation:
+
+```python
+def linear_forward(A, W, b):
+    Z = np.dot(A, W) + b
+    return Z
+
+
+def linear_activation_forward(A_prev, W, b, activation_function):
+    Z = linear_forward(A_prev, W, b)
+    A = activation_function(Z)
+    return A
+
+
+def forward_step(A0, params, activations_functions, n_layers):
+    L = n_layers
+    params["A0"] = A0
+    for i in range(1, L + 1):
+        params[f"A{i}"] = linear_activation_forward(params[f"A{i - 1}"], params[f"W{i}"], params[f"b{i}"],
+                                                    activations_functions[i])
+    y_hat = params[f"A{L}"]
+    return y_hat
+```
+
+> ### Nota:
+> Por nomenclatura, la primera capa de una red corresponde con la entrada de las varibles a clasificar, a su vez podemos llamar a estos datos como:
+> `A0` en realidad, la función `linear_forward` necesita los pesos y bias de la capa actual y la respuesta de la función de activación de la capa anterior.
+> Sin embargo, en la capa oculta 1, la respuesta A anterior corresponde con la entrada de datos. Solamente es en este caso.
+> 
+
 ## 2.4 Aplicando backpropagation y descenso del gradiente
+
+### 6. Backpropagation
+
+En el proceso de `backpropagation` el primer paso es obtener el error entre el valor real `Y` y el valor predicho por la red
+`y_hat`. Una vez que se calculan las derivadas de `Z`y `W` de la última capa, entonces podemos ir para atrás calculando
+las otras `dZ` y `dW`para las capas anteriores.
+
+```python
+def backpropagation(Y, y_hat, params, activations_functions, error_function, n_layers):
+    L = n_layers
+    params[f'dZ{L}'] = error_function(Y, y_hat, True) * activations_functions[L](params[f'A{L}'], True)
+    params[f'dW{L}'] = np.dot(params[f'A{L - 1}'].T, params[f'dZ{L}'])
+
+    for l in reversed(range(2, L + 1)):
+        params[f'dZ{l - 1}'] = np.matmul(params[f'dZ{l}'], params[f'W{l}'].T) * activations_functions[l - 1](
+            params[f'A{l - 1}'], True)
+
+    for l in reversed(range(1, L)):
+        params[f'dW{l}'] = np.matmul(params[f'A{l - 1}'].T, params[f'dZ{l}'])
+
+    return params
+```
+
+### 7. Gradient descent
+
+El último paso es ya con las derivadas calculadas podemos actualizar los pesos `Wi` y los bias `bi` de cada capa utilizando
+las derivadas calculadas en el punto anterior y un learning rate `lr`.
+
+```python
+def gradient_descent(params, lr, n_layers):
+    L = n_layers
+
+    for l in reversed(range(1, L + 1)):
+        params[f'W{l}'] = params[f'W{l}'] - params[f'dW{l}'] * lr
+        params[f'b{l}'] = params[f'b{l}'] - (np.mean(params[f'dZ{l}'], axis=0, keepdims=True)) * lr
+
+    return params
+```
+
 ## 2.5 Entrenamiento y análisis de resultados de tu red neuronal
+
+### 8. Train model function
+
+Ahora con todas las funciones que hemos definido anteriormente podemos crear una nueva función que sirva como orquestador de funciones
+y permita poner de forma secuencial todos los pasos de entrenamiento de la red para una cantidad de iteraciones `epochs` definida:
+
+```python
+def train_model(X, Y, layer_dims, params, activations_functions, error_function, lr, epochs):
+    errors = []
+    n_layers = len(layer_dims) - 1
+    j = 1
+    for _ in range(epochs):
+        y_hat = forward_step(X, params, activations_functions, n_layers)
+        params = backpropagation(Y, y_hat, params, activations_functions, error_function, n_layers)
+        params = gradient_descent(params, lr, n_layers)
+
+        if _ % 100 == 0:
+            e = error_function(Y, y_hat)
+            if _ % 1000 == 0:
+                print(j, "error:", e)
+                j += 1
+            errors.append(e)
+            
+    return errors, params
+```
+
+### 9. Definir arquitectura de la red
+
+En este punto podemos definir todas las variables que orquestan a la arquitectura de la red como: el número de capas y número
+de neuronas para capa. El learning rate. Las funciones de activaciones para cada capa oculta. La cantidad de epochs.
+
+```python
+layer_dims = [2, 4, 8, 1]
+lr = 0.002
+activations_functions = [0, relu, relu, sigmoid]
+params = initialize_parameters_deep(layer_dims)
+epochs = 10000
+```
+Repuesta esperada:
+```commandline
+Inicializando PESO W1 con dimensiones: (2, 4)
+Inicializando BIAS b1 con dimensiones: (1, 4)
+Inicializando PESO W2 con dimensiones: (4, 8)
+Inicializando BIAS b2 con dimensiones: (1, 8)
+Inicializando PESO W3 con dimensiones: (8, 1)
+Inicializando BIAS b3 con dimensiones: (1, 1)
+```
+### 10. Entrenamos el modelo
+
+Ya tenemos todo listo para ejecutar nuestra función `train_model` durante n `epochs` utilizando `mse` como nuestra 
+`función de perdida`.
+
+```python
+errors, params = train_model(X, Y, layer_dims, params, activations_functions, mse, lr, epochs)
+plt.plot(errors)
+plt.title("MSE over epochs")
+plt.xlabel("epochs")
+plt.ylabel("MSE")
+plt.savefig("imgs/model.png")
+plt.close()
+```
+Respuesta esperada:
+```commandline
+1 error: 0.24757298982437223
+2 error: 0.05393229428625825
+3 error: 0.059482476810252996
+4 error: 0.05376995780762481
+5 error: 0.045345930433615116
+6 error: 0.03746680657241106
+7 error: 0.03602928839608933
+8 error: 0.03626453751967989
+9 error: 0.031568468850135964
+10 error: 0.022516339724916422
+```
+![model.png](2%20Redes%20neuronales%20con%20Python%2Fprimer%20red%2Fimgs%2Fmodel.png)
+
+### 11. Probando el modelo sobre datos nuevos
+Finalmente, podemos crear un nuevo dataset de prueba aleatorio que tenga una distribución similar al dataset de entrenamiento y observar
+como clasifico nuestro modelo al dataset de prueba.
+```python
+data_test = (np.random.rand(1000, 2) * 2) - 1
+prediction = forward_step(data_test, params, activations_functions, 3)
+y = np.where(prediction >= 0.5, 1, 0)
+plt.scatter(data_test[:, 0], data_test[:, 1], c=y[:, 0], s=40)
+plt.title("NN prediction")
+plt.savefig("imgs/prediction.png")
+plt.close()
+```
+Respuesta esperada:
+![prediction.png](2%20Redes%20neuronales%20con%20Python%2Fprimer%20red%2Fimgs%2Fprediction.png)
+
 ## 2.6 Quiz: redes neuronales con python
+
+![q2p1.png](2%20Redes%20neuronales%20con%20Python%2Fimgs%2Fq2p1.png)
+
+![q2p2.png](2%20Redes%20neuronales%20con%20Python%2Fimgs%2Fq2p2.png)
+
+![q2p3.png](2%20Redes%20neuronales%20con%20Python%2Fimgs%2Fq2p3.png)
+
+![q2p4.png](2%20Redes%20neuronales%20con%20Python%2Fimgs%2Fq2p4.png)
+
+![q2p5.png](2%20Redes%20neuronales%20con%20Python%2Fimgs%2Fq2p5.png)
 
 # 3. Manejo de Redes Neuronales con Keras
 
