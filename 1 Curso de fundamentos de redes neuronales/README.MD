@@ -1326,9 +1326,154 @@ cuando se utiliza en el mundo real.
 
 
 ## 3.2 Resolviendo un problema de clasificación binaria
+
+
 ## 3.3 Entrenamiento del modelo de clasificación binaria
+
 ## 3.4 Regularización - Dropout
+
+![errores.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fclasificacion%20binaria%2Fimgs%2Ferrores.png)
+
+El `overfitting` o `sobre ajuste` es cuando nuestro modelo no es capaz de generalizar el conocimiento adquirido en la etapa
+de `trainig`. Es fácil de observar este problema, cuando comparamos las funciones de coste a lo largo de las épocas entre 
+el dataset de `trainig` y `validation`. En nuestro problema de clasificación binaria de reseñas de `IMDB`. La curva roja representa
+el error en el dataset de entrenamiento, pero a pesar de que a lo largo de 10 épocas podemos observar como de poco en poco este
+error fue disminuyendo, esto no fue el mismo caso para el error en el conjunto de `validation` aproximadamente, después de
+la época 4 el error en el dataset de `validation` empezó a subir, marcando una pauta para detectar el `overfitting`.
+
+Ahora listemos algunas de las principales técnicas con las que contamos en deep learning para reducir el problema del overfitting.
+
+### Regularización L2 (Ridge)
+
+La idea detrás de este tipo de regularización es reducir el valor de los parámetros para que sean pequeños.
+
+Esta técnica introduce un término adicional de penalización en la función de coste original (L), añadiendo a su valor la suma de los cuadrados de los parámetros (ω).
+
+La mala noticia es que este nuevo término puede ser alto; tanto que la red minimizaría la función de coste haciendo los parámetros muy cercanos a 0, lo que no sería nada conveniente. Es por ello que multiplicaremos ese sumando por una constante (λ) pequeña, cuyo valor escogeremos de forma arbitraria (0.1, 0.01, …).
+
+La función de coste queda, por tanto, así:
+
+![L2](https://latex2png.com/pngs/3457ebd84be9eb2d9e89ed7df3349a77.png)
+
+**¿Cuándo es efectiva Ridge (L2)?**
+
+Ridge nos va a servir de ayuda cuando sospechemos que varios de los atributos de entrada (features) estén correlacionados 
+entre ellos. Ridge hace que los coeficientes acaben siendo más pequeños. Esta disminución de los coeficientes minimiza 
+el efecto de la correlación entre los atributos de entrada y hace que el modelo generalice mejor. Ridge funciona mejor cuando la mayoría de los atributos son relevantes.
+
+### Regularización L1 (Lasso)
+
+Existe otra técnica muy parecida a la anterior denominada regularización L1 donde los parámetros en el sumatorio del término de penalización no se elevan al cuadrado, sino que se usa su valor absoluto.
+
+![L1](https://latex2png.com/pngs/fb0f2fb18c9fc8d7db7288c0fb99fad3.png)
+
+Esta variante empuja el valor de los parámetros hacia valores más pequeños, haciendo incluso que la influencia de algunas
+variables de entrada sea nula en la salida de la red, lo que supone una selección de variables automática. El resultado es 
+una mejor generalización, pero solo hasta cierto punto (la elección del valor de λ cobra más importancia en este caso).
+
+**¿Cuándo es efectiva Lasso (L1)?**
+
+Lasso nos va a servir de ayuda cuando sospechemos que varios de los atributos de entrada (features) sean irrelevantes. 
+Al usar Lasso, estamos fomentando que la solución sea poco densa. Es decir, favorecemos que algunos de los coeficientes 
+acaben valiendo 0. Esto puede ser útil para descubrir cuáles de los atributos de entrada son relevantes y, en general, 
+para obtener un modelo que generalice mejor. Lasso nos puede ayudar, en este sentido, a hacer la selección de atributos 
+de entrada. Lasso funciona mejor cuando los atributos no están muy correlacionados entre ellos.
+
+### Regularización ElasticNet (L1 y L2)
+
+ElasticNet combina las regularizaciones L1 y L2. Con el parámetro r podemos indicar que importancia relativa tienen 
+Lasso y Ridge respectivamente. Matemáticamente:
+
+![elastic](https://latex2png.com/pngs/ec1b4f7f8e2e71c50ae9957e4c41afe4.png)
+
+**¿Cuándo es efectiva ElasticNet?**
+
+Usaremos ElasticNet cuando tengamos un gran número de atributos. Algunos de ellos serán irrelevantes y otros estarán 
+correlacionados entre ellos.
+
+### Dropout
+
+Esta técnica difiere de las vistas hasta el momento. El procedimiento es sencillo: por cada nueva entrada a la red en fase 
+de entrenamiento, se desactivará aleatoriamente un porcentaje de las neuronas en cada capa oculta, acorde a una probabilidad 
+de descarte previamente definida. Dicha probabilidad puede ser igual para toda la red, o distinta en cada capa.
+
+![dropout.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fdropout.png)
+
+Lo que se consigue con esto es que ninguna neurona memorice parte de la entrada; que es precisamente lo que sucede cuando 
+tenemos sobreajuste.
+
+Una vez tengamos el modelo listo para realizar predicciones sobre muestras nuevas, debemos compensar de alguna manera el 
+hecho de que no todas las neuronas permanecieran activas en entrenamiento, ya que en inferencia sí que estarán todas 
+funcionando y, por tanto, habrá más activaciones contribuyendo a la salida de la red. Un ejemplo de dicha compensación 
+podría ser multiplicar todos los parámetros por la probabilidad de no descarte.
+
+### Normalización por lotes (Batch normalization)
+La historia de esta técnica es curiosa. Se presentó como una solución para reducir algo llamado Internal Covariate Shift, 
+pero parece que no es eso lo que hace. Aún así es una técnica esencial para redes neuronales por todo lo que aporta, como 
+explicamos a continuación.
+
+La normalización en lotes consiste básicamente en añadir un paso extra, habitualmente entre las neuronas y la función de 
+activación, con la idea de normalizar las activaciones de salida. Lo ideal es que la normalización se hiciera usando la 
+media y la varianza de todo el conjunto de entrenamiento, pero si estamos aplicando el descenso del gradiente estocástico 
+para entrenar la red, se usará la media y la varianza de cada mini-lote de entrada.
+
+Nota: cada salida de cada neurona se normalizará de forma independiente, lo que quiere decir que en cada iteración se 
+calculará la media y la varianza de cada salida para el mini-lote en curso.
+
+A continuación de la normalización se añaden 2 parámetros: un bias como sumando, y otra constante similar a un bias, pero 
+que aparece multiplicando cada activación. Esto se hace para que el rango de la entrada escale fácilmente hasta el rango 
+de salida, lo que ayudará mucho a nuestra red a la hora de ajustar a los datos de entrada, y reducirá las oscilaciones 
+de la función de coste. Como consecuencia de esto podremos aumentar la tasa de aprendizaje (no hay tanto riesgo de acabar 
+en un mínimo local) y la convergencia hacia el mínimo global se producirá más rápidamente.
+
+![batch_norm.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fbatch_norm.png)
+
+La normalización por lotes es más una técnica de ayuda al entrenamiento que una estrategia de regularización en sí misma. 
+Esto último se logra realmente aplicando algo adicional conocido como momentum. La idea de este momentum es que cuando 
+introduzcamos un nuevo mini-batch de entrada (N muestras procesadas en paralelo) no se usen una media y una desviación 
+muy distintas a las de la iteración anterior, para lo que se tendrá en cuenta el histórico, y se elegirá una constante 
+que pondere la importancia de los valores del mini-batch actual frente a los valores del anterior. Gracias a todo esto 
+se conseguirá reducir el sobreajuste.
+
+### Data augmentation
+
+La idea es aplicar diversas transformaciones sobre las entradas originales, obteniendo muestras ligeramente diferentes, 
+pero iguales en esencia, lo que permite a la red desenvolverse mejor en la fase de inferencia.
+
+Esta técnica se utiliza mucho en el campo de la visión artificial porque funciona de maravilla (en otros campos está por 
+explorar). Dentro de dicho contexto, una misma imagen de entrada será procesada por la red neuronal tantas veces como epochs 
+ejecutemos en entrenamiento; provocando que la red acabe memorizando la imagen si estamos entrenamos demasiado. Lo que 
+haremos es aplicar transformaciones de forma aleatoria cada vez que volvamos a introducir la imagen a la red.
+
+Ejemplos de transformaciones son:
+
+- Voltear la imagen en horizontal / vertical.
+- Rotar la imagen X grados.
+- Recortar, añadir relleno, redimensionar.
+- Aplicar deformaciones de perspectiva.
+- Ajustar brillo, contraste, saturación.
+- Introducir ruido, defectos.
+- Combinaciones de las anteriores.
+
+![data_augmentation.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fdata_augmentation.png)
+
+De esta forma contaremos con más información para entrenamiento sin necesidad de obtener muestras adicionales, y también 
+sin alargar los tiempos. Lo mejor es que si por ejemplo nuestra red se dedica a clasificar imágenes o detectar objetos, 
+esta técnica conseguirá que el modelo sea capaz de obtener buenos resultados para imágenes tomadas desde distintos ángulos 
+o bajo distintas condiciones de luz. Por tanto, conseguiremos que la red no sobreajuste y que generalice mejor.
+
+
+### Early Stopping 
+
+Es una técnica que trata de aplicar ciertas reglas para saber cuándo es momento de parar el entrenamiento, de forma que 
+no se produzca sobreajuste a los datos de entrada, ni tampoco subajuste.
+
+La regla más extendida sería la de entrenar el modelo monitorizando su rendimiento y guardando sus parámetros al finalizar 
+cada epoch, hasta que apreciemos que el error de validación aumenta de forma sostenida (hay empeoramientos que son debidos 
+a la componente estocástica del algoritmo). Nos quedaremos con el modelo que teníamos justo en el momento anterior.
+
 ## 3.5 Reduciendo el overfitting
+
 ## 3.6 Resolviendo un problema de clasificación multiple
 ## 3.7 Entrenamiento del modelo de clasificación multiple
 ## 3.8 Resolviendo un problema de regresión
