@@ -1327,12 +1327,230 @@ cuando se utiliza en el mundo real.
 
 ## 3.2 Resolviendo un problema de clasificación binaria
 
+En las siguientes clases estaremos resolviendo un problema de clasificación binaria. Para ello vamos a utilizar el dataset
+[IMDB movie review sentiment classification](https://keras.io/api/datasets/imdb/). El cual es un dataset que contiene una muestra de 
+25,000 reseñas de películas de IMDB etiquetadas por sentimiento (positivo/negativo). Adicionalmente, este dataset contiene 
+10,000 de las palabras más usadas en cada una de las reseñas, estas palabras están guardadas en un catálogo que asigna 
+un índice a cada una de las palabras más empleadas.
+
+El objetivo de esta práctica es utilizar nuestros conocimientos de normalizado de datos para preparar a este dataset para ser 
+clasificado por una red neuronal que pueda predecir el sentimiento de una nueva reseña. Los puntos a seguir serán los siguientes:
+
+1. Obtención de datos imdb - Keras
+2. Normalizando datos
+3. Arquitectura del Modelo
+4. Entrenando el modelo
+5. Analizando resultados
+6. Arquitectura del modelo normalizado
+
+> ## Nota:
+> El código completo de este proyecto lo puedes encontrar [aquí](3%20Manejo%20de%20redes%20neuronales%20con%20Keras/clasificacion%20binaria/main.py)
+
+### 1. Obtención de datos IMDB - Keras
+
+Utilizando `keras.datasets` vamos a importar `imdb` y a cargar el dataset con su método `load_data`
+```python
+from keras.datasets import imdb
+(train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
+# ¿Cómo luce uno de los datos de entrenamiento?
+print("Train data example")
+print(train_data[0])
+print("Train label example")
+print(train_labels[0])
+```
+Respuesta esperada:
+```commandline
+Train data example
+[1, 14, 22, 16, 43, 530, 973, 1622, 1385, 65, 458, 4468, 66, 3941, 4, 173, 36, 256, 5, 25, 100, 43, 838, 112, 50, 670, 2, 9, 35, 480, 284, 5, 150, 4, 172, 112, 167, 2, 336, 385, 39, 4, 172, 4536, 1111, 17, 546, 38, 13, 447, 4, 192, 50, 16, 6, 147, 2025, 19, 14, 22, 4, 1920, 4613, 469, 4, 22, 71, 87, 12, 16, 43, 530, 38, 76, 15, 13, 1247, 4, 22, 17, 515, 17, 12, 16, 626, 18, 2, 5, 62, 386, 12, 8, 316, 8, 106, 5, 4, 2223, 5244, 16, 480, 66, 3785, 33, 4, 130, 12, 16, 38, 619, 5, 25, 124, 51, 36, 135, 48, 25, 1415, 33, 6, 22, 12, 215, 28, 77, 52, 5, 14, 407, 16, 82, 2, 8, 4, 107, 117, 5952, 15, 256, 4, 2, 7, 3766, 5, 723, 36, 71, 43, 530, 476, 26, 400, 317, 46, 7, 4, 2, 1029, 13, 104, 88, 4, 381, 15, 297, 98, 32, 2071, 56, 26, 141, 6, 194, 7486, 18, 4, 226, 22, 21, 134, 476, 26, 480, 5, 144, 30, 5535, 18, 51, 36, 28, 224, 92, 25, 104, 4, 226, 65, 16, 38, 1334, 88, 12, 16, 283, 5, 16, 4472, 113, 103, 32, 15, 16, 5345, 19, 178, 32]
+Train label example
+1
+```
+Sin embargo, nos gustaría ver, por fines didácticos, cuál es el verdadero texto que tiene una muestra del dataset de entrenamiento.
+
+Para ello nos apoyaremos de la función `get_word_index()` el cual nos regresara el catalogo de las palabras utilizadas con su 
+respectivo índice, después convertiremos este `word_index` en un diccionario, para de esta forma acceder de forma sencilla
+a las palabras del `word_index` de acuerdo al índice de la palabra.
+```python
+def convert_number_to_word(example):
+    word_index = imdb.get_word_index()
+    word_index = dict([(value, key) for (key, value) in word_index.items()])
+    print(" ".join([str(word_index.get(_ - 3)) for _ in example]))
+
+# Observemos entonces cómo luce realmente un texto de entrada
+convert_number_to_word(train_data[0])
+```
+Respuesta esperada:
+```commandline
+None this film was just brilliant casting location scenery story direction everyone's really suited the part they played and you could just imagine being there robert None is an amazing actor and now the same being director None father came from the same scottish island as myself so i loved the fact there was a real connection with this film the witty remarks throughout the film were great it was just brilliant so much that i bought the film as soon as it was released for None and would recommend it to everyone to watch and the fly fishing was amazing really cried at the end it was so sad and you know what they say if you cry at a film it must have been good and this definitely was also None to the two little boy's that played the None of norman and paul they were just brilliant children are often left out of the None list i think because the stars that play them all grown up are such a big profile for the whole film but these children are amazing and should be praised for what they have done don't you think the whole story was so lovely because it was true and was someone's life after all that was shared with us all
+```
+
+### 2. Normalizado de datos
+
+Antes de continuar con este punto, veamos un poco de contexto del porqué las palabras del dataset han sido guardadas como 
+índices en lugar de utilizar las palabras directamente.
+
+En general en cualquier problema de machine learning/deep learning, nos topamos con que los datos que vamos a utilizar para
+entrenar a nuestro modelo de inteligencia artificial pueden ser de dos clases:
+
+- `Estructurados:` Datos que tengan forma de fila - columna (similar a una tabla de excel)
+- `No estructurados:` Datos que explícitamente NO tengan una forma de fila - columna, cómo lo son: El audio, las imágenes o el texto.
+
+A su vez, los datasets `estructurados` cuentan con dos tipos principales de variables: **Cualitativas y Cuantitativas**.
+
+![tipos_de_variable.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Ftipos_de_variable.png)
+
+- **Variables cualitativas**
+  - Explicación: Este tipo de variables representan características o cualidades de un objeto y no pueden ser medidas de forma numerica.
+  - Tipos de variables cualitativas:
+    - Ordinal: A pesar de NO tener un valor asignado, sí posee un orden conocido. Por ejemplo: Muy frio, frio, templado, caliente, muy caliente.
+    - Nominal: No poseen un valor asignado y tampoco cuentan con un orden conocido. Por ejemplo tipos de colores: Rojo, Azul, Verde.
+- **Variables cuantitativas:**
+  - Explicación: Este tipo de variables representan cantidades numéricas, lo cual les permite utilizar operaciones aritméticas.
+  - Tipos de variables cuantitativas:
+    - Discreta: Se puede contar con números enteros. Por ejemplo: Años de vida, número de hijos en una familia etc.
+    - Continúa: Se debe expresar con números decimales. Por ejemplo: Peso de una persona puede ser 64.512 Kg o 72.018 Kg etc.
+
+Tomando en cuenta lo dicho anteriormente, podemos observar que la propia naturaleza de las redes neuronales, incentiva el uso de
+variables cuantitativas continuas como tipo de variable predilecta para ser utilizada por el modelo. Sin embargo, ya sabemos
+que el texto es un tipo de dato `No estructurado` y esto NO le gusta a los modelos de deep learning, tendríamos entonces que
+primero usar algún mecanismo que nos permita estructurar a este tipo de dato y de forma preferible llevarlo a una variable
+cuantitativa continua. 
+
+El texto puede ser pensado de cierta manera como una variable `cualitativa nominal` en donde cada una de las palabras que existen 
+puede ser en sí misma una variable nominal. Tomando este primer pensamiento como base, entonces es fácil de observar que una
+forma de convertir variables `nominales` a `discretas` es creando un catálogo de índices, que logre mapear cada valor nominal
+a un número discreto. `[gato, azul, coche]` Se puede convertir en `[1, 2, 3]` dado un diccionario de índices - palabras como el siguiente:
+
+`{1: "gato", 2: "azul", 3: "coche"}`
+
+A este tipo de conversión entre variables nominales y discretas se le conoce como: `label encoding` puedes leer más de esta
+técnica en -> [sklearn.preprocessing.LabelEncoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelEncoder.html)
+
+Sin embargo, pese a que esta técnica es sumamente fácil de implementar y es bastante eficiente en terminos de tiempo y memoria, 
+tiene una gran desventaja muy clara. Este tipo de transformaciones podría hacernos pensar que un `coche` es equivalente a tres `gatos`
+numéricamente es cierto, pero sabemos que esa analogía no tiene ningún sentido. 
+
+Una alternativa al `Label Encoding` es el método llamado `One Hot Encoding`. La estrategia que implementa es crear una 
+columna para cada valor distinto que exista en la característica que estamos codificando y, para cada registro, marcar 
+con un 1 la columna a la que pertenezca dicho registro y dejar las demás con 0. En el ejemplo visto en la sección anterior 
+en el que codificábamos el sexo de los pasajeros, `One Hot Encoding generaría dos columnas (una para el valor "male" y otra 
+para el valor "female") y, para cada pasajero, asignaría un 1 a la columna de "male" y un 0 a la de "female" en el caso 
+de ser un hombre, y viceversa en el caso de ser mujer (un 0 en la columna de "male" y un 1 en la de "female").
+
+En nuestro ejemplo anterior entonces las variables nominales de: `[gato, azul, coche]` en lugar de ser representadas
+utilizando `Label enconding` como `{1: "gato", 2: "azul", 3: "coche"}` podrían tener la siguiente reprsentación de `One Hot
+Encoding`
+
+```
+gato =  [1, 0, 0]
+azul =  [0, 1, 0]
+coche = [0, 0, 1]
+```
+
+Esta es una mejor aproximación, puesto que entonces un coche tiene el mismo peso que un gato. Y todas las palabras tienen la misma
+distancia entre ellas. Sin embargo, esta NO es la representación definitiva para la conversión de Texto a un tipo de dato
+estructurado. Un ejemplo sencillo es que en el lenguaje existe un concepto llamado semántica que nos permite darnos cuenta que:
+
+Entre las palabras `cuchillo` y `tenedor` hay menos distancia que entre `cuchillo` y `ornitorrico`. Esta explicación será utilizada
+en un próximo curso de deep learning, pero es la introducción al tema de word embeddings. Pero por ahora con el conocimiento que he explicado
+podemos continuar con la explicación de este tema.
+
+Ahora que ya tenemos un conocimiento sobre qué es `Label Encoding` y `One Hot Encoding` podemos proceder a transformar la representación
+de `Label Encoding` que utilizo el dataset de IMDB por una versión en `One Hot Encoding` la cuál es una mejor representación puesto que 
+tiene la forma de un `tensor` que es ideal para deep learning. Revisar apuntes de tipos de datos de deep learning [Dimensiones y tensores](#21-dimensiones-tensores-y-reshape).
+
+```python
+
+def one_hot_encoding(sequences, dim=10000):
+    results = np.zeros((len(sequences), dim))
+    for i, sequences in enumerate(sequences):
+        results[i, sequences] = 1
+    return results
+
+# Covertirmos la representacion de label encoding por one hot encoding para nuestros parámetros de entrada
+x_train = one_hot_encoding(train_data)
+x_test = one_hot_encoding(test_data)
+
+# Siempre que podamos transformemos los datos enteros en float32 puesto que tensorflow esta optimizado para trabajar con este tipo de datos
+y_train = np.asarray(train_labels).astype('float32')
+y_test = np.asarray(test_labels).astype('float32')
+
+print(train_data.shape)
+print(x_train.shape)
+print(x_train[0], x_train[0].shape)
+```
+Valor esperado:
+```commandline
+(25000,)
+(25000, 10000)
+[0. 1. 1. ... 0. 0. 0.] (10000,)
+```
+
+### 3. Arquitectura del Modelo.
+
+Para esta arquitectura veremos un modelo de 2 capa ocultas de 16 neuronas con función de activación `relu`. Nuestra capa de clasificación
+solo tendrá 1 neurona, puesto que es suficiente para un problema de clasificación binaria y tendrá una función de activación `sigmoid`
+
+Finalmente, el modelo será compilado con el optimizador `rmsprop` y como función de perdida usaremos `binary_crossentropy` la cual funciona
+muy bien para problemas de clasificación binaria, y como medida de desempeño usaremos `accuracy`
+
+```python
+def architecture(model: models.Sequential, input_shape) -> models.Sequential:
+    model.add(layers.Dense(16, activation="relu", input_shape=input_shape))
+    model.add(layers.Dense(16, activation="relu"))
+    model.add(layers.Dense(1, activation="sigmoid"))
+    return model
+
+
+model = models.Sequential()
+model = architecture(model, (10000, ))
+model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["acc"])
+```
 
 ## 3.3 Entrenamiento del modelo de clasificación binaria
 
-## 3.4 Regularización - Dropout
+### 4. Entrenando el Modelo
+
+Entrenaremos el modelo por 50 épocas, con un batch size de 512 y finalmente, usaremos un 30% de los datos de entrenamiento
+como datos de validación. Esto nos permitirá observar si el modelo tiene o no overfitting.
+
+```python
+history = model.fit(x_train, y_train, epochs=50, batch_size=512, validation_split=0.3)
+```
+
+### 5. Analizando resultados
+
+Veamos cuales son los resultados de nuestro modelo base:
+
+```python
+results = model.evaluate(x_test, y_test)
+print(results)
+history_dict = history.history
+loss_values = history_dict['loss']
+val_loss_values = history_dict['val_loss']
+fig = plt.figure(figsize=(10, 10))
+epoch = range(1, len(loss_values) + 1)
+plt.plot(epoch, loss_values, 'o-r', label='training')
+plt.plot(epoch, val_loss_values, '--', label='validation')
+plt.title("Error in training and validation datasets")
+plt.xlabel("epochs")
+plt.ylabel("Binary Cross Entropy")
+plt.legend()
+plt.savefig("imgs/errores.png")
+plt.close()
+```
+Respuesta esperada:
+```commandline
+782/782 [==============================] - 1s 1ms/step - loss: 1.2614 - acc: 0.8542
+```
 
 ![errores.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fclasificacion%20binaria%2Fimgs%2Ferrores.png)
+
+
+## 3.4 Regularización - Dropout
+
+Antes de continuar con la parte final de este mini proyecto de ejemplo, es necesario explicar el concepto de `overfitting` y con ello
+conocer diferentes técnicas de `regularización`:
 
 El `overfitting` o `sobre ajuste` es cuando nuestro modelo no es capaz de generalizar el conocimiento adquirido en la etapa
 de `trainig`. Es fácil de observar este problema, cuando comparamos las funciones de coste a lo largo de las épocas entre 
@@ -1473,6 +1691,63 @@ cada epoch, hasta que apreciemos que el error de validación aumenta de forma so
 a la componente estocástica del algoritmo). Nos quedaremos con el modelo que teníamos justo en el momento anterior.
 
 ## 3.5 Reduciendo el overfitting
+
+De forma completamente didactica y para poder observar como se utilizan algunas de las técnicas de normalización anteriormente
+mencionadas, vamos a crear un nuevo modelo con una nueva arquitectura que tenga las siguientes características:
+
+- Un modelo más simple: Menos cantidad de neuronas por capa.
+- Uso de regularizadores l1 y l2
+- Uso de BatchNormalization
+- Uso de dropout
+- Early Stopping - Entrenar con menos épocas. 
+
+Primero definimos la nueva arquitectura del modelo:
+```python
+def architecture(model: models.Sequential) -> models.Sequential:
+    model.add(layers.Dense(8, activation="relu", input_shape=(10000,), kernel_regularizer=regularizers.l1_l2()))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(8, activation="relu", kernel_regularizer=regularizers.l1_l2()))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(1, activation="sigmoid"))
+    return model
+```
+Y ahora procedemos a compilar
+```python
+model_norm = models.Sequential()
+model_norm = architecture(model_norm)
+model_norm.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["acc"])
+history_norm = model_norm.fit(x_train, y_train, epochs=20, batch_size=512, validation_split=0.3)
+```
+Finalmente evaluamos los resultados del nuevo modelo:
+```python
+results = model_norm.evaluate(x_test, y_test)
+print(results)
+history_dict = history_norm.history
+loss_values = history_dict['loss']
+val_loss_values = history_dict['val_loss']
+
+fig2 = plt.figure(figsize=(10, 10))
+epoch = range(1, len(loss_values) + 1)
+plt.plot(epoch, loss_values, 'o-r', label='training')
+plt.plot(epoch, val_loss_values, '--', label='validation')
+plt.title("Error in training and validation datasets using normalization")
+plt.xlabel("epochs")
+plt.ylabel("Binary Cross Entropy")
+plt.legend()
+plt.savefig("imgs/errores_norm.png")
+plt.close()
+```
+Respuseta esperada:
+```commandline
+782/782 [==============================] - 1s 1ms/step - loss: 0.4057 - acc: 0.8629
+```
+![errores_norm.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fclasificacion%20binaria%2Fimgs%2Ferrores_norm.png)
+
+El modelo ahora ha obtenido una performance ligeramente superior en el dataset de testing pasando de 0.85 a 0.86 con un modelo más
+simple, y en la gráfica de comparación del error de training y validation vemos una disminución de overfitting.
+
 
 ## 3.6 Resolviendo un problema de clasificación multiple
 ## 3.7 Entrenamiento del modelo de clasificación multiple
