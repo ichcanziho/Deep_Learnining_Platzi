@@ -1938,14 +1938,255 @@ Validación cruzada LOOCV, Leave One Out Cross Validation. Este es el método m�
 
 ## 3.9 Resolviendo un problema de regresión
 
+Tomando lo aprendido en la sección anterior, en esta ocasión vamos a resolver un problema de `house pricing`, para ello 
+vamos a utilizar el dataset de [Boston Housing price regression dataset](https://keras.io/api/datasets/boston_housing/)
+el cual contiene `404` muestras de casas, cada casa contiene `13` variables continuas que expresan atributos de la casa.
+
+Nuestra tarea entonces será predecir el valor de la casa con base en los `13` atributos mencionados anteriormente. La 
+metodología como es costumbre será similar a los ejemplos anteriores, sin embargo; para este específico mini proyecto utilizaremos
+una estrategia de validación del modelo diferente. 
+
+En este ejemplo usaremos `k-Fold Cross Validation` descrito en la clase anterior. Para ello crearemos una función que contenga
+el modelo, su arquitectura y compilado y lo correremos para cada uno de los `folds` de validación.
+
+> ## Nota:
+> El código completo lo puedes encontrar [aquí](3%20Manejo%20de%20redes%20neuronales%20con%20Keras/regresión/main.py)
+
+
+1. **Importando bibliotecas necesarias:**
+    ```python
+    import pandas as pd
+    import os
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    import numpy as np
+    from keras.datasets import boston_housing
+    from keras import models, layers
+    # Biblioteca para implementar K-Fold CrossValidation
+    from sklearn.model_selection import KFold
+    # Biblioteca para la correcta normalización de datos numéricos
+    from sklearn.preprocessing import StandardScaler
+    import matplotlib.pyplot as plt
+    ```
+    Lo más relevante a resaltar aquí es el uso de KFold y StandardScaler provenientes de `sklearn`
+
+
+2. **Definiendo la arquitectura del modelo:**
+
+    La siguiente función se encarga de crear la arquitectura y compilar al nuestro modelo de regresión:
+    ```python
+    def build_model_regression(dim):
+        model = models.Sequential()
+        model.add(layers.Dense(64, activation='relu', input_dim=dim))
+        model.add(layers.Dropout(0.3))
+        model.add(layers.BatchNormalization())
+        model.add(layers.Dense(64, activation='relu'))
+        model.add(layers.Dropout(0.3))
+        model.add(layers.BatchNormalization())
+        # Como la última capa es una predicción de regresión, NO necesita una capa de activación
+        model.add(layers.Dense(1))
+        # El error sí será el mean squared error, pero la métrica debe ser diferente, en este caso max absolute error
+        model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+        return model
+    ```
+    Los puntos claves a destacar son: 
+    - La función de perdida es `mean squared error (mse)`
+    - Como nuestro problema es una regresión la métrica de éxito es `mean absolut error (mae)`
+    - Dado que la última capa del modelo NO es para clasificar, NO es necesario que tenga ninguna función de activación.
+    - `input_dim` es una variante de `input_shape` la cual solo necesita especificar la canatidad de elementos en la entrada
+    - de la red.
+
 ## 3.10 Entrenamiento del modelo de regresión
+
+3. **Cargando el dataset:**
+    
+    Este paso es básicamente el mismo que el de los ejemplos anteriores pero con el nuevo dataset de este ejemplo:
+    ```python
+    (train_data, train_targets), (test_data, test_targets) = boston_housing.load_data()
+    print(train_data[0])
+    print(train_targets[0])
+    ```
+    Respuesta esperada:
+    ```commandline
+    [  1.23247   0.        8.14      0.        0.538     6.142    91.7
+       3.9769    4.      307.       21.      396.9      18.72   ]
+    15.2
+    ```
+    Podemos conocer el valor de los 13 atributos de la casa y conocer que el precio de la misma es de 15.2 Mil dólares.
+4. **Generando particiones de K-fold**
+
+    El primer paso es definir el objeto `kf` de la clase `KFold`y pedirle que genere 5 `folds`
+    ```python
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    ```
+    Adicionalmente, para que estas particiones sean replicables pondremos su `random_state` en un valor fijo.
+    Ahora definimos una función auxiliar que nos permita dado unos vectores de valores de datos y de targets regrese las particiones
+    de `x_train, x_test, y_train, y_test`:
+    ```python
+    def train_test_split_kf(xs: np.array, ys: np.array, train_size: np.array, test_size: np.array) -> np.array:
+        x_train_ = xs[train_size]
+        x_test_ = xs[test_size]
+        y_train_ = ys[train_size]
+        y_test_ = ys[test_size]
+        return x_train_, x_test_, y_train_, y_test_
+    ```
+    Con la función definida podemos proceder a utilizar los rangos de `train y test` creados por el objeto `kf` y de ahí conseguir
+    las particiones esperadas:
+    
+    ```python
+    all_history = []  # Aquí guardaremos los resultados de cada fold
+    
+    for n_fold, (train, test) in enumerate(kf.split(train_data)):
+        print(f"\t-I'm running fold {n_fold + 1}")
+        x_train, x_test, y_train, y_test = train_test_split_kf(xs=train_data, ys=train_targets,
+                                                               train_size=train, test_size=test)
+    ```
+    > Nota:
+    > La función kf.split(vector) toma un vector de entrada y regresa los indices de las particiones para `train y test`
+
+
+5. **Normalizando datos de entrenamiento**
+
+    Dado que estamos en un problema de regresión es MUY buena idea normalizar los datos, puesto que si tenemos una variable llamada:
+    número de cuartos, quizá el rango de valores pueda ir de (1, 5) sin embargo, si tenemos otra que sea año de construcción cuyos valores
+    esten entre (1930, 2022) podría aparentar que numéricamente hablando es más importante el año de construcción que el número de cuartos.
+    
+    Para evitar estos inconvenientes lo que se hace es normalizar los datos, para ello a cada muestra del vector se le resta su 
+    promedio y se le divide entre su desviación standard. A este tipo de normalizado se le conoce como: `StandardScaler`
+    Primero: Creamos un objeto de la clase `StandarScaler`
+    ```python
+    standard_scaler = StandardScaler()
+    ```
+    A este objeto lo vamos a `entrenar` con la distribución de datos de nuestra partición de entrenamiento `x_train`:
+    ```python
+    standard_scaler.fit(x_train)
+    ```
+    Esto le permite al modelo aprender los valores de `mean` y `std` Ahora podemos proceder a normalizar los datos de entrenamiento y validación:
+    ```python
+    x_train_s = standard_scaler.transform(x_train)
+    # Es MUY importante tener en cuenta que los datos de prueba NO LOS CONOZCO entonces NO tiene sentido obtener
+    # el promedio y desviación standard de una muestra que NO conozco por eso estoy normalizando con el promedio
+    # y std de la muestra a la que mi modelo sí tenía acceso mientras fue entrenada.
+    x_test_s = standard_scaler.transform(x_test)
+    ```
+
+6. **Entrenando el modelo**
+    
+    Ahora podemos construir un modelo que sirva para las particiones de entrenamiento y validación de nuestros `fold` y ponerlo a
+    entrenar por un número de épocas predefinido:
+    ```python
+    model = build_model_regression(dim=13)
+    history = model.fit(x_train_s, y_train, epochs=n_epochs, batch_size=16,
+                        validation_data=(x_test_s, y_test), verbose=0)
+    all_history.append(history.history)
+    ```
+
 ## 3.11 Análisis de resultados del modelo de regresión
 
+7. Re estructurando datos de salida
+
+    Observemos los resultados de nuestros modelos que fueron guardados en `all_history`:
+    ```python
+    out = all_history
+    print(out)
+    ```
+    Respuesta esperada:
+    ```commandline
+    [{'loss': [546.1715087890625, 396.9112548828125, 247.38885498046875, 133.14358520507812, 76.148681640625, ...], 
+       'mae': [21.413293838500977, 17.873849868774414, 13.284331321716309, 8.88094425201416, 6.3826823234558105, ...], 
+       'val_loss': [354.6539611816406, 238.64332580566406, 141.55055236816406, 78.4019546508789, 51.63487243652344, ...], 
+       'val_mae': [17.48577117919922, 14.001570701599121, 10.338260650634766, 7.059571266174316, 5.430708885192871, ...]}, 
+       
+       {'loss': [508.8610534667969, 375.5047607421875, 231.6179656982422, 115.08528137207031, 63.184120178222656, ...], 
+       'mae': [20.488609313964844, 16.794652938842773, 12.525876998901367, 8.449064254760742, 6.081153392791748, ...], 
+       'val_loss': [424.28839111328125, 291.0716552734375, 168.71376037597656, 106.91384887695312, 76.11128234863281, ...], 
+       'val_mae': [17.950767517089844, 14.14747142791748, 9.914441108703613, 7.694438934326172, 6.680331230163574]}, 
+       
+       ... 
+       
+       ] 
+    ```
+    Esta estructura de diccionarios guardados en una lista NO es tan conveniente, lo que desearemos es un dataframe que contenga
+    el promedio de los 5 `folds` sobre cada una de las n `epochs`eso lo podemos hacer de la siguiente manera:
+    ```python
+    df = {}
+    for key in out[0].keys():
+        row = []
+        for fold in out:
+            row.append(fold[key])
+        row = np.array(row).mean(axis=0)
+        df[key] = row
+    frame = pd.DataFrame(df)
+    frame = frame[offset:]
+    print(frame)
+    ```
+    Respuesta esperada:
+    ```commandline
+             loss       mae   val_loss   val_mae
+    5   39.485257  4.583744  36.213194  4.253143
+    6   30.369080  3.897518  30.883676  3.902345
+    7   25.733508  3.562452  26.227117  3.475329
+    8   22.751280  3.313163  25.029307  3.454233
+    9   20.649399  3.139169  23.158773  3.239379
+    10  18.837821  2.997525  21.098302  3.168812
+    ```
+8. Análisis de resultados final
+
+    Finalmente, podemos graficar los resultados de nuestro `frame` de resultados y observar los resultados de nuestro modelo con 
+    nuestra partición de `test` que hasta este momento NO habíamos utilizado.
+    
+    ```python
+    metric = "mae"
+    offset = 5
+    loss_values = frame['loss']
+    val_loss_values = frame['val_loss']
+    metric_values = frame[metric]
+    val_metric_values = frame[f"val_{metric}"]
+    epoch = range(1, len(loss_values) + 1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 5))
+    fig.suptitle("Neural Network's Result")
+    ax1.set_title("Loss function over epoch")
+    ax2.set_title(f"{metric} over epoch")
+    ax1.set(ylabel="loss", xlabel="epochs")
+    ax2.set(ylabel=metric, xlabel="epochs")
+    ax1.plot(epoch, loss_values, 'o-r', label='training')
+    ax1.plot(epoch, val_loss_values, '--', label='validation')
+    ax2.plot(epoch, metric_values, 'o-r', label='training')
+    ax2.plot(epoch, val_metric_values, '--', label='validation')
+    ax1.legend()
+    ax2.legend()
+    plt.savefig("imgs/results.png")
+    plt.close()
+    ```
+    Respuesta esperada:
+    ![results.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fregresi%C3%B3n%2Fimgs%2Fresults.png)
+    
+    Finalmente, evaluando la partición de pruebas:
+    ```python
+    results = model.evaluate(test_data, test_targets)
+    ```
+    Respuesta esperada:
+    ```commandline
+    4/4 [==============================] - 0s 1ms/step - loss: 960760.6875 - mae: 906.1437
+    ```
+    ÉXITO TOTAL ÉXITO ROTUNDO 
+    Hemos conseguido un error de menos de 1000 dólares en la predicción del precio de una nueva casa.
+
 # 4 Cierre
+
+Muchas Felicidades si has llegado hasta aquí has terminado exitosamente el curso de [Fundamentos de Redes Neuronales con Python y Keras](https://platzi.com/cursos/redes-neuronales/)
+El curso es impartido por el profesor [Carlos Alarcón](https://platzi.com/profes/alarcon7a/) Y este repositorio me pertenece a mí:
+[Gabriel Ichcanziho](https://www.linkedin.com/in/ichcanziho/).
+
+Antes de que te vayas, te dejo un breve resumen de cuando utilizar diferentes tipos de funciones de activación y funciones de perdida
+de acuerdo al tipo de problema que estás enfrentando.
 
 ![c1.png](4%20cierre%2Fc1.png)
 
 ## ¿Qué sigue a continuación?
+
+Ahora que hemos terminado el curso de **Fundamentos de Redes Neuronales con Python y Keras** ¿Qué podemos esperar de Deep Learning?
+
+Pues próximos tópicos que podemos aprender son:
 
 **CNN (Convolutional Neural Networks)**
 
@@ -1970,3 +2211,5 @@ Validación cruzada LOOCV, Leave One Out Cross Validation. Este es el método m�
 **Long short-term memory (LSTM)**
 
 ![lstm.gif](4%20cierre%2Flstm.gif)
+
+Ahora acompañame al siguiente curso: [Redes neuronales con Python]()

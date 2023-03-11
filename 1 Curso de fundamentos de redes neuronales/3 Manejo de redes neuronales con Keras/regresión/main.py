@@ -4,12 +4,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
 from keras.datasets import boston_housing
 from keras import models, layers
+# Biblioteca para implementar K-Fold CrossValidation
 from sklearn.model_selection import KFold
+# Biblioteca para la correcta normalización de datos numéricos
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
 
 def plot_results(out, metric, offset):
+    print(out)
     df = {}
     for key in out[0].keys():
         row = []
@@ -52,7 +55,11 @@ def train_test_split_kf(xs: np.array, ys: np.array, train_size: np.array, test_s
 def build_model_regression(dim):
     model = models.Sequential()
     model.add(layers.Dense(64, activation='relu', input_dim=dim))
+    model.add(layers.Dropout(0.3))
+    model.add(layers.BatchNormalization())
     model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dropout(0.3))
+    model.add(layers.BatchNormalization())
     # Como la última capa es una predicción de regresión, NO necesita una capa de activación
     model.add(layers.Dense(1))
     # El error sí será el mean squared error, pero la métrica debe ser diferente, en este caso max absolute error
@@ -69,7 +76,7 @@ if __name__ == '__main__':
     n_epochs = 40
     kf = KFold(n_splits=5, shuffle=True, random_state=42)
     standard_scaler = StandardScaler()
-    all_history = []
+    all_history = []  # Aquí guardaremos los resultados de cada fold
     for n_fold, (train, test) in enumerate(kf.split(train_data)):
         print(f"\t-I'm running fold {n_fold + 1}")
         x_train, x_test, y_train, y_test = train_test_split_kf(xs=train_data, ys=train_targets,
@@ -90,3 +97,5 @@ if __name__ == '__main__':
     print("End CrossValidation process.")
 
     plot_results(all_history, "mae", offset=5)
+    results = model.evaluate(test_data, test_targets)
+    print(results)
