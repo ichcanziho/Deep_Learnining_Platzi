@@ -38,9 +38,11 @@ Las redes neuronales se utilizan en deep learning para generar predicciones, an�
   - [3.5 Reduciendo el overfitting](#35-reduciendo-el-overfitting)
   - [3.6 Resolviendo un problema de clasificación multiple](#36-resolviendo-un-problema-de-clasificación-multiple)
   - [3.7 Entrenamiento del modelo de clasificación multiple](#37-entrenamiento-del-modelo-de-clasificación-multiple)
-  - [3.8 Resolviendo un problema de regresión](#38-resolviendo-un-problema-de-regresión)
-  - [3.9 Entrenamiento del modelo de regresión](#39-entrenamiento-del-modelo-de-regresión)
-  - [3.10 Análisis de resultados del modelo de regresión](#310-análisis-de-resultados-del-modelo-de-regresión)
+  - [3.8 Validación de nuestro modelo usando cross validation](#38-validación-de-nuestro-modelo-usando-cross-validation)
+  - [3.9 Resolviendo un problema de regresión](#39-resolviendo-un-problema-de-regresión)
+  - [3.10 Entrenamiento del modelo de regresión](#310-entrenamiento-del-modelo-de-regresión)
+  - [3.11 Análisis de resultados del modelo de regresión](#311-análisis-de-resultados-del-modelo-de-regresión)
+- [4. Cierre](#4-cierre)
 
 # 1. Fundamentos en la arquitectura de redes neuronales
 
@@ -1870,6 +1872,101 @@ los pasos a continuación.
    ```
    ![results.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fclasificaci%C3%B3n%20multiple%2Fimgs%2Fresults.png)
 
-## 3.8 Resolviendo un problema de regresión
-## 3.9 Entrenamiento del modelo de regresión
-## 3.10 Análisis de resultados del modelo de regresión
+
+## 3.8 Validación de nuestro modelo usando Cross Validation
+
+Antes de continuar con este tema, es un buen momento para repasar conceptos de machine learning. En este momento hablaremos un
+poco sobre la estrategia de `Cross Validation` la cual implementaremos en este mini proyecto. 
+
+
+- **La última palabra siempre la van a tener los datos.**
+  - Todas nuestras intuiciones no tiene nada que hacer frente a lo que digan los datos y las matemáticas que aplicamos sobre estos datos. Por eso es importante siempre tener rigurosidad a la hora de evaluar los resultados que estamos recibiendo.
+
+- **Necesitamos mentalidad de testeo.**
+  - No se trata solamente de probar un poco al principio y un poco al final, sino que tendremos que probar constantemente durante todo el proceso, para poder encontrar cuál es la solución óptima que realmente nos soluciona el problema que tenemos pendiente, todo esto:
+    - con varias formas
+    - con varios conjuntos de datos
+    - con varias configuraciones de parámetros
+    - con varias distribuciones de nuestros datos
+
+- **Todos los modelos son malos, solamente algunos son útiles.**
+  - Todos los modelos que nosotros hacemos en últimas son una sobre simplificación de lo que pasa realmente. Entonces nunca nuestros modelos van a corresponder con la realidad al cien por ciento. Si jugamos lo suficiente y si somos lo suficientemente hábiles para configurar, vamos a llegar a un punto donde el modelo que estamos trabajando va a ser útil para ciertos casos específicos dentro del mundo real.
+
+### Tipos de validación
+
+#### Hold-Out
+
+Se trata de dividir nuestros datos entrenamiento/pruebas, básicamente consiste en usar porcentajes fijos, por lo regular 70% de entrenamiento y 30% de pruebas.
+
+![ho1.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fho1.png)
+
+![ho2.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fho2.png)
+
+**¿Cuándo utilizar Hold-out?**
+
+- Se requiere un prototipado rápido.
+- No se tiene mucho conocimiento en ML.
+- No se cuenta con abundante poder de cómputo.
+
+#### K-Folds
+
+Usar validación cursada K-Fold, aquí vamos a plegar nuestros datos k veces, el k es un parámetro que nosotros definimos y en esos pliegues vamos a utilizar diferentes partes de nuestro dataset como entrenamiento y como test, de tal manera que intentemos cubrir todos los datos de entrenamiento y de test, al finalizar el proceso.
+
+![kf1.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fkf1.png)
+
+![kf2.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Fkf2.png)
+
+**¿Cuándo utilizar K-Folds?**
+
+- Recomendable en la mayoría de los casos.
+- Se cuenta con un equipo suficiente para desarrollar ML.
+- Se require la integración con técnicas de optimización paramétrica.
+- Se tiene más tiempo para las pruebas.
+
+#### LOOCV
+
+Validación cruzada LOOCV, Leave One Out Cross Validation. Este es el método más intensivo, ya que haremos una partición entre entrenamiento y pruebas, porque vamos a hacer entrenamiento con todos los datos, salvo 1 y vamos a repetir este proceso tantas veces hasta que todos los datos hayan sido probados.
+
+![lo.png](3%20Manejo%20de%20redes%20neuronales%20con%20Keras%2Fimgs%2Flo.png)
+
+**¿Cuándo utilizar LOOCV?**
+
+- Se tiene gran poder de cómputo
+- Se cuenta con pocos datos para poder dividir por Train/Test
+- Cuando se quiere probar todos los casos posibles (para personas con TOC)
+
+
+## 3.9 Resolviendo un problema de regresión
+
+## 3.10 Entrenamiento del modelo de regresión
+## 3.11 Análisis de resultados del modelo de regresión
+
+# 4 Cierre
+
+![c1.png](4%20cierre%2Fc1.png)
+
+## ¿Qué sigue a continuación?
+
+**CNN (Convolutional Neural Networks)**
+
+![cnn.gif](4%20cierre%2Fcnn.gif)
+
+**NLP (Natural Language Processing)**
+
+![nlp.gif](4%20cierre%2Fnlp.gif)
+
+**Hyper Parameters tuning**
+
+![hpt.gif](4%20cierre%2Fhpt.gif)
+
+**Tensorboards**
+
+![tensorboard.gif](4%20cierre%2Ftensorboard.gif)
+
+**Generative Adversarial Networks (Gans)**
+
+![gans.gif](4%20cierre%2Fgans.gif)
+
+**Long short-term memory (LSTM)**
+
+![lstm.gif](4%20cierre%2Flstm.gif)
