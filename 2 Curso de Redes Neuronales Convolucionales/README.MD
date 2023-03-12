@@ -125,6 +125,48 @@ Luego reconocerá o verá imágenes de una manera similar a los humanos.
 
 ## 1.2 ¿Qué herramientas usaremos para redes neuronales convolucionales?
 
+Al igual que en el curso anterior de esta ruta: [Curso de fundamentos de redes neuronales con Python y Keras](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales). Este curso
+se enfocará en el uso de Keras y Python para programar redes neuronales.
+
+**¿Qué es Keras?**
+
+Keras es una biblioteca de código abierto (con licencia MIT) escrita en Python, que se basa principalmente en el trabajo 
+de François Chollet, un desarrollador de Google, en el marco del proyecto ONEIROS (Open-ended Neuro-Electronic Intelligent 
+Robot Operating System). La primera versión de este software multiplataforma se lanzó el 28 de marzo de 2015. 
+El objetivo de la biblioteca es acelerar la creación de redes neuronales: para ello, Keras no funciona como un 
+framework independiente, sino como una interfaz de uso intuitivo (API) que permite acceder a varios frameworks de 
+aprendizaje automático y desarrollarlos. Entre los frameworks compatibles con Keras, se incluyen Theano, Microsoft 
+Cognitive Toolkit (anteriormente CNTK) y TensorFlow.
+
+![herra1.png](imgs%2Fintroducci%C3%B3n%2Fherra1.png)
+
+Entonces Keras no es más que una forma más amigable de acceder a Frameworks independientes, a su vez estos Frameworks
+usaran libererías de más bajo nivel para comunicarse directamente con el Hardware de nuestro dispositivo para de esta
+forma acceder y utilizar a la `GPU` o `CPU` de nuestro computador. 
+
+> ## NOTA del curso:
+> 
+> Al igual que en el curso anterior, el curso de PLATZI está creado para utilizar NoteBooks como herramienta principal.
+> Sin embargo, este repositorio está pensando para implementar el código en local. 
+> 
+> El curso propone utilizar [Kaggle](https://www.kaggle.com/)
+> ![herra2.png](imgs%2Fintroducci%C3%B3n%2Fherra2.png)
+> Como página para acceder a NoteBooks de python. 
+> 
+> ¿Por qué kaggle sobre Google Colab?
+> 
+> Debemos recordar que nosotros estamos usando recursos computacionales, los cuales, al proveedor no le son gratis; así 
+> que todos los servicios nos pondrán un límite de uso, por ejemplo:
+> 
+> - **Google Colab (version free)** - no publica estos límites. Uno de los motivos es que pueden (y suelen) variar rápidamente. 
+> Pero, los usuarios que usan Colab para ejecutar operaciones informáticas de larga duración o que han usado más recursos 
+> recientemente tienen más posibilidades de que se les establezcan límites de uso y de que se les restrinja temporalmente 
+> el acceso a las GPUs y TPUs
+>
+> - **Kaggle** - en 2020 implementaron un nuevo sistema el cual por ~30 horas semanales tendrás un poder computacional que no varía.
+> 
+> **Conclusión**: Kaggle nos da un poder específico que no varía, sin importar la cantidad de cómputo que tengamos (pero tenemos 30 horas semanales), mientras Google nos limita dependiendo de la actividad.
+
 ## 1.3 ¿Qué son las redes convolucionales?
 
 # 2. Mi primera red neuronal convolucional
