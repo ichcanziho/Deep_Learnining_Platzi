@@ -506,6 +506,104 @@ Respuesta esperada:
 
 ## 3.1 Consejos para el manejo de imágenes
 
+### Consejo 1: Es más fácil trabajar en escala de grises que a color
+
+Una imagen es una composición de pixeles, a su vez dichos pixeles tienen un rango numérico de `0 a 255` siendo 0 negro y 255 blanco.
+Las imágenes tienen un ancho y largo correspondiente al tamaño de la imagen. 
+
+![m1.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm1.png)
+
+La computadora lo que interpreta de una imagen es una matriz numerica. Esto es una gran noticia, puesto que los modelos de DL
+trabajan directamente con número, lo cual significa que las imágenes por si mismas son un tipo de estructura de datos con
+la que es fácilmente trabajable por Deep Learning. 
+
+**¿Qué pasa con las imágenes a color?**
+
+![m2.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm2.png)
+
+En nuestro ejemplo de clasificación de ropa usando `fashion MNIST` las imágenes de ropa estaban en una escala de grises. Sin embargo,
+la mayoría de imágenes estan en 3 canales Red Green Blue (RGB) 
+
+> Incluso algunas imágenes tienen 4 canales, la imágenes PNG pueden contar con un canal adicional para marcar la transparencia de una imagen.
+> Este canal es conocido como `alpha` (RGBA).
+> 
+
+Las imágenes a color tienen las mismas dimensiones que las imágenes en escala de grises, sin embargo, estás al poseer 3 canales, cuentan
+son su respectiva escala de color de 0 - 255 para cada color. Es la combinación de estas 3 escalas la que genera un color 
+para cada pixel. Al sumar el color de la escala de Red con el Green con el Blue tenemos un color definido. Por ende el color
+(0, 0, 0) sería negro, puesto que se están sumando 0 unidades de cada color, por otro el color (255, 0, 0) sería un Rojo puro,
+puesto que se está sumando el máximo de la escala de Rojo con 0 unidades de las otras escalas.
+
+![m3.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm3.png)
+
+RGB NO es la única forma numerica que tenemos para representar el color, existen varios modelos de color que tienen diferentes
+propiedades, por ejemplo una variable bastante utilizada al modelo RGB es el modelo HSV el cual tiene como parámetros:
+`H: Hue, V: Value, S: Saturation` de forma simple de entender, la saturación va del blanco al color real, el value va del negro
+al color real y finalmente el hue es el color en sí mismo.
+
+![m4.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm4.png)
+
+Para efector prácticos en DL seguiremos hablando de RGB como modelo de color base.
+
+> Nota: En opencv la forma de leer las imágenes NO es por defecto RGB sino BGR.
+
+Hablando computacionalmente, NO suele convenir trabajar las imágenes en color, puesto que aumenta la complejidad del modelo en 3,
+puesto que el proceso de clasificación se debe hacer tomando en cuanta cada uno de los canales. En general si el problema
+lo permite, lo mejor es convertir nuestra imagen de color a una escala de grises.
+
+**¿Dónde si importa el color?**
+
+Va a depender del tipo de problema que estemos resolviendo, pero tomemos en cuenta el siguiente ejemplo.
+
+![m5.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm5.png)
+
+Si estoy trabajando en un proceso de condición automática, necesito poder diferenciar el color de las marcas de la carretera
+para saber si estoy dentro o fura del área permitida de conducción. En resumen si el problema intrínsecamente necesita del color
+para poder clasificar, entonces vamos a tener que usar los 3 canales. 
+
+### Consejo 2: Es la mejor idea manejar dimensiones definidas para las imágenes.
+
+Si hemos entrenado una red neuronal para trabajar con imágenes de 255 x 255 en escala de grises, entonces todas las nuevas
+imágenes que vaya a utilizar para clasificar deben seguir el mismo formato de imagen.
+
+![m6.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm6.png)
+
+Estás dimensiones y características de las imágenes deben ser compartidas entre las diferentes particiones del dataset y
+las nuevas imágenes a clasificar.
+
+### Consejo 3: Aumenta tus imágenes
+
+Son los humanos los responsables de etiquetar manualmente cada una de las imágenes a clasificar, sin embargo, este proceso no
+es escalable, es lento y puede ser costoso. No siempre se dispone de más imágenes completamente nuevas para entrenar al modelo.
+Una técnica bastante utilizada es hacer `data augmentation` está es una técnica que implica la transformación de una imagen
+base en una nueva imagen basada en rotaciones, traslaciones, zoom, cambios de brillo y contraste etc.
+
+La idea es aplicar diversas transformaciones sobre las entradas originales, obteniendo muestras ligeramente diferentes, 
+pero iguales en esencia, lo que permite a la red desenvolverse mejor en la fase de inferencia.
+
+Esta técnica se utiliza mucho en el campo de la visión artificial porque funciona de maravilla (en otros campos está por 
+explorar). Dentro de dicho contexto, una misma imagen de entrada será procesada por la red neuronal tantas veces como epochs 
+ejecutemos en entrenamiento; provocando que la red acabe memorizando la imagen si estamos entrenamos demasiado. Lo que 
+haremos es aplicar transformaciones de forma aleatoria cada vez que volvamos a introducir la imagen a la red.
+
+Ejemplos de transformaciones son:
+
+- Voltear la imagen en horizontal / vertical.
+- Rotar la imagen X grados.
+- Recortar, añadir relleno, redimensionar.
+- Aplicar deformaciones de perspectiva.
+- Ajustar brillo, contraste, saturación.
+- Introducir ruido, defectos.
+- Combinaciones de las anteriores.
+
+![m7.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm7.png)
+
+De esta forma contaremos con más información para entrenamiento sin necesidad de obtener muestras adicionales, y también 
+sin alargar los tiempos. Lo mejor es que si por ejemplo nuestra red se dedica a clasificar imágenes o detectar objetos, 
+esta técnica conseguirá que el modelo sea capaz de obtener buenos resultados para imágenes tomadas desde distintos ángulos 
+o bajo distintas condiciones de luz. Por tanto, conseguiremos que la red no sobreajuste y que generalice mejor.
+
+
 ## 3.2 Manejo de imágenes con Python
 
 # 4. Fundamentos de redes neuronales convolucionales
