@@ -224,6 +224,8 @@ Las clases disponibles son:
 |     9     |    Ankle boot   |
 
 
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar [aqui](Mi%20primera%20CNN/main.py) 
 
 ## 2.1 Creando nuestra primer red convolucional
 
