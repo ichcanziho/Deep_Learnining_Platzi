@@ -169,6 +169,32 @@ forma acceder y utilizar a la `GPU` o `CPU` de nuestro computador.
 
 ## 1.3 ¿Qué son las redes convolucionales?
 
+Las Redes Neuronales Convolucionales (Convolutional Neural Networks o CNNs, por sus siglas en inglés) son un tipo de algoritmo 
+de aprendizaje profundo que se utiliza comúnmente en tareas de visión por computadora, como la clasificación de imágenes 
+y la detección de objetos.
+
+![que son.gif](imgs%2Fintroducci%C3%B3n%2Fque%20son.gif)
+
+Las CNNs se llaman así porque utilizan una operación matemática llamada convolución para procesar los datos de entrada. 
+La convolución implica la aplicación de un filtro o kernel a la imagen de entrada para detectar características específicas, 
+como bordes o texturas.
+
+A diferencia de las redes neuronales tradicionales, que procesan los datos de entrada como una matriz unidimensional, 
+las CNNs pueden trabajar con datos de entrada en dos o más dimensiones, lo que las hace ideales para tareas que involucran 
+imágenes, videos y otros datos similares.
+
+![que son 2.gif](imgs%2Fintroducci%C3%B3n%2Fque%20son 2.gif)
+
+En una CNN, los datos de entrada se procesan a través de capas de neuronas que realizan la convolución y otros cálculos 
+matemáticos, seguidos de capas de agrupamiento o pooling para reducir el tamaño de la imagen. Luego, la red pasa por 
+varias capas de neuronas totalmente conectadas que actúan la clasificación final.
+
+![que son 3.gif](imgs%2Fintroducci%C3%B3n%2Fque%20son%203.gif)
+
+Las CNNs han demostrado ser muy efectivas en una variedad de tareas de visión por computadora y han sido utilizadas en 
+aplicaciones como la identificación de objetos en imágenes, la detección de rostros, la segmentación de imágenes y la 
+clasificación de imágenes médicas.
+
 # 2. Mi primera red neuronal convolucional
 
 ## 2.1 Creando nuestra primer red convolucional
