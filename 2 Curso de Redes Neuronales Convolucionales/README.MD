@@ -197,9 +197,308 @@ clasificación de imágenes médicas.
 
 # 2. Mi primera red neuronal convolucional
 
+A lo largo de esta sección estaremos creando nuestra primera CCN con Python y Keras. En este momento del curso hay muchos
+términos que NO serán explicados explícitamente, el objetivo de estas siguientes dos clases es tener familiaridad con el
+api de Keras y como podemos usarla para implementar nuestra primera CNN. Más adelante en el curso los términos utilizados se
+irán explicando con más detalle. 
+
+Nuestro trabajo de esta sección consiste en resolver un problema de clasificación multiple. Poder clasificar entre 10 tipos
+de prenda de vestir. Para ello vamos a utilizar el dataset [Fashion MNIST](https://keras.io/api/datasets/fashion_mnist/)
+
+El cual cuenta con 60,000 imágenes de 28x28 píxeles en escala de grises. Adicionalmente, cuenta con un set de prueba de 
+10,000 imágenes con las mismas características que el set de entrenamiento. 
+
+Las clases disponibles son:
+
+| **Label** | **Description** |
+|:---------:|-----------------|
+|     0     |   T-shirt/top   |
+|     1     |     Trouser     |
+|     2     |     Pullover    |
+|     3     |      Dress      |
+|     4     |       Coat      |
+|     5     |      Sandal     |
+|     6     |      Shirt      |
+|     7     |     Sneaker     |
+|     8     |       Bag       |
+|     9     |    Ankle boot   |
+
+
+
 ## 2.1 Creando nuestra primer red convolucional
 
+**1: Importando bibliotecas necesarias**
+```python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from keras.datasets import fashion_mnist
+from keras.layers import Conv2D, Dropout, MaxPool2D, Flatten, Dense
+from keras.utils import to_categorical
+from keras import Sequential
+from keras.losses import SparseCategoricalCrossentropy
+import matplotlib.pyplot as plt
+```
+
+**2: Descargando los datos necesarios**
+```python
+# Descargando dataset
+(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+# Análisis exploratorio
+print(train_images.shape)
+plt.imshow(train_images[0])
+plt.savefig("imgs/train0.jpg")
+plt.close()
+```
+Respuesta esperada:
+```commandline
+(60000, 28, 28)
+```
+![train0.jpg](Mi%20primera%20CNN%2Fimgs%2Ftrain0.jpg)
+
+**3: Normalizando datos**
+> Nota: Este es un paso común de normalizado que YA hemos explorado en el curso anterior.
+```python
+# Normalizado de imágenes
+train_images = train_images.astype("float32") / 255
+test_images = test_images.astype("float32") / 255
+# a diferencia de las redes neuronales normales, dónde la entrada debía ser un vector de 1 dim
+# en las CNN la entrada es una matriz, es por eso que en el reshape debemos tomar en cuenta
+# [[]].reshape(n, x, y, c)
+# n, x, y, c -> n = número de imágenes, x = ancho de la imagen, y = largo de la imagen, c = número de canales
+# Dado que nuestras imágenes están en escala de grises, entonces el número de canales que maneja es 1.
+train_images = train_images.reshape(train_images.shape[0], 28, 28, 1)
+test_images = test_images.reshape(test_images.shape[0], 28, 28, 1)
+# CONOCIMIENTO del curso anterior -> Transformando números del 0 al 9 (10 clases) en su One Hot Encoding
+train_labels_categorical = to_categorical(train_labels, 10)
+test_labels_categorical = to_categorical(test_labels, 10)
+```
+Cabe destacar que por ser una CNN NO fue necesario usar un vector 1d para esta arquitectura.
+
+**4: Definimos la arquitectura**
+
+```python
+def architecture(model_: Sequential):
+    model_.add(Conv2D(filters=64, kernel_size=2, padding="same", activation="relu", input_shape=(28, 28, 1)))
+    model_.add(MaxPool2D(pool_size=2))
+    model_.add(Dropout(0.3))
+    model_.add(Conv2D(filters=32, kernel_size=2, padding="same", activation="relu"))
+    model_.add(MaxPool2D(pool_size=2))
+    model_.add(Dropout(0.3))
+    # Esta capa sirve para aplanar y pasar de redes convolucionales a normales
+    model_.add(Flatten())
+    model_.add(Dense(256, activation="relu"))
+    model_.add(Dropout(0.5))
+    # Como es un problema de clasificación multilabel usamos softmax como activación de la última capa
+    model_.add(Dense(10, activation="softmax"))
+    print(model_.summary())
+    # Compilamos el modelo con la información que YA conocemos (la última capa de la red CNN es igual a las que ya hemos
+    # trabajo anteriormente)
+    model_.compile(loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"])
+    return model_
+```
+
+
 ## 2.2 Entrenando nuestra primera red convolucional
+
+**Auxiliar: Definiendo función para graficar resultados**
+```python
+def plot_results(history_, metric, fname):
+    history_dict = history_.history
+    loss_values = history_dict['loss']
+    val_loss_values = history_dict['val_loss']
+    metric_values = history_dict[metric]
+    val_metric_values = history_dict[f"val_{metric}"]
+    epoch = range(1, len(loss_values) + 1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 5))
+    fig.suptitle("Neural Network's Result")
+    ax1.set_title("Loss function over epoch")
+    ax2.set_title(f"{metric} over epoch")
+    ax1.set(ylabel="loss", xlabel="epochs")
+    ax2.set(ylabel=metric, xlabel="epochs")
+    ax1.plot(epoch, loss_values, 'o-r', label='training')
+    ax1.plot(epoch, val_loss_values, '--', label='validation')
+    ax2.plot(epoch, metric_values, 'o-r', label='training')
+    ax2.plot(epoch, val_metric_values, '--', label='validation')
+    ax1.legend()
+    ax2.legend()
+    plt.savefig(f"imgs/{fname}")
+    plt.close()
+```
+
+**5: Entrenando el modelo**
+```python
+model = Sequential()
+model = architecture(model)
+history = model.fit(train_images, train_labels_categorical, batch_size=64, epochs=10, validation_split=0.3)
+```
+Respuesta esperada:
+- architecture(model)
+```commandline
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, 28, 28, 64)        320       
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, 14, 14, 64)       0         
+ )                                                               
+                                                                 
+ dropout (Dropout)           (None, 14, 14, 64)        0         
+                                                                 
+ conv2d_1 (Conv2D)           (None, 14, 14, 32)        8224      
+                                                                 
+ max_pooling2d_1 (MaxPooling  (None, 7, 7, 32)         0         
+ 2D)                                                             
+                                                                 
+ dropout_1 (Dropout)         (None, 7, 7, 32)          0         
+                                                                 
+ flatten (Flatten)           (None, 1568)              0         
+                                                                 
+ dense (Dense)               (None, 256)               401664    
+                                                                 
+ dropout_2 (Dropout)         (None, 256)               0         
+                                                                 
+ dense_1 (Dense)             (None, 10)                2570      
+                                                                 
+=================================================================
+Total params: 412,778
+Trainable params: 412,778
+Non-trainable params: 0
+```
+- model.fit()
+```commandline
+Epoch 1/10
+657/657 [==============================] - 5s 6ms/step - loss: 0.6350 - accuracy: 0.7688 - val_loss: 0.4131 - val_accuracy: 0.8517
+Epoch 2/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.4317 - accuracy: 0.8450 - val_loss: 0.3430 - val_accuracy: 0.8776
+Epoch 3/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.3867 - accuracy: 0.8617 - val_loss: 0.3216 - val_accuracy: 0.8836
+Epoch 4/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.3534 - accuracy: 0.8725 - val_loss: 0.3114 - val_accuracy: 0.8878
+Epoch 5/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.3344 - accuracy: 0.8782 - val_loss: 0.2914 - val_accuracy: 0.8934
+Epoch 6/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.3200 - accuracy: 0.8856 - val_loss: 0.2692 - val_accuracy: 0.9022
+Epoch 7/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.3092 - accuracy: 0.8871 - val_loss: 0.3074 - val_accuracy: 0.8886
+Epoch 8/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.3005 - accuracy: 0.8912 - val_loss: 0.2636 - val_accuracy: 0.9043
+Epoch 9/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.2999 - accuracy: 0.8929 - val_loss: 0.2756 - val_accuracy: 0.8996
+Epoch 10/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.2927 - accuracy: 0.8944 - val_loss: 0.3042 - val_accuracy: 0.8992
+```
+
+**6: Análisis de resultados**
+```python
+score = model.evaluate(test_images, test_labels_categorical)
+print(score)
+plot_results(history, "accuracy", "results_base.png")
+```
+Respuesta esperada:
+```commandline
+313/313 [==============================] - 1s 2ms/step - loss: 0.3146 - accuracy: 0.8929
+```
+![results_base.png](Mi%20primera%20CNN%2Fimgs%2Fresults_base.png)
+
+### BONUS: Una forma alternativa de resolución del problema.
+
+Para esta forma alternativa, vamos a modificar la arquitectura del modelo levemente, en esta ocasión
+vamos a utilizar como función de perdida `SparseCategoricalCrossentropy` está nos va a permitir trabajar directamente con
+los valores originales de los `labels, train_labels, test_labels` sin necesidad de pasarlos por la función `to_categorical`
+adicionalmente, nos permitirá NO usar la función `softmax` que hemos utilizado siempre en problemas de clasificación multiple.
+
+**Nueva arquitectura:**
+```python
+def architecture_sparse(model_: Sequential):
+    model_.add(Conv2D(filters=64, kernel_size=2, padding="same", activation="relu", input_shape=(28, 28, 1)))
+    model_.add(MaxPool2D(pool_size=2))
+    model_.add(Dropout(0.3))
+    model_.add(Conv2D(filters=32, kernel_size=2, padding="same", activation="relu"))
+    model_.add(MaxPool2D(pool_size=2))
+    model_.add(Dropout(0.3))
+    model_.add(Flatten())
+    model_.add(Dense(256, activation="relu"))
+    model_.add(Dropout(0.5))
+    # Utilizando como perdida la SparceCategoricalCrossentropy NO es necesario usar "Softmax" como activación
+    model_.add(Dense(10))
+    print(model_.summary())
+    model_.compile(loss=SparseCategoricalCrossentropy(from_logits=True), optimizer="rmsprop", metrics=["accuracy"])
+    return model_
+```
+**Entrenamos nuestro nuevo modelo:**
+```python
+model = Sequential()
+model = architecture_sparse(model)
+# Este tipo de modelo NO me exige usar las etiquetas como categóricas, por eso puedo usar train_labels normal.
+history = model.fit(train_images, train_labels, batch_size=64, epochs=10, validation_split=0.3)
+```
+Respuesta esperada:
+```commandline
+Model: "sequential_1"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d_2 (Conv2D)           (None, 28, 28, 64)        320       
+                                                                 
+ max_pooling2d_2 (MaxPooling  (None, 14, 14, 64)       0         
+ 2D)                                                             
+                                                                 
+ dropout_3 (Dropout)         (None, 14, 14, 64)        0         
+                                                                 
+ conv2d_3 (Conv2D)           (None, 14, 14, 32)        8224      
+                                                                 
+ max_pooling2d_3 (MaxPooling  (None, 7, 7, 32)         0         
+ 2D)                                                             
+                                                                 
+ dropout_4 (Dropout)         (None, 7, 7, 32)          0         
+                                                                 
+ flatten_1 (Flatten)         (None, 1568)              0         
+                                                                 
+ dense_2 (Dense)             (None, 256)               401664    
+                                                                 
+ dropout_5 (Dropout)         (None, 256)               0         
+                                                                 
+ dense_3 (Dense)             (None, 10)                2570      
+                                                                 
+=================================================================
+Total params: 412,778
+Trainable params: 412,778
+Non-trainable params: 0
+_________________________________________________________________
+None
+Epoch 1/10
+657/657 [==============================] - 4s 5ms/step - loss: 0.6205 - accuracy: 0.7737 - val_loss: 0.3955 - val_accuracy: 0.8567
+Epoch 2/10
+657/657 [==============================] - 4s 5ms/step - loss: 0.4216 - accuracy: 0.8498 - val_loss: 0.3708 - val_accuracy: 0.8619
+Epoch 3/10
+657/657 [==============================] - 4s 5ms/step - loss: 0.3773 - accuracy: 0.8650 - val_loss: 0.3188 - val_accuracy: 0.8849
+Epoch 4/10
+657/657 [==============================] - 3s 5ms/step - loss: 0.3505 - accuracy: 0.8736 - val_loss: 0.2995 - val_accuracy: 0.8918
+Epoch 5/10
+657/657 [==============================] - 3s 5ms/step - loss: 0.3326 - accuracy: 0.8799 - val_loss: 0.2840 - val_accuracy: 0.8966
+Epoch 6/10
+657/657 [==============================] - 3s 5ms/step - loss: 0.3195 - accuracy: 0.8846 - val_loss: 0.2849 - val_accuracy: 0.8952
+Epoch 7/10
+657/657 [==============================] - 4s 5ms/step - loss: 0.3121 - accuracy: 0.8872 - val_loss: 0.2726 - val_accuracy: 0.9024
+Epoch 8/10
+657/657 [==============================] - 3s 5ms/step - loss: 0.3054 - accuracy: 0.8915 - val_loss: 0.2749 - val_accuracy: 0.8991
+Epoch 9/10
+657/657 [==============================] - 3s 5ms/step - loss: 0.2993 - accuracy: 0.8938 - val_loss: 0.2634 - val_accuracy: 0.9070
+Epoch 10/10
+657/657 [==============================] - 4s 6ms/step - loss: 0.2942 - accuracy: 0.8944 - val_loss: 0.2539 - val_accuracy: 0.9071
+```
+**Análisis de resultados**
+```python
+score = model.evaluate(test_images, test_labels)
+print(score)
+plot_results(history, "accuracy", "results_sparse.png")
+```
+Respuesta esperada:
+```commandline
+313/313 [==============================] - 0s 1ms/step - loss: 0.2676 - accuracy: 0.9012
+```
+![results_sparse.png](Mi%20primera%20CNN%2Fimgs%2Fresults_sparse.png)
 
 # 3. Manejo de imágenes
 
