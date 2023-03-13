@@ -522,9 +522,9 @@ la que es fácilmente trabajable por Deep Learning.
 ![m2.png](imgs%2Fmanejo%20de%20im%C3%A1genes%2Fm2.png)
 
 En nuestro ejemplo de clasificación de ropa usando `fashion MNIST` las imágenes de ropa estaban en una escala de grises. Sin embargo,
-la mayoría de imágenes estan en 3 canales Red Green Blue (RGB) 
+la mayoría de imágenes están en 3 canales Red Green Blue (RGB) 
 
-> Incluso algunas imágenes tienen 4 canales, la imágenes PNG pueden contar con un canal adicional para marcar la transparencia de una imagen.
+> Incluso algunas imágenes tienen 4 canales, las imágenes PNG pueden contar con un canal adicional para marcar la transparencia de una imagen.
 > Este canal es conocido como `alpha` (RGBA).
 > 
 
@@ -605,6 +605,97 @@ o bajo distintas condiciones de luz. Por tanto, conseguiremos que la red no sobr
 
 
 ## 3.2 Manejo de imágenes con Python
+
+En este pequeño ejercicio vamos a ver un par de transformaciones a una imagen, utilizando `numpy` para modificar dicha imagen.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [aquí](Manejo%20de%20imágenes/main.py)
+
+**1: Importando bibliotecas necesarias**
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import io  # Una alternativa podría ser opencv o pill
+```
+
+**2: Abrimos nuestra imagen de prueba**
+```python
+im = io.imread("imgs/perro.png")
+print(im.shape)
+print(im)
+```
+Respuesta esperada:
+```commandline
+(800, 600, 3)
+[[[ 98 112  99]
+  [103 117 104]
+  [ 98 112  97]
+  ...]]]
+```
+![perro.png](Manejo%20de%20im%C3%A1genes%2Fimgs%2Fperro.png)
+
+**3: Transformaciones**
+
+- Separemos cada canal:
+  ```python
+    red_channel = im[:, :, 0]
+    green_channel = im[:, :, 1]
+    blue_channel = im[:, :, 2]
+    
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    ax1.imshow(red_channel, cmap="gray")
+    ax2.imshow(blue_channel, cmap="gray")
+    ax3.imshow(green_channel, cmap="gray")
+    ax1.set_title("Red channel")
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    ax2.set_title("Green channel")
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    ax3.set_title("Blue channel")
+    ax3.set_xticks([])
+    ax3.set_yticks([])
+    plt.savefig("imgs/channels.png")
+    plt.close()
+    ```
+  ![channels.png](Manejo%20de%20im%C3%A1genes%2Fimgs%2Fchannels.png)
+
+- Observemos el color de cada canal:
+  ```python
+    # este es una capa AUXILIAR llena de 0s nos permite completar los 3 canles
+    aux_dim = np.zeros(im.shape[:2])
+    # Este es rojo porque es (R Aux Aux)
+    red = np.dstack((red_channel, aux_dim, aux_dim)).astype(np.uint8)
+    green = np.dstack((aux_dim, green_channel, aux_dim)).astype(np.uint8)
+    blue = np.dstack((aux_dim, aux_dim, blue_channel)).astype(np.uint8)
+    
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    ax1.imshow(red)
+    ax2.imshow(green)
+    ax3.imshow(blue)
+    ax1.set_title("Red")
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    ax2.set_title("Green")
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    ax3.set_title("Blue")
+    ax3.set_xticks([])
+    ax3.set_yticks([])
+    plt.savefig("imgs/channels2.png")
+    plt.close()
+  ```
+    ![channels2.png](Manejo%20de%20im%C3%A1genes%2Fimgs%2Fchannels2.png)
+- Zoom a la imagen en una zona específica:
+  ```python
+    plt.imshow(im[270:530, 150:400])
+    plt.xticks([], [])
+    plt.yticks([], [])
+    plt.savefig("imgs/zoom.png")
+    plt.close()
+  ```
+  ![zoom.png](Manejo%20de%20im%C3%A1genes%2Fimgs%2Fzoom.png)
 
 # 4. Fundamentos de redes neuronales convolucionales
 
