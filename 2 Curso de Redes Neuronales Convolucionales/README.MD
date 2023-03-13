@@ -183,7 +183,7 @@ A diferencia de las redes neuronales tradicionales, que procesan los datos de en
 las CNNs pueden trabajar con datos de entrada en dos o más dimensiones, lo que las hace ideales para tareas que involucran 
 imágenes, videos y otros datos similares.
 
-![que son 2.gif](imgs%2Fintroducci%C3%B3n%2Fque%20son 2.gif)
+![que son 2.gif](imgs%2Fintroducci%C3%B3n%2Fque%20son%202.gif)
 
 En una CNN, los datos de entrada se procesan a través de capas de neuronas que realizan la convolución y otros cálculos 
 matemáticos, seguidos de capas de agrupamiento o pooling para reducir el tamaño de la imagen. Luego, la red pasa por 
