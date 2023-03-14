@@ -790,8 +790,37 @@ plt.savefig("imgs/resultados.png")
 Respuesta esperada:
 ![resultados.png](Fundamentos%20de%20redes%2Fkernel%20en%20acci%C3%B3n%2Fimgs%2Fresultados.png)
 
-
 ## 4.3 Padding y Strides
+
+En una red neuronal convolucional, el padding y los strides son dos parámetros importantes que se utilizan para controlar 
+la forma en que se realizan las convoluciones.
+
+El padding se refiere a la adición de ceros alrededor de los bordes de la entrada antes de realizar la convolución. La 
+razón por la que se hace esto es para evitar que el tamaño de la salida de la convolución se reduzca demasiado en 
+comparación con el tamaño de la entrada original. El padding puede ser "valid" (sin padding) o "same" (con padding para 
+que el tamaño de la salida sea el mismo que el de la entrada).
+
+![padding1.png](imgs%2FFundamentos%20de%20CNNs%2Fpadding1.png)
+
+Los strides, por otro lado, se refieren a la cantidad de píxeles que se desplazan entre cada convolución. Un stride de 1 
+significa que la ventana de convolución se mueve un píxel a la vez, mientras que un stride de 2 significa que la ventana 
+de convolución se mueve dos píxeles a la vez. Los strides más grandes resultan en una reducción en el tamaño de la salida, 
+mientras que los strides más pequeños resultan en una salida más grande.
+
+![strides.gif](imgs%2FFundamentos%20de%20CNNs%2Fstrides.gif)
+
+**¿Cómo se implementan estas ideas en código?**
+
+En keras es muy sencillo, simplemente cuando añadimos una `layer` de `Conv2D` debemos tener en cuenta los siguientes parámetros:
+
+```python
+model.add(Conv2D(filters=32, 
+                 kernel_size=2, 
+                 padding="same",  # Puede ser ["valid", "same"] "same" hace que el tamaño de la imagen de entrada sea igual al de salida
+                                  # valid NO aplica padding lo cual produce una pequeña reducción en el tamaño de la imagen dependiendo el tamaño del kernel.
+                 strids = (1, 1),  # El primer número es cuanto se desplaza a la derecha y el segundo es cuanto se desplaza verticalmente.
+                 activation="relu"))
+```
 
 ## 4.4 Capa de pooling
 
