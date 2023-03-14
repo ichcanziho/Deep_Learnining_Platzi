@@ -824,6 +824,53 @@ model.add(Conv2D(filters=32,
 
 ## 4.4 Capa de pooling
 
+Una capa de pooling, también conocida como capa de submuestreo, es una capa común en una red neuronal convolucional (CNN). 
+Esta capa se utiliza para reducir la dimensión espacial (alto x ancho) de la representación de características obtenida a 
+través de las capas de convolución, lo que reduce la cantidad de parámetros y computación necesarios en la red.
+
+La operación de pooling se realiza en cada canal de la salida de la capa de convolución (normalmente, el canal de salida 
+es la imagen filtrada por diferentes kernels o filtros), aplicando una función de reducción que suele ser una operación de 
+máxima o promedio. La operación de pooling se realiza con ventanas deslizantes de tamaño predefinido y con un stride 
+determinado.
+
+Por ejemplo, en una operación de pooling máxima (max pooling), la ventana de pooling de tamaño (2x2) se desliza por la 
+salida de la capa de convolución con un stride de 2, y en cada ventana, se toma el valor máximo del mapa de características. 
+Esto reduce la dimensión espacial a la mitad. El promedio de pooling (average pooling) funciona de manera similar, pero 
+en lugar de tomar el valor máximo, se toma el promedio de los valores en cada ventana.
+
+![maxpool.gif](imgs%2FFundamentos%20de%20CNNs%2Fmaxpool.gif)
+
+
+En general, las capas de pooling tienen dos objetivos principales:
+
+1. `Reducción de la dimensión espacial:` al reducir la dimensión espacial de la representación de características, se reduce 
+la cantidad de parámetros y computación necesarios en la red, lo que hace que la red sea más eficiente.
+
+2. `Introducción de invarianza de desplazamiento: el pooling puede hacer que la red sea invariante a pequeñas variaciones 
+en la posición de las características, ya que la operación de pooling tomará el valor máximo o promedio de las características 
+en una ventana de pooling, independientemente de su ubicación exacta en la imagen.
+
+En resumen, las capas de pooling son una herramienta importante en las redes neuronales convolucionales, ya que ayudan a reducir la dimensión espacial de la representación de características y a introducir invarianza de desplazamiento, lo que puede mejorar el rendimiento de la red en tareas de clasificación de imágenes y otros problemas de visión por computadora.
+
+**Ejemplos de Pooling**
+
+Aquí podemos observar la diferencia entre una imagen original (al centro), a la izquierda la imagen después de max pooling 
+y a la derecha después de Average pooling.
+
+![pooling2.png](imgs%2FFundamentos%20de%20CNNs%2Fpooling2.png)
+
+En el ejemplo del coche podemos ver como se ha reducido las dimensiones de la imagen, pero en general las características del coche
+se mantienen presentes. 
+
+**¿Qué tan eficiente es utilizar pooling?**
+
+A continuación podemos observar dos arquitecturas muy similares, solo que a la izquierda se usa max_pooling y a la derecha no.
+
+![pooling3.png](imgs%2FFundamentos%20de%20CNNs%2Fpooling3.png)
+
+El resultado final es que en la arquitectura con max_pooling se entrenan `528,054` parámetros mientras que en la arquitectura
+que no usa max_pooling la cantidad de parámetros se dispara a `32,784,054`. 
+
 ## 4.5 Arquitectura de redes convolucionales
 
 ## 4.6 Quizz Fundamentos de redes neuronales convolucionales
