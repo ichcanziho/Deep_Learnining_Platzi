@@ -926,7 +926,22 @@ de nuestras CNNs: https://alexlenail.me/NN-SVG/LeNet.html
 
 Para resolver este quizz es importante tener en cuenta las siguientes fórmulas y tomar el siguiente ejemplo de base:
 
+![form1.png](imgs%2FFundamentos%20de%20CNNs%2Fform1.png)
 
+Por ejemplo para una imagen con medidas iniciales de 28x28x1 que tiene 1 filtro de 3x3 , un padding de “same” , stride 1 y 16
+canales de salida se tiene lo siguiente:
+
+n eje x= (28+2(1) -3)/1 +1 =28
+
+n eje y= (28+2(1) -3)/1 +1 =28
+
+Siendo las dimensiones de salida 28x28x16
+
+![q1.png](imgs%2FFundamentos%20de%20CNNs%2Fq1.png)
+
+![q2.png](imgs%2FFundamentos%20de%20CNNs%2Fq2.png)
+
+![q3.png](imgs%2FFundamentos%20de%20CNNs%2Fq3.png)
 
 # 5. Resolviendo un problema de clasificación
 
