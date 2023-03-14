@@ -727,6 +727,70 @@ La cual nos permitirá comparar una imagen de entrada, seleccionar un kernel y o
 
 ## 4.2 El Kernel en acción
 
+Creemos nuestro ejemplo de kernel horizontal y vertical, utilizando una imagen nuestra como base.
+
+**1: importando bibliotecas**
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.ndimage as nd
+from skimage import io, color
+```
+
+**2: Abrimos nuestra imagen y la convertimos a gris**
+```python
+img = io.imread('input/gabriel.png')
+print("Original's shape:", img.shape)
+img_gray = color.rgb2gray(img)
+print("Gray's shape:", img_gray.shape)
+```
+Respuesta esperada:
+```commandline
+Original's shape: (1365, 2048, 3)
+Gray's shape: (1365, 2048)
+```
+Vemos como la imagen original tiene 3 canales RGB mientras que la imagen en escala de Grises no tiene una tercera dimensión.
+
+**3: Creamos nuestros kernels vertical y horizontal**
+```python
+# Kernel para detectar bordes verticales
+
+kernel_v = np.array([[-1, 0, 1],
+                     [-1, 0, 1],
+                     [-1, 0, 1]])
+
+# Kernel para detectar bordes horizontales
+
+kernel_h = np.array([[-1, -1, -1],
+                     [0, 0, 0],
+                     [1, 1, 1]])
+```
+**4: Aplicamos la convolución a la imagen en escala de grises**
+```python
+img_kernel_v = nd.convolve(img_gray, kernel_v)
+img_kernel_h = nd.convolve(img_gray, kernel_h)
+```
+**5: Graficamos los resultados**
+```python
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 10))
+ax1.imshow(img)
+ax1.set_title('Original')
+ax1.axis('off')
+ax2.imshow(img_gray, cmap="gray")
+ax2.set_title('Gray scale')
+ax2.axis('off')
+ax3.imshow(img_kernel_v, cmap="gray")
+ax3.set_title('Vertical Kernel Conv')
+ax3.axis('off')
+ax4.imshow(img_kernel_h, cmap="gray")
+ax4.set_title('Horizontal Kernel Conv')
+ax4.axis('off')
+plt.savefig("imgs/resultados.png")
+```
+Respuesta esperada:
+![resultados.png](Fundamentos%20de%20redes%2Fkernel%20en%20acci%C3%B3n%2Fimgs%2Fresultados.png)
+
+
 ## 4.3 Padding y Strides
 
 ## 4.4 Capa de pooling
