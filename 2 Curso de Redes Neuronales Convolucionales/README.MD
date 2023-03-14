@@ -701,6 +701,30 @@ Respuesta esperada:
 
 ## 4.1 Kernel en redes neuronales
 
+El Kernel en Computer Vision es una matriz o filtro utilizado para realizar operaciones de convolución en una imagen. 
+La convolución es un proceso matemático que se usa para analizar una imagen y extraer características relevantes de ella. 
+El kernel se aplica a cada píxel de la imagen y se multiplica por los valores de los píxeles en su vecindario. El resultado 
+se suma y se coloca en la posición correspondiente en la imagen de salida.
+
+![2D_Convolution_Animation.gif](imgs%2FFundamentos%20de%20CNNs%2F2D_Convolution_Animation.gif)
+
+El tamaño del kernel y los valores de sus elementos son importantes para determinar el resultado de la convolución. Los 
+kernels pueden ser diseñados para detectar características específicas en una imagen, como bordes, esquinas, texturas, etc. 
+También se pueden utilizar para suavizar la imagen o para resaltar ciertas áreas de interés.
+
+![giphy.gif](imgs%2FFundamentos%20de%20CNNs%2Fgiphy.gif)
+
+En resumen, el Kernel en Computer Vision es una herramienta importante para procesar imágenes y extraer información útil 
+de ellas.
+
+Una página muy útil para observar el funcionamiento de los kernels es la siguiente:
+
+https://setosa.io/ev/image-kernels/
+
+La cual nos permitirá comparar una imagen de entrada, seleccionar un kernel y observar la imagen respuesta ya convolucionada.
+
+![conv1.png](imgs%2FFundamentos%20de%20CNNs%2Fconv1.png)
+
 ## 4.2 El Kernel en acción
 
 ## 4.3 Padding y Strides
