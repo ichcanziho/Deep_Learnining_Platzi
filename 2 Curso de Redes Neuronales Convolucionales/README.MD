@@ -873,7 +873,60 @@ que no usa max_pooling la cantidad de parámetros se dispara a `32,784,054`.
 
 ## 4.5 Arquitectura de redes convolucionales
 
+La arquitectura general de una red neuronal convolucional CNN buscar apilar capas convolucionales, después de capas de 
+reducción de dimensionalidad, max_pooling. Para finalmente utilizar una capa flatten que me permita volver la imagen a un 
+vector 1d y poder ocupar capas densamente conectadas.
+
+![arq1.png](imgs%2FFundamentos%20de%20CNNs%2Farq1.png)
+
+Una vez llegados a este punto se pueden ocupar las mismas técnicas que hemos visto en cursos anteriores y ocupar los mismos principios.
+
+El uso de kernels y número de filtros `filters` lo que hace es modificar la profundidad de mis capas covolucionales.
+
+![arq2.png](imgs%2FFundamentos%20de%20CNNs%2Farq2.png)
+
+Cada uno de los kernels estará buscando detectar algo específicamente, bordes, líneas, rayas texturas etc. A mayo cantidad de 
+filtros mayor será la profundidad de la capa.
+
+Por el contrario, las capas de max_pooling reducen el ancho y largo de las capas de entrada:
+![arq3.png](imgs%2FFundamentos%20de%20CNNs%2Farq3.png)
+
+Si funcionamos estás dos ideas, entonces agrupar capas convolucionales seguidas de capas de max_pooling genera la siguiente distribución:
+
+![arq4.png](imgs%2FFundamentos%20de%20CNNs%2Farq4.png)
+
+Cada salto me permite ir observando características más finas de la imagen, puesto que en cada paso la imagen se reduce de dimensiones, 
+las primeras capas tienen filtros con características más generales, puesto que la imagen es muy amplia solo puedo observar 
+algunos patrones como bordes horizontales o verticales, pero conforme se hace más profunda la red entonces puedo observar
+detalles más específicos como lo serían por ejemplo las llantas de un coche o los ojos de un rostro.
+
+Cuando ya he conseguido reducir considerablemente la dimensión de las matrices, entonces es el mejor momento para aplanar
+la matriz y volverla un vector 1D y utilizar capas fully connected para proceder con la clasificación final de la imagen.
+
+![arq5.png](imgs%2FFundamentos%20de%20CNNs%2Farq5.png)
+
+En resumen, la arquitectura básica de una CNN es la siguiente:
+
+![arq6.png](imgs%2FFundamentos%20de%20CNNs%2Farq6.png)
+
+Sin embargo, esto no quiere decir que sea la única arquitectura que existe. En este momento te estarás preguntando ¿Y cómo elijo
+cuantos filtros usar en cada capa? ¿Cuántas capas convolucionales debo elegir? ¿Y los strides y todos los demás parámetros?
+
+La respuesta es que NO hay respuesta, esto es un fino arte de prueba y error, lo más común es empezar un nuevo proyecto con muy
+pocas capas, observar los resultados y apoyarse de las gráficas para identificar el underfitting o el overfitting y con base en esto
+decidir si se necesita un modelo más complejo (más capas, más filtros etc.) o si se necesita uno más simple que pueda generalizar
+mejor (menos capas, o técnicas de normalizado de datos).
+
+Finalmente, la siguiente página web nos permite construir imágenes que sirvan para explicar de forma simple la arquitectura
+de nuestras CNNs: https://alexlenail.me/NN-SVG/LeNet.html
+
+![arq7.png](imgs%2FFundamentos%20de%20CNNs%2Farq7.png)
+
 ## 4.6 Quizz Fundamentos de redes neuronales convolucionales
+
+Para resolver este quizz es importante tener en cuenta las siguientes fórmulas y tomar el siguiente ejemplo de base:
+
+
 
 # 5. Resolviendo un problema de clasificación
 
