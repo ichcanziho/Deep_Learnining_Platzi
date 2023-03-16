@@ -1332,10 +1332,16 @@ for i, batch in enumerate(datagen.flow(x, batch_size=1)):
     if i == 3:
         break
 ```
+
 Respuesta esperada:
+
+
 ![transformation_0.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_0.png)
+
 ![transformation_1.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_1.png)
+
 ![transformation_2.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_2.png)
+
 ![transformation_3.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_3.png)
 
 Adicionalmente, existe una forma de generar estás imágenes tomando como referencia un directorio:
