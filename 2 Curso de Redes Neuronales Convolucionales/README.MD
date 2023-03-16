@@ -1366,6 +1366,213 @@ train/
 
 ## 6.3 Callbacks: early stopping y checkpoints
 
+Los `Callbacks` son una herramienta sumamente poderosa que nos permite monitorear el entrenamiento de nuestras redes neuronales
+tienen varias funcionalidades, sin embargo, en este ejemplo hablaremos de 2 de las más utilizadas:
+
+1. Early stopping: Detener el proceso de entrenamiento cuando este deja de optimizar
+2. Checkpoints: Permite guardar el estado de un modelo mientras está siendo entrenado.
+
+Para estos ejemplos usaremos la misma red que ya vimos en [Mi primera CNN](#2-mi-primera-red-neuronal-convolucional) que
+utiliza `Fashion MNIST`.
+
+**1: Empecemos por importar las bibliotecas que ya conocemos**
+```python
+from keras.datasets import fashion_mnist
+from keras.layers import Conv2D, Dropout, MaxPool2D, Flatten, Dense
+from keras.utils import to_categorical
+from keras import Sequential
+```
+Sin embargo, aquí vamos a añadir un par de nuevas bibliotecas que nos permitirán usar callbacks y cargar modelos guardados.
+```python
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.models import load_model
+```
+**2: Creando arquitectura del modelo**
+```python
+def architecture(shape, name):
+    model_ = Sequential(name=name)
+    model_.add(Conv2D(filters=64, kernel_size=2, padding="same", activation="relu", input_shape=shape))
+    model_.add(MaxPool2D(pool_size=2))
+    model_.add(Dropout(0.3))
+    model_.add(Conv2D(filters=32, kernel_size=2, padding="same", activation="relu"))
+    model_.add(MaxPool2D(pool_size=2))
+    model_.add(Dropout(0.3))
+    model_.add(Flatten())
+    model_.add(Dense(256, activation="relu"))
+    model_.add(Dropout(0.5))
+    model_.add(Dense(10, activation="softmax"))
+    print(model_.summary())
+    return model_
+```
+**3: Descargando el dataset y normalizando datos**
+```python
+(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+train_images = train_images.astype("float32") / 255
+test_images = test_images.astype("float32") / 255
+train_images = train_images.reshape(train_images.shape[0], 28, 28, 1)
+test_images = test_images.reshape(test_images.shape[0], 28, 28, 1)
+train_labels_categorical = to_categorical(train_labels, 10)
+test_labels_categorical = to_categorical(test_labels, 10)
+```
+
+**4: Creando Callbacks**
+
+Esta es la parte interesante de esta nueva sección, vamos a crear `Callbacks` para monitorear el entrenamiento de nuestra red.
+
+**Early stopping**
+
+Empecemos por definir un callback de [Early Stopping](https://keras.io/api/callbacks/early_stopping/)
+Te aconsejo leer toda la documentación para entender mejor su uso.
+```
+tf.keras.callbacks.EarlyStopping(
+    monitor="val_loss",
+    min_delta=0,
+    patience=0,
+    verbose=0,
+    mode="auto",
+    baseline=None,
+    restore_best_weights=False,
+    start_from_epoch=0,
+)
+```
+Ejemplo:
+```python
+# Callback de Early Stopping
+early_stopping_cb = EarlyStopping(monitor="val_accuracy", patience=1, verbose=1)
+# Creando arquitectura del modelo
+model = architecture(shape=train_images[0].shape, name="Early_Stopping")
+# Compilando el modelo
+model.compile(loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"])
+model.fit(train_images, train_labels_categorical, batch_size=256, epochs=10, validation_split=0.3,
+          callbacks=[early_stopping_cb])
+score = model.evaluate(test_images, test_labels_categorical)
+print(score)
+```
+En este momento hemos definido un callback de early stopping, para efectos demostrativos estamos monitoreando el valor
+de accuracy NO del dataset de entrenamiento sino del de validación. En otras palabras, le estamos pidiendo al modelo que se
+detenga cuando NO haya logrado optimizar el accuracy del dataset de validación, tomando como restricción 1 única epoch. 
+Esto es sumamente restrictivo, aquí solo está hecho para poder ejemplificar el caso, sin embargo, la `patience` debería ser mayor a 1
+para evitar el ruido.
+
+Respuesta esperada:
+```commandline
+Model: "Early_Stopping"
+Epoch 1/10
+165/165 [==============================] - 3s 8ms/step - loss: 0.6910 - accuracy: 0.7489 - val_loss: 0.7549 - val_accuracy: 0.7353
+Epoch 2/10
+165/165 [==============================] - 1s 7ms/step - loss: 0.4211 - accuracy: 0.8467 - val_loss: 0.5268 - val_accuracy: 0.8148
+Epoch 3/10
+165/165 [==============================] - 1s 7ms/step - loss: 0.3562 - accuracy: 0.8713 - val_loss: 0.4886 - val_accuracy: 0.8238
+Epoch 4/10
+165/165 [==============================] - 1s 7ms/step - loss: 0.3148 - accuracy: 0.8843 - val_loss: 0.3971 - val_accuracy: 0.8611
+Epoch 5/10
+165/165 [==============================] - 1s 7ms/step - loss: 0.2874 - accuracy: 0.8951 - val_loss: 0.5576 - val_accuracy: 0.8001
+Epoch 5: early stopping
+313/313 [==============================] - 1s 2ms/step - loss: 0.5766 - accuracy: 0.7930
+[0.5765808820724487, 0.7929999828338623]
+```
+Podemos ver que inmediatamente que él `val_accuracy` cayó el modelo dejo de ser entrenado. Esto en medida se debe al valor de
+`batch_size` que elegimos, un valor más pequeño es más lento de entrenar, aumenta en menor velocidad el accuracy, pero suele ser más
+estable. De cualquier forma, aquí SOLO buscabamos demostrar el comportamiento de `early stopping` no optimizar la red.
+
+**Checkpoint**
+
+Este es un callback de extremada utilidad, pues permite ir guardando en cada epoch o n epoch el modelo que mejor optimice una feature.
+Te aconsejo ampliamente leer [ModelCheckpoint](https://keras.io/api/callbacks/model_checkpoint/).
+```
+tf.keras.callbacks.ModelCheckpoint(
+    filepath,
+    monitor: str = "val_loss",
+    verbose: int = 0,
+    save_best_only: bool = False,
+    save_weights_only: bool = False,
+    mode: str = "auto",
+    save_freq="epoch",
+    options=None,
+    initial_value_threshold=None,
+    **kwargs
+)
+```
+Ejemplo:
+
+Creamos nuestro callback de checkpoint, le decimos que vamos a guardar el modelo entero (incluyendo, arquitecura, pesos etc)
+vamos a monitorear el `accuracy` del modelo, vamos a guardar el mejor modelo que encontremos y el modelo será guardado en
+`models/best_model.h5`
+
+```python
+# Callback de Checkpoint
+checkpoint_cb = ModelCheckpoint(filepath="models/best_model.h5", save_weights_only=False, monitor="accuracy",
+                                mode="max",
+                                save_best_only=True, verbose=1)
+# Creando arquitectura del modelo
+model = architecture(shape=train_images[0].shape, name="Checkpoint")
+# Compilando el modelo
+model.compile(loss="categorical_crossentropy", optimizer="rmsprop", metrics=["accuracy"])
+
+model.fit(train_images, train_labels_categorical, batch_size=64, epochs=10, validation_split=0.3,
+          callbacks=[checkpoint_cb])
+```
+Respuesta esperada:
+```commandline
+Model: "Checkpoint"
+Epoch 1/10
+655/657 [============================>.] - ETA: 0s - loss: 0.4926 - accuracy: 0.8198
+Epoch 1: accuracy improved from -inf to 0.81990, saving model to models/best_model.h5
+657/657 [==============================] - 3s 4ms/step - loss: 0.4924 - accuracy: 0.8199 - val_loss: 0.4184 - val_accuracy: 0.8423
+Epoch 2/10
+653/657 [============================>.] - ETA: 0s - loss: 0.3170 - accuracy: 0.8853
+Epoch 2: accuracy improved from 0.81990 to 0.88510, saving model to models/best_model.h5
+657/657 [==============================] - 3s 4ms/step - loss: 0.3172 - accuracy: 0.8851 - val_loss: 0.3127 - val_accuracy: 0.8860
+Epoch 3/10
+652/657 [============================>.] - ETA: 0s - loss: 0.2682 - accuracy: 0.9015
+Epoch 3: accuracy improved from 0.88510 to 0.90143, saving model to models/best_model.h5
+657/657 [==============================] - 3s 4ms/step - loss: 0.2681 - accuracy: 0.9014 - val_loss: 0.2737 - val_accuracy: 0.9013
+Epoch 4/10
+655/657 [============================>.] - ETA: 0s - loss: 0.2375 - accuracy: 0.9126
+Epoch 4: accuracy improved from 0.90143 to 0.91271, saving model to models/best_model.h5
+657/657 [==============================] - 3s 4ms/step - loss: 0.2374 - accuracy: 0.9127 - val_loss: 0.2665 - val_accuracy: 0.9021
+Epoch 5/10
+647/657 [============================>.] - ETA: 0s - loss: 0.2119 - accuracy: 0.9217
+Epoch 5: accuracy improved from 0.91271 to 0.92181, saving model to models/best_model.h5
+657/657 [==============================] - 3s 4ms/step - loss: 0.2117 - accuracy: 0.9218 - val_loss: 0.2613 - val_accuracy: 0.9092
+Epoch 6/10
+653/657 [============================>.] - ETA: 0s - loss: 0.1920 - accuracy: 0.9274
+Epoch 6: accuracy improved from 0.92181 to 0.92757, saving model to models/best_model.h5
+657/657 [==============================] - 3s 5ms/step - loss: 0.1918 - accuracy: 0.9276 - val_loss: 0.2802 - val_accuracy: 0.8978
+Epoch 7/10
+653/657 [============================>.] - ETA: 0s - loss: 0.1750 - accuracy: 0.9362
+Epoch 7: accuracy improved from 0.92757 to 0.93617, saving model to models/best_model.h5
+657/657 [==============================] - 2s 4ms/step - loss: 0.1749 - accuracy: 0.9362 - val_loss: 0.2596 - val_accuracy: 0.9116
+Epoch 8/10
+657/657 [==============================] - ETA: 0s - loss: 0.1582 - accuracy: 0.9416
+Epoch 8: accuracy improved from 0.93617 to 0.94160, saving model to models/best_model.h5
+657/657 [==============================] - 2s 3ms/step - loss: 0.1582 - accuracy: 0.9416 - val_loss: 0.2814 - val_accuracy: 0.9027
+Epoch 9/10
+650/657 [============================>.] - ETA: 0s - loss: 0.1426 - accuracy: 0.9478
+Epoch 9: accuracy improved from 0.94160 to 0.94788, saving model to models/best_model.h5
+657/657 [==============================] - 2s 4ms/step - loss: 0.1424 - accuracy: 0.9479 - val_loss: 0.2621 - val_accuracy: 0.9139
+Epoch 10/10
+645/657 [============================>.] - ETA: 0s - loss: 0.1294 - accuracy: 0.9522
+Epoch 10: accuracy improved from 0.94788 to 0.95198, saving model to models/best_model.h5
+657/657 [==============================] - 2s 4ms/step - loss: 0.1298 - accuracy: 0.9520 - val_loss: 0.2493 - val_accuracy: 0.9179
+```
+Ahora veamos los resultados con el dataset de prueba:
+```python
+# Podemos asegurarnos de que el modelo se guardo correctamente, si lo cargamos y comparamos con el modelo que ya tenemos listo
+loaded_model = load_model("models/best_model.h5")
+print("model:", model.evaluate(test_images, test_labels_categorical))
+print("loaded model:", loaded_model.evaluate(test_images, test_labels_categorical))
+```
+Respuesta esperada:
+```commandline
+313/313 [==============================] - 0s 1ms/step - loss: 0.2766 - accuracy: 0.9152
+model: [0.2766445279121399, 0.9151999950408936]
+313/313 [==============================] - 0s 1ms/step - loss: 0.2766 - accuracy: 0.9152
+loaded model: [0.2766445279121399, 0.9151999950408936]
+```
+Excelente, vemos como ambos tienen el mismo resultado, puesto que se trata de exactamente el mismo modelo. Con esto podemos
+concluir que el proceso de guardado del modelo por el callback ha sido completamente exitoso.
+
 ## 6.4 Batch normalization
 
 ## 6.5 Optimización de modelo de clasificación
