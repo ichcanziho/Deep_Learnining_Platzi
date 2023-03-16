@@ -1366,6 +1366,10 @@ train/
 
 ## 6.3 Callbacks: early stopping y checkpoints
 
+> ## Nota:
+> El código completo lo puedes encontrar [aquí](Optimización%20de%20una%20red%20neuronal/Callbacks/main.py)
+
+
 Los `Callbacks` son una herramienta sumamente poderosa que nos permite monitorear el entrenamiento de nuestras redes neuronales
 tienen varias funcionalidades, sin embargo, en este ejemplo hablaremos de 2 de las más utilizadas:
 
@@ -1418,6 +1422,7 @@ test_labels_categorical = to_categorical(test_labels, 10)
 **4: Creando Callbacks**
 
 Esta es la parte interesante de esta nueva sección, vamos a crear `Callbacks` para monitorear el entrenamiento de nuestra red.
+
 
 **Early stopping**
 
@@ -1623,9 +1628,289 @@ model.add(BatchNormalization())
 
 ## 6.5 Optimización de modelo de clasificación
 
+En estas siguientes clases vamos a estar optimizando los resultados obtenidos en [Resolviendo un problema de clasificación](#5-resolviendo-un-problema-de-clasificación)
+
+Recordemos que los últimos resultados obtenidos fueron:
+
+```commandline
+Entrenamiento:
+Epoch 50/50
+352/352 [==============================] - 4s 12ms/step - loss: 0.4794 - acc: 0.8876 - val_loss: 0.6581 - val_acc: 0.8378
+Test set:
+313/313 [==============================] - 1s 3ms/step - loss: 0.7079 - acc: 0.8265
+```
+Veamos si logramos aumentar un poco estos resultados.
+
+**1: Importando Bibliotecas**
+```python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from keras.utils import to_categorical
+from keras import regularizers
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Activation
+from keras.datasets import cifar10
+import numpy as np
+import matplotlib.pyplot as plt
+```
+Nuevas bibliotecas de este ejemplo
+```python
+# Nuevas bibliotecas
+from keras.layers import BatchNormalization
+from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ModelCheckpoint
+from keras.optimizers import Adam
+from keras.models import load_model
+from os.path import exists
+```
+
+**2: Cargando datos y creando particiones**
+```python
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+# Análisis exploratorio
+print("x_train shape:", x_train.shape)
+# Limpieza de datos
+
+num_clases = len(np.unique(y_train))
+y_train = to_categorical(y_train, num_clases)
+y_test = to_categorical(y_test, num_clases)
+
+# Creando nuevas particiones de los datos
+(x_train, x_valid) = x_train[5000:], x_train[:5000]
+(y_train, y_valid) = y_train[5000:], y_train[:5000]
+print('x_train shape', x_train.shape)
+print('x_train shape [0]', x_train[0].shape)
+
+print('train:', x_train.shape[0])
+print('val:', x_valid.shape[0])
+print('test:', x_test.shape[0])
+```
+
+**3: Normalizando datos**
+Aquí es MUY IMPORTANTE tener en cuenta que estamos normalizando TODAS las particiones con los datos del dataset de entrenamiento.
+Esto porque NOSOTROS NO debemos tener ningún tipo de información de los datos de validación o prueba. Esto puede afectar los
+resultados finales, pero reflejan mucho mejor la realidad de predicción del modelo.
+
+```python
+# Normalizado de datos
+x_train = x_train.astype('float32')
+x_test = x_test.astype('float32')
+x_valid = x_valid.astype('float32')
+
+mean_train = np.mean(x_train)
+std_train = np.std(x_train)
+
+x_train = (x_train - mean_train) / (std_train + 1e-7)
+x_test = (x_test - mean_train) / (std_train + 1e-7)
+x_valid = (x_valid - mean_train) / (std_train + 1e-7)
+```
+Respuesta esperada:
+```commandline
+x_train shape: (50000, 32, 32, 3)
+x_train shape (45000, 32, 32, 3)
+x_train shape [0] (32, 32, 3)
+train: 45000
+val: 5000
+test: 10000
+```
+
+**4: Creamos nuestro aumentador de datos**
+```python
+# Data Augmentation
+datagen = ImageDataGenerator(rotation_range=15,
+                             width_shift_range=0.1,
+                             height_shift_range=0.1,
+                             horizontal_flip=True,
+                             vertical_flip=True)
+```
+
+**5: Creando nuestro callback de monitoreo de val accuracy**
+```python
+# Checkpoint Callback
+checkpoint_cb = ModelCheckpoint("models/best_model.h5", verbose=1, save_best_only=True, monitor="val_acc")    
+```
+
+**DEFINIMOS la arquitectura de nuestra CNN**
+
+La principal diferencia respecto a la versión original es que aquí estamos añadiendo `BatchNormalization()` a la salida de cada
+capa de `Activation()`
+
+```python
+def architecture(base_filtros: int, w_regularized: float, shape: tuple, num_classes: int):
+    """
+    Definiendo la arquitectura de nuestra CNN
+    :param base_filtros: Número de filtros que tomara como base la CNN (capas posteriores usaran multiplos de este número)
+    :param w_regularized: Peso para utilizar por el regularizador L2
+    :param shape: forma del tensor de entrada (dimensiones de las imágenes de entrenamiento)
+    :param num_classes: número de clases a clasificar por la CNN
+    :return:
+    """
+    model = Sequential()
+
+    # Conv 1
+    model.add(Conv2D(filters=base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized), input_shape=shape))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization())
+    # Conv 2
+    model.add(Conv2D(filters=base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.2))
+    # Conv 3
+    model.add(Conv2D(filters=2 * base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.2))
+    # Conv 4
+    model.add(Conv2D(filters=2 * base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.2))
+    # Conv 5
+    model.add(Conv2D(filters=4 * base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization())
+    # Conv 6
+    model.add(Conv2D(filters=4 * base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.4))
+    # Flatten
+    model.add(Flatten())
+    # Capa de clasificación
+    model.add(Dense(units=num_classes, activation="softmax"))
+    print(model.summary())
+    return model
+```
+
 ## 6.6 Entrenamiento de nuestro modelo de clasificación optimizado
 
+Aquí vamos a agregar una pequeña línea que nos permitirá entrenar el modelo por primera vez, o en caso de que ya éxista 
+el modelo, lo puede cargar para continuar con su proceso de entrenamiento posterior.
+
+```python
+if not exists("models/best_model.h5"):
+```
+
+**6: Creando el modelo por primera vez**
+```python
+print("Entrenando por primera vez")
+print("*" * 64)
+print("Creando arquitectura")
+md = architecture(base_filtros=32, w_regularized=1e-4, shape=x_train[0].shape, num_classes=num_clases)
+```
+Respuesta esperada:
+```commandline
+
+```
+**7: Compilando y entrenando el modelo**
+
+Como pequeña variante al código original aquí vamos a utilizar `Adam()` como optimizador en lugar del que siempre hemos usado
+`rmsprop`
+
+```python
+print("Empezando a entrenar")
+md.compile(optimizer=Adam(), loss="categorical_crossentropy", metrics=["acc"])
+history = md.fit(datagen.flow(x_train, y_train, batch_size=128),
+                 callbacks=[checkpoint_cb],
+                 steps_per_epoch=x_train.shape[0] // 128,
+                 epochs=50,
+                 verbose=2,
+                 validation_data=(x_valid, y_valid))
+plot_results(history, "acc", "resultado_tuneado.png")
+```
+Resultado esperado:
+![resultado_tuneado.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Foptmizaci%C3%B3n%20del%20modelo%2Fimgs%2Fresultado_tuneado.png)
+
+Podemos comparar estos resultados con el primer modelo que hicimos:
+![primer_resultado.png](Resolviendo%20un%20problema%20de%20clasificaci%C3%B3n%2Fimgs%2Fprimer_resultado.png)
+
+Podemos observar que en el mismo número de iteraciones, en general el primer modelo obtiene mejores resultados, pero observamos
+una mayor diferencia entre los resultados de training y validation, indicando que el primer modelo es más cercano a presentar
+overfitting en contraste al segundo modelo que a pesar de no presentar una mejora circunstancial, sí ha mostrado un comportamiento
+más cercano al set de entrenamiento.
+
+Ahora como ya tenemos un modelo guardado, podemos cargarlo y seguir entrenando un par de iteraciones más:
+
+**8: Retomando entrenamiento**
+```python
+print("Abriendo modelo y continuando entrenamiento")
+md = load_model("models/best_model.h5")
+history = md.fit(datagen.flow(x_train, y_train, batch_size=128),
+                 callbacks=[checkpoint_cb],
+                 steps_per_epoch=x_train.shape[0] // 128,
+                 epochs=20,
+                 verbose=2,
+                 validation_data=(x_valid, y_valid))
+
+plot_results(history, "acc", "resultado_tuneado_2.png")
+```
+Resultado esperado:
+```commandline
+Epoch 1: val_acc improved from -inf to 0.80880, saving model to models/best_model.h5
+351/351 - 10s - loss: 0.7392 - acc: 0.7879 - val_loss: 0.7140 - val_acc: 0.8088 - 10s/epoch - 29ms/step
+Epoch 2/20
+
+Epoch 2: val_acc did not improve from 0.80880
+351/351 - 8s - loss: 0.7438 - acc: 0.7859 - val_loss: 0.7734 - val_acc: 0.7806 - 8s/epoch - 23ms/step
+Epoch 3/20
+
+...
+
+Epoch 15: val_acc improved from 0.81900 to 0.82280, saving model to models/best_model.h5
+351/351 - 9s - loss: 0.7210 - acc: 0.7967 - val_loss: 0.6565 - val_acc: 0.8228 - 9s/epoch - 24ms/step
+Epoch 16/20
+
+Epoch 16: val_acc did not improve from 0.82280
+351/351 - 9s - loss: 0.7226 - acc: 0.7970 - val_loss: 0.7217 - val_acc: 0.8076 - 9s/epoch - 24ms/step
+Epoch 17/20
+```
+![resultado_tuneado_2.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Foptmizaci%C3%B3n%20del%20modelo%2Fimgs%2Fresultado_tuneado_2.png)
+
+**9: Resultados finales:**
+```python
+acc = md.evaluate(x_test, y_test)
+print("normal acc: ", acc)
+best_model = load_model("models/best_model.h5")
+acc = best_model.evaluate(x_test, y_test)
+print("loaded model acc:", acc)
+```
+Respuesta esperada:
+```commandline
+313/313 [==============================] - 1s 3ms/step - loss: 0.7037 - acc: 0.8105
+normal acc:  [0.7037441730499268, 0.8105000257492065]
+313/313 [==============================] - 1s 3ms/step - loss: 0.7040 - acc: 0.8095
+loaded model acc: [0.7039660215377808, 0.809499979019165]
+```
+
+### Conclusiones
+
+Este mini proyecto nos ha servido para condensar MUCHÍSIMOS temas vistos hasta el momento:
+
+- Data generation
+- Data normalization
+- Callbacks
+- Arquitectura de una CNN
+- Guardado de CNN models
+- Restableciendo una CNN para seguir entrenando.
+
+El primer modelo obtenido parece haber tenido un mejor resultado, esto nos demuestra que no hay una fórmula secreta para 
+mejorar los resultados obtenidos y que a veces menos es más. Sin embargo, lo más importante es tener conocer una metodología
+correcta y profunda de diferentes herramientas de deep learning. Es nuestra responsabilidad como científicos de datos encontrar
+diferentes combinaciones más complejas o sencillas que nos permitan optimizar nuestros problemas de clasificación.
+
 ## 6.7 Quizz: Optimización de redes neuronales convolucionales
+
+
 
 # 7. Resolviendo una competencia de Kaggle
 
