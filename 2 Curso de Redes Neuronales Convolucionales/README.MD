@@ -1985,6 +1985,11 @@ diferentes combinaciones más complejas o sencillas que nos permitan optimizar n
 
 ## 6.7 Quizz: Optimización de redes neuronales convolucionales
 
+![q1.png](imgs%2FOptimizaci%C3%B3n%20de%20una%20red%2Fq1.png)
+
+![q2.png](imgs%2FOptimizaci%C3%B3n%20de%20una%20red%2Fq2.png)
+
+![q3.png](imgs%2FOptimizaci%C3%B3n%20de%20una%20red%2Fq3.png)
 
 
 # 7. Resolviendo una competencia de Kaggle
