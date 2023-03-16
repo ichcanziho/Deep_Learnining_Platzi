@@ -33,7 +33,7 @@ En este curso avanzado eleva tus conocimientos de deep learning. Comprende el fu
   - [4.5 Arquitectura de redes convolucionales](#45-arquitectura-de-redes-convolucionales)
   - [4.6 Quizz Fundamentos de redes neuronales convolucionales](#46-quizz-fundamentos-de-redes-neuronales-convolucionales)
 - [5. Resolviendo un problema de clasificación](#5-resolviendo-un-problema-de-clasificación)
-  - [5.1 Clasificación con redes neuronlaes convolucionales](#51-clasificación-con-redes-neuronlaes-convolucionales)
+  - [5.1 Clasificación con redes neuronales convolucionales](#51-clasificación-con-redes-neuronales-convolucionales)
   - [5.2 Creación de red convolucional para clasificación](#52-creación-de-red-convolucional-para-clasificación)
   - [5.3 Entrenamiento de un modelo de clasificación con redes convolucionales](#53-entrenamiento-de-un-modelo-de-clasificación-con-redes-convolucionales)
 - [6. Optimización de una red neuronal convolucional](#6optimización-de-una-red-neuronal-convolucional)
@@ -945,11 +945,293 @@ Siendo las dimensiones de salida 28x28x16
 
 # 5. Resolviendo un problema de clasificación
 
-## 5.1 Clasificación con redes neuronlaes convolucionales
+A lo largo de esta sección repasaremos los conceptos de CNNs aprendidos hasta el momento, creando una red neuronal capas de
+clasificar entre 10 diferentes tipos de clases. Para ello vamos a utilizar el dataset [CIFAR10](https://keras.io/api/datasets/cifar10/)
+el cual consta de 50,000 imágenes de 32x32 píxeles a color, para el training set y 
+10,000 imágenes con las mismas características para el conjunto de pruebas.
+
+Las clases disponibles son:
+
+| **Label** | **Description** |
+|:---------:|-----------------|
+|     0     | airplane        |
+|     1     | automobile      |
+|     2     | bird            |
+|     3     | cat             |
+|     4     | deer            |
+|     5     | dog             |
+|     6     | frog            |
+|     7     | horse           |
+|     8     | ship            |
+|     9     | truck           |
+
+## 5.1 Clasificación con redes neuronales convolucionales
+
+**1: importamos bibliotecas necesarias:**
+```python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from keras.utils import to_categorical
+from keras import regularizers
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Activation
+from keras.datasets import cifar10
+import numpy as np
+import matplotlib.pyplot as plt
+```
+**Definimos nuestra función auxiliar para gráficar resultados:**
+```python
+def plot_results(history_, metric, fname):
+    history_dict = history_.history
+    loss_values = history_dict['loss']
+    val_loss_values = history_dict['val_loss']
+    metric_values = history_dict[metric]
+    val_metric_values = history_dict[f"val_{metric}"]
+    epoch = range(1, len(loss_values) + 1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 5))
+    fig.suptitle("Neural Network's Result")
+    ax1.set_title("Loss function over epoch")
+    ax2.set_title(f"{metric} over epoch")
+    ax1.set(ylabel="loss", xlabel="epochs")
+    ax2.set(ylabel=metric, xlabel="epochs")
+    ax1.plot(epoch, loss_values, 'o-r', label='training')
+    ax1.plot(epoch, val_loss_values, '--', label='validation')
+    ax2.plot(epoch, metric_values, 'o-r', label='training')
+    ax2.plot(epoch, val_metric_values, '--', label='validation')
+    ax1.legend()
+    ax2.legend()
+    plt.savefig(f"imgs/{fname}")
+    plt.close()
+```
+
+**2: Descargamos el dataset CIFAR10**
+```python
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+# Análisis exploratorio
+print("x_train shape:", x_train.shape)
+plt.imshow(x_train[0])
+plt.savefig("imgs/train0.jpg")
+plt.close()
+```
+Respuesta esperada:
+```commandline
+x_train shape: (50000, 32, 32, 3)
+```
+
+**3: Limpiamos nuestros datos**
+Como ya sabemos, lo primero que debemos hacer es normalizar la escala de nuestros pixeles de 0-255 a 0-1
+```python
+x_train = x_train.astype('float32')/255
+x_test = x_test.astype('float32')/255
+```
+También sabemos que aunque NO es la única forma de trabajar para clasificación de multiples clases, es una estrategia convertir
+el label encoding en one hot encoding:
+```python
+num_clases = len(np.unique(y_train))
+y_train = to_categorical(y_train, num_clases)
+y_test = to_categorical(y_test, num_clases)
+```
+
+**4: Creando particiones de validación** 
+```python
+# Creando nuevas particiones de los datos
+(x_train, x_valid) = x_train[5000:], x_train[:5000]
+(y_train, y_valid) = y_train[5000:], y_train[:5000]
+print('x_train shape', x_train.shape)
+print('x_train shape [0]', x_train[0].shape)
+
+print('train:', x_train.shape[0])
+print('val:', x_valid.shape[0])
+print('test:', x_test.shape[0])
+```
+Respuesta esperada:
+```commandline
+x_train shape (45000, 32, 32, 3)
+x_train shape [0] (32, 32, 3)
+train: 45000
+val: 5000
+test: 10000
+```
+Podemos observar como ahora contamos con 3 conjuntos de datos, para el set de entrenamiento tenemos `45,000` muestras, 
+de las cuales cada una de ellas tiene una forma de `(32, 32, 3)`. Para el conjunto de validación tenemos `5,000`muestras y
+para el conjunto de pruebas `10,000`.
 
 ## 5.2 Creación de red convolucional para clasificación
 
+> ## Nota:
+> Algunos de los conceptos explicados en este punto son conceptos que YA FUERON explicados en el curso anterior.
+> Si NO estás familiarizado con las técnicas de regularización puedes leer [Regularizadores de deep learning](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#34-regularizaci%C3%B3n---dropout)
+> 
+
+**5: Definiendo la arquitectura del modelo**
+Para este paso es importante recordar:
+- Debemos tener presente el shape de las imágenes del dataset
+- La cantidad de filtros aplicados en cada capa es arbitrario, pero generalmente conforme más profunda es la capa mayor cantidad de filtros
+- La capa de `MaxPooling2D` sirve para reducir la complejidad del modelo, al ir reduciendo las dimensiones de la capa.
+- Utilizar una capa de `DropOut` es una buena idea para reducir el posible overfitting que puede presentar el modelo.
+- La arquitectura propuesta a continuación NO es una receta de cocina y NO tiene por qué ser la mejor para todos los escenarios,
+es simplemente una propuesta que sigue la arquitectura básica de cualquier CNN vista en [Arquitectura de una CNN](#45-arquitectura-de-redes-convolucionales)
+
+```python
+def architecture(base_filtros: int, w_regularized: float, shape: tuple, num_classes: int):
+    """
+    Definiendo la arquitectura de nuestra CNN
+    :param base_filtros: Número de filtros que tomara como base la CNN (capas posteriores usaran multiplos de este número)
+    :param w_regularized: Peso para utilizar por el regularizador L2
+    :param shape: forma del tensor de entrada (dimensiones de las imágenes de entrenamiento)
+    :param num_classes: número de clases a clasificar por la CNN
+    :return: 
+    """
+    model = Sequential()
+
+    # Conv 1
+    model.add(Conv2D(filters=base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized), input_shape=shape))
+    model.add(Activation("relu"))
+    # Conv 2
+    model.add(Conv2D(filters=base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.2))
+    # Conv 3
+    model.add(Conv2D(filters=2*base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(Dropout(0.2))
+    # Conv 4
+    model.add(Conv2D(filters=2 * base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.2))
+    # Conv 5
+    model.add(Conv2D(filters=4 * base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    # Conv 6
+    model.add(Conv2D(filters=4 * base_filtros, kernel_size=(3, 3), padding="same",
+                     kernel_regularizer=regularizers.l2(w_regularized)))
+    model.add(Activation("relu"))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.4))
+    # Flatten
+    model.add(Flatten())
+    # Capa de clasificación
+    model.add(Dense(units=num_classes, activation="softmax"))
+    print(model.summary())
+    return model
+```
+
 ## 5.3 Entrenamiento de un modelo de clasificación con redes convolucionales
+**6: Creando el modelo**
+```python
+md = architecture(base_filtros=32, w_regularized=1e-4, shape=x_train[0].shape, num_classes=num_clases)
+```
+Respuesta esperada:
+```commandline
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, 32, 32, 32)        896       
+                                                                 
+ activation (Activation)     (None, 32, 32, 32)        0         
+                                                                 
+ conv2d_1 (Conv2D)           (None, 32, 32, 32)        9248      
+                                                                 
+ activation_1 (Activation)   (None, 32, 32, 32)        0         
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, 16, 16, 32)       0         
+ )                                                               
+                                                                 
+ dropout (Dropout)           (None, 16, 16, 32)        0         
+                                                                 
+ conv2d_2 (Conv2D)           (None, 16, 16, 64)        18496     
+                                                                 
+ activation_2 (Activation)   (None, 16, 16, 64)        0         
+                                                                 
+ dropout_1 (Dropout)         (None, 16, 16, 64)        0         
+                                                                 
+ conv2d_3 (Conv2D)           (None, 16, 16, 64)        36928     
+                                                                 
+ activation_3 (Activation)   (None, 16, 16, 64)        0         
+                                                                 
+ max_pooling2d_1 (MaxPooling  (None, 8, 8, 64)         0         
+ 2D)                                                             
+                                                                 
+ dropout_2 (Dropout)         (None, 8, 8, 64)          0         
+                                                                 
+ conv2d_4 (Conv2D)           (None, 8, 8, 128)         73856     
+                                                                 
+ activation_4 (Activation)   (None, 8, 8, 128)         0         
+                                                                 
+ conv2d_5 (Conv2D)           (None, 8, 8, 128)         147584    
+                                                                 
+ activation_5 (Activation)   (None, 8, 8, 128)         0         
+                                                                 
+ max_pooling2d_2 (MaxPooling  (None, 4, 4, 128)        0         
+ 2D)                                                             
+                                                                 
+ dropout_3 (Dropout)         (None, 4, 4, 128)         0         
+                                                                 
+ flatten (Flatten)           (None, 2048)              0         
+                                                                 
+ dense (Dense)               (None, 10)                20490     
+                                                                 
+=================================================================
+Total params: 307,498
+Trainable params: 307,498
+Non-trainable params: 0
+_________________________________________________________________
+```
+**7: Compilamos el modelo**
+```python
+md.compile(optimizer="rmsprop", loss="categorical_crossentropy", metrics=["acc"])
+```
+**8: Entrenamos el modelo**
+```python
+history = md.fit(x_train, y_train, batch_size=128, epochs=50, validation_data=(x_valid, y_valid), shuffle=True,)
+```
+Respuesta esperada:
+```commandline
+Epoch 1/50
+352/352 [==============================] - 8s 14ms/step - loss: 1.9319 - acc: 0.3002 - val_loss: 1.7272 - val_acc: 0.3886
+Epoch 2/50
+352/352 [==============================] - 4s 12ms/step - loss: 1.5370 - acc: 0.4534 - val_loss: 1.3019 - val_acc: 0.5526
+Epoch 3/50
+352/352 [==============================] - 4s 12ms/step - loss: 1.3065 - acc: 0.5464 - val_loss: 1.1814 - val_acc: 0.5988
+Epoch 4/50
+352/352 [==============================] - 4s 12ms/step - loss: 1.1477 - acc: 0.6091 - val_loss: 1.0774 - val_acc: 0.6410
+Epoch 5/50
+352/352 [==============================] - 4s 12ms/step - loss: 1.0509 - acc: 0.6481 - val_loss: 1.0610 - val_acc: 0.6396
+...
+Epoch 45/50
+352/352 [==============================] - 4s 12ms/step - loss: 0.4845 - acc: 0.8835 - val_loss: 0.7058 - val_acc: 0.8308
+Epoch 46/50
+352/352 [==============================] - 4s 12ms/step - loss: 0.4874 - acc: 0.8804 - val_loss: 0.6386 - val_acc: 0.8404
+Epoch 47/50
+352/352 [==============================] - 4s 12ms/step - loss: 0.4870 - acc: 0.8824 - val_loss: 0.7363 - val_acc: 0.8226
+Epoch 48/50
+352/352 [==============================] - 4s 12ms/step - loss: 0.4824 - acc: 0.8851 - val_loss: 0.7366 - val_acc: 0.8234
+Epoch 49/50
+352/352 [==============================] - 4s 12ms/step - loss: 0.4830 - acc: 0.8838 - val_loss: 0.6489 - val_acc: 0.8466
+Epoch 50/50
+352/352 [==============================] - 4s 12ms/step - loss: 0.4794 - acc: 0.8876 - val_loss: 0.6581 - val_acc: 0.8378
+```
+**9: Análisis de resultados**
+```python
+plot_results(history, "acc", "primer_resultado.png")
+md.evaluate(x_test, y_test)
+```
+Resultados esperados:
+![primer_resultado.png](Resolviendo%20un%20problema%20de%20clasificaci%C3%B3n%2Fimgs%2Fprimer_resultado.png)
+```commandline
+313/313 [==============================] - 1s 3ms/step - loss: 0.7079 - acc: 0.8265
+```
+
+Hemos tenido muy buenos resultados, sin embargo, más adelante veremos más técnicas que podemos utilizar con el objetivo de 
+optimizar este resultado.
 
 # 6.Optimización de una red neuronal convolucional
 
