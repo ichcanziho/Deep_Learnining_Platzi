@@ -1017,6 +1017,7 @@ Respuesta esperada:
 ```commandline
 x_train shape: (50000, 32, 32, 3)
 ```
+![train0.jpg](Resolviendo%20un%20problema%20de%20clasificaci%C3%B3n%2Fimgs%2Ftrain0.jpg)
 
 **3: Limpiamos nuestros datos**
 Como ya sabemos, lo primero que debemos hacer es normalizar la escala de nuestros pixeles de 0-255 a 0-1
@@ -1236,6 +1237,40 @@ optimizar este resultado.
 # 6.Optimización de una red neuronal convolucional
 
 ## 6.1 Data augmentation
+
+La clasificación de imágenes es una tarea bastante complicada y laboriosa que require de mucho trabajo humano. Tomar las 
+fotografías de las clases de interés y etiquetar cada una de ellas. Esto puede sonar sencillo, pero repetir este proceso
+cientos o miles de veces puede ser bastante tardado y costoso. Una de las técnicas que podemos utilizar para simplificar
+este proceso es conocida como `data augmentation`, está técnica ya la hemos mencionado anteriormente. Puedes volver a leer
+[Consejo 3: aumenta tus imágenes](#consejo-3--aumenta-tus-imágenes), sin embargo; aquí te dejo un breve resumen:
+
+Data Augmentation, o aumentación de datos, es una técnica comúnmente utilizada en el aprendizaje automático para aumentar 
+la cantidad de datos de entrenamiento a partir de un conjunto de datos existente. La idea detrás de esta técnica es generar 
+nuevas instancias de datos a partir de las que ya se tienen, de manera que la red neuronal tenga más datos para entrenarse 
+y pueda mejorar su capacidad de generalización.
+
+La aumentación de datos se puede realizar de varias formas, por ejemplo:
+
+1. Rotación: se gira la imagen en un cierto ángulo.
+2. Desplazamiento: se desplaza la imagen horizontal o verticalmente.
+3. Aumento de tamaño: se aumenta el tamaño de la imagen.
+4. Reducción de tamaño: se reduce el tamaño de la imagen.
+5. Espejo: se crea una imagen espejo reflejando horizontalmente la imagen original.
+6. Cambio de brillo, contraste, saturación, etc.
+7. Recorte: se toma una parte de la imagen original.
+8. Ruido: se agrega ruido a la imagen.
+
+La idea es que al aplicar estas transformaciones a las imágenes de entrada, se creen nuevas versiones de las mismas que 
+permitan mejorar el rendimiento de la red neuronal en situaciones en las que se encuentre con imágenes similares, pero no 
+idénticas a las que se encuentran en el conjunto de datos original.
+
+La aumentación de datos es especialmente útil cuando se tiene un conjunto de datos pequeño, lo que puede llevar a problemas de 
+sobreajuste (overfitting), es decir, que la red neuronal se adapte demasiado a los datos de entrenamiento y no sea capaz 
+de generalizar bien a nuevos datos. Al aumentar el conjunto de datos, se puede reducir el riesgo de sobreajuste y mejorar 
+el rendimiento de la red.
+
+Para ver más ejemplos en acción: https://blog.keras.io/building-powerful-image-classification-models-using-very-little-data.html
+
 
 ## 6.2 Aplicando data augmentation
 
