@@ -1690,6 +1690,7 @@ print('test:', x_test.shape[0])
 ```
 
 **3: Normalizando datos**
+
 Aquí es MUY IMPORTANTE tener en cuenta que estamos normalizando TODAS las particiones con los datos del dataset de entrenamiento.
 Esto porque NOSOTROS NO debemos tener ningún tipo de información de los datos de validación o prueba. Esto puede afectar los
 resultados finales, pero reflejan mucho mejor la realidad de predicción del modelo.
@@ -1813,7 +1814,78 @@ md = architecture(base_filtros=32, w_regularized=1e-4, shape=x_train[0].shape, n
 ```
 Respuesta esperada:
 ```commandline
-
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, 32, 32, 32)        896       
+                                                                 
+ activation (Activation)     (None, 32, 32, 32)        0         
+                                                                 
+ batch_normalization (BatchN  (None, 32, 32, 32)       128       
+ ormalization)                                                   
+                                                                 
+ conv2d_1 (Conv2D)           (None, 32, 32, 32)        9248      
+                                                                 
+ activation_1 (Activation)   (None, 32, 32, 32)        0         
+                                                                 
+ batch_normalization_1 (Batc  (None, 32, 32, 32)       128       
+ hNormalization)                                                 
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, 16, 16, 32)       0         
+ )                                                               
+                                                                 
+ dropout (Dropout)           (None, 16, 16, 32)        0         
+                                                                 
+ conv2d_2 (Conv2D)           (None, 16, 16, 64)        18496     
+                                                                 
+ activation_2 (Activation)   (None, 16, 16, 64)        0         
+                                                                 
+ batch_normalization_2 (Batc  (None, 16, 16, 64)       256       
+ hNormalization)                                                 
+                                                                 
+ dropout_1 (Dropout)         (None, 16, 16, 64)        0         
+                                                                 
+ conv2d_3 (Conv2D)           (None, 16, 16, 64)        36928     
+                                                                 
+ activation_3 (Activation)   (None, 16, 16, 64)        0         
+                                                                 
+ batch_normalization_3 (Batc  (None, 16, 16, 64)       256       
+ hNormalization)                                                 
+                                                                 
+ max_pooling2d_1 (MaxPooling  (None, 8, 8, 64)         0         
+ 2D)                                                             
+                                                                 
+ dropout_2 (Dropout)         (None, 8, 8, 64)          0         
+                                                                 
+ conv2d_4 (Conv2D)           (None, 8, 8, 128)         73856     
+                                                                 
+ activation_4 (Activation)   (None, 8, 8, 128)         0         
+                                                                 
+ batch_normalization_4 (Batc  (None, 8, 8, 128)        512       
+ hNormalization)                                                 
+                                                                 
+ conv2d_5 (Conv2D)           (None, 8, 8, 128)         147584    
+                                                                 
+ activation_5 (Activation)   (None, 8, 8, 128)         0         
+                                                                 
+ batch_normalization_5 (Batc  (None, 8, 8, 128)        512       
+ hNormalization)                                                 
+                                                                 
+ max_pooling2d_2 (MaxPooling  (None, 4, 4, 128)        0         
+ 2D)                                                             
+                                                                 
+ dropout_3 (Dropout)         (None, 4, 4, 128)         0         
+                                                                 
+ flatten (Flatten)           (None, 2048)              0         
+                                                                 
+ dense (Dense)               (None, 10)                20490     
+                                                                 
+=================================================================
+Total params: 309,290
+Trainable params: 308,394
+Non-trainable params: 896
+_________________________________________________________________
 ```
 **7: Compilando y entrenando el modelo**
 
