@@ -1641,6 +1641,9 @@ Test set:
 ```
 Veamos si logramos aumentar un poco estos resultados.
 
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar [aquí](Optimización%20de%20una%20red%20neuronal/optmización%20del%20modelo/main.py)
+
 **1: Importando Bibliotecas**
 ```python
 import os
