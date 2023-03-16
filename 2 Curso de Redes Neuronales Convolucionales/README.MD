@@ -1575,6 +1575,52 @@ concluir que el proceso de guardado del modelo por el callback ha sido completam
 
 ## 6.4 Batch normalization
 
+La normalización es un procedimiento llevado a cabo sobre un conjunto de datos que busca estandarizar sus valores, reducir 
+la cantidad de números que lo compone y en una escala homogénea de datos ayudando al descenso del gradiente `para converger mucho más rápido`
+cuando se ejecuta el `Backpropagation`.
+
+- Valores pequeños: típicamente entre 0 a 1
+- Data homogénea: todos los píxeles tienen datos en el mismo rango.
+
+
+![norma1.png](imgs%2FOptimizaci%C3%B3n%20de%20una%20red%2Fnorma1.png)
+
+También, se puede dentro de las capas ocultas de la red neuronal llevar a cabo una normalización para así estandarizarla, 
+a este proceso se le conoce como: `Batch Normalization.
+
+Batch Normalization (normalización por lotes) es una técnica utilizada en el aprendizaje profundo para mejorar la estabilidad 
+y eficacia del entrenamiento de redes neuronales. La técnica consiste en normalizar las activaciones de cada capa en una red 
+neuronal para que tengan una media cercana a cero y una varianza cercana a uno.
+
+![norma2.png](imgs%2FOptimizaci%C3%B3n%20de%20una%20red%2Fnorma2.png)
+
+La normalización por lotes se realiza sobre un lote (batch) de muestras de entrenamiento en cada iteración del proceso de 
+entrenamiento. Para normalizar las activaciones, se calcula la media y la desviación estándar del batch y se utiliza esta 
+información para escalar y centrar las activaciones.
+
+El efecto de la normalización por lotes es que la red neuronal se vuelve menos sensible a los valores iniciales de los 
+pesos y sesgos de la red, lo que a su vez reduce la necesidad de ajustar constantemente la tasa de aprendizaje durante el 
+entrenamiento. Además, la normalización por lotes reduce la propagación de los gradientes a través de la red, lo que permite 
+el uso de tasas de aprendizaje más altas sin que se produzca inestabilidad en el entrenamiento.
+
+![norma3.png](imgs%2FOptimizaci%C3%B3n%20de%20una%20red%2Fnorma3.png)
+
+La normalización por lotes también puede ayudar a prevenir el sobreajuste (overfitting) y mejorar la capacidad de generalización 
+de la red. Al estabilizar las activaciones de cada capa, se reduce la necesidad de regularización y se mejora el rendimiento 
+en conjuntos de datos nuevos.
+
+**Implementación en Keras**
+
+En Keras es tan sencillo como agregar una capa al modelo:
+```python
+model.add(BatchNormalization())
+```
+Esta capa suele ser agregada justamente después de la salida de la capa de activación, pues lo que nos intereza es normalizar estos datos.
+```python
+model.add(Activation("relu"))
+model.add(BatchNormalization())
+```
+
 ## 6.5 Optimización de modelo de clasificación
 
 ## 6.6 Entrenamiento de nuestro modelo de clasificación optimizado
