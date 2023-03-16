@@ -965,6 +965,9 @@ Las clases disponibles son:
 |     8     | ship            |
 |     9     | truck           |
 
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar [aquí](Resolviendo%20un%20problema%20de%20clasificación/main.py)
+
 ## 5.1 Clasificación con redes neuronales convolucionales
 
 **1: importamos bibliotecas necesarias:**
@@ -1275,6 +1278,85 @@ Para ver más ejemplos en acción: https://blog.keras.io/building-powerful-image
 
 
 ## 6.2 Aplicando data augmentation
+
+En este pequeño ejercicio veremos una forma muy simple de aplicar data augmentation utilizando `keras`
+
+> ## Nota:
+> El código completo lo puedes encontrar [aquí](Optimización%20de%20una%20red%20neuronal/aplicando%20data%20augmentation/main.py)
+
+**1: Importando bibliotecas necesarias**
+```python
+from keras.preprocessing.image import ImageDataGenerator
+from keras.utils import array_to_img, img_to_array, load_img
+import matplotlib.pyplot as plt
+```
+
+**2: Definiendo nuestro generador de imágenes**
+```python
+datagen = ImageDataGenerator(rotation_range=40,
+                                 width_shift_range=0.2,
+                                 height_shift_range=0.2,
+                                 zoom_range=0.2,
+                                 horizontal_flip=True,
+                                 fill_mode='nearest',
+                                 brightness_range=[0.4, 1.5]
+                                 )
+```
+Toda la información sobre `ImageDataGenerator` la puedes encontrar [aquí](https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator)
+
+**3: Cargando una imagen de ejemplo**
+```python
+img = load_img('imgs/perro.png')
+x = img_to_array(img)
+print(x.shape)
+x = x.reshape((1,) + x.shape)
+print(x.shape)
+```
+Respuesta esperada:
+```commandline
+(800, 600, 3)
+(1, 800, 600, 3)
+```
+![perro.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Fperro.png)
+
+**4: Empezamos a generar alteraciones de la imagen original**
+> Nota:
+> Como en este ejemplo solo tenemos una imagen, entonces el batch_size debe ser igual a 1.
+> A pesar de que sea una sola imagen, `batch` es un arreglo de imágenes, por eso accedemos a cada
+> imagen unitaria del batch de tamaño 1 como `batch[0]`
+```python
+for i, batch in enumerate(datagen.flow(x, batch_size=1)):
+    plt.imshow(array_to_img(batch[0]))
+    plt.savefig(f"imgs/transformation_{i}.png")
+    plt.close()
+    if i == 3:
+        break
+```
+Respuesta esperada:
+![transformation_0.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_0.png)
+![transformation_1.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_1.png)
+![transformation_2.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_2.png)
+![transformation_3.png](Optimizaci%C3%B3n%20de%20una%20red%20neuronal%2Faplicando%20data%20augmentation%2Fimgs%2Ftransformation_3.png)
+
+Adicionalmente, existe una forma de generar estás imágenes tomando como referencia un directorio:
+```python
+train_generator = datagen.flow_from_directory(
+    '/train',
+    target_size=(150,150),
+    batch_size=32,
+    class_mode='binary'
+    )
+```
+El diretorio debe tener la siguiente estructura:
+```commandline
+train/
+...class_a/
+......a_image_1.jpg
+......a_image_2.jpg
+...class_b/
+......b_image_1.jpg
+......b_image_2.jpg
+```
 
 ## 6.3 Callbacks: early stopping y checkpoints
 
