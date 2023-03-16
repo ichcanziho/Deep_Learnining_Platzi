@@ -1260,6 +1260,8 @@ La aumentación de datos se puede realizar de varias formas, por ejemplo:
 7. Recorte: se toma una parte de la imagen original.
 8. Ruido: se agrega ruido a la imagen.
 
+![dataA.png](imgs%2FFundamentos%20de%20CNNs%2FdataA.png)
+
 La idea es que al aplicar estas transformaciones a las imágenes de entrada, se creen nuevas versiones de las mismas que 
 permitan mejorar el rendimiento de la red neuronal en situaciones en las que se encuentre con imágenes similares, pero no 
 idénticas a las que se encuentran en el conjunto de datos original.
