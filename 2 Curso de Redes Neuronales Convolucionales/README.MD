@@ -86,17 +86,20 @@ Luego reconocerá o verá imágenes de una manera similar a los humanos.
 ## Principales usos de la visión artificial
 
 1. **Clasificación de imágenes.**
+
     ![reco1.png](imgs%2Fintroducci%C3%B3n%2Freco1.png)
     
     Ve una imagen y puede clasificarla (un perro, una manzana, la cara de una persona). Más precisamente, puede predecir 
     con precisión que una imagen determinada pertenece a un cierto tipo. Por ejemplo, una empresa de redes sociales podría 
     querer usarlo para identificar y segregar automáticamente las imágenes objetables cargadas por los usuarios.
 2. **Detección de objetos.**
+
     ![reco2.png](imgs%2Fintroducci%C3%B3n%2Freco2.png)
     Puede usar la clasificación de imágenes para identificar una determinada clase de imagen y luego detectar y tabular su 
     apariencia en una imagen o video. Los ejemplos incluyen la detección de daños en una línea de montaje o la identificación 
     de maquinaria que requiera mantenimiento.
 3. **Transferencia de estilos.**
+
     ![reco3.png](imgs%2Fintroducci%C3%B3n%2Freco3.png)
     La transferencia de estilo neuronal (Neural Style Transfer) es una técnica de aprendizaje automático para combinar el 
     contenido semántico de una imagen con el estilo artístico de otra. Este proceso considera dos imágenes, la imagen de 
@@ -108,12 +111,14 @@ Luego reconocerá o verá imágenes de una manera similar a los humanos.
     optimización que puede resolverse mediante el entrenamiento de una red neuronal.
 
 4. **GANs**
+
     ![reco4.png](imgs%2Fintroducci%C3%B3n%2Freco4.png)
     Las Redes Neuronales Generativas Adversarias también se denominan GANs por sus siglas en inglés (Generative Adversarial Networks). 
     También lo he visto traducido al español como Redes Antagónicas. Las GANs son una forma nueva de usar deep learning para 
     generar imágenes que parecen reales. También pueden generar otro tipo de datos tales como música.
 
 5. **Reconocimiento facial**
+
     ![reco5.png](imgs%2Fintroducci%C3%B3n%2Freco5.png)
     Es un software que identifica o confirma la identidad de una persona a partir del rostro. Funciona mediante la identificación 
     y medición de los rasgos faciales en una imagen. El reconocimiento facial puede identificar rostros humanos en imágenes o videos, 
