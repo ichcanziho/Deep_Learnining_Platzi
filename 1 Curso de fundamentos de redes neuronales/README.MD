@@ -2212,4 +2212,6 @@ Pues próximos tópicos que podemos aprender son:
 
 ![lstm.gif](4%20cierre%2Flstm.gif)
 
-Ahora acompañame al siguiente curso: [Redes neuronales con Python]()
+Ahora acompañame al siguiente curso: [Curso de Redes neuronales convolucionales con Python y Keras](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales)
+
+

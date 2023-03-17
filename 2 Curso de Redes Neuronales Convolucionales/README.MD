@@ -2262,4 +2262,54 @@ anteriores siempre habíamos utilizado datasets ya existentes de keras, los cual
 >
 # 8. Cierre
 
+Muchas Felicidades si has llegado hasta aquí has terminado exitosamente el curso de [Redes Neuronales Convolucionales con Python y Keras](https://platzi.com/cursos/redes-neuronales-convolucionales/)
+El curso es impartido por el profesor [Carlos Alarcón](https://platzi.com/profes/alarcon7a/) Y este repositorio me pertenece a mí:
+[Gabriel Ichcanziho](https://www.linkedin.com/in/ichcanziho/).
+
+Este curso nos ha permitido conocer los temas de:
+
+- Clasificación de imágenes: Binary Output - Multiple Output
+- Arquitectura de redes CNNs
+- Kernel y convoluciones
+- Padding y Strides
+- Pooling
+- Regularization: Data Augmentation, Batch normalization, Dropout
+- Callbacks: Checkpoint, Early Stopping
+
+Aún queda mucho por aprender:
+
 ## 8.1 Siguientes pasos
+
+### Arquitecturas más complejas de CNN:
+
+**Alexnet**
+
+![A1.png](imgs%2FCierre%2FA1.png)
+
+**VGGNet**
+
+![A2.png](imgs%2FCierre%2FA2.png)
+
+**LeNet**
+
+![A3.png](imgs%2FCierre%2FA3.png)
+
+**ResNet**
+
+![resnet.png](imgs%2FCierre%2Fresnet.png)
+
+
+### Uso de redes pre-entrenadas
+
+![A5.png](imgs%2FCierre%2FA5.png)
+
+### Tensorboard
+
+![A6.png](imgs%2FCierre%2FA6.png)
+
+### Inception Net
+
+![A7.png](imgs%2FCierre%2FA7.png)
+
+
+Ahora acompáñame al siguiente curso de [Curso profesional de Redes Neuronales con TensorFlow]()
