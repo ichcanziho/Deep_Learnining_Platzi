@@ -1994,10 +1994,272 @@ diferentes combinaciones más complejas o sencillas que nos permitan optimizar n
 
 # 7. Resolviendo una competencia de Kaggle
 
+En este mini proyecto haremos una CNN muy sencilla para clasificar entre perros y gatos, sin embargo, la principal diferencia
+respecto a todos los otros ejemplos es que en esta ocasión NO partiremos de un dataset de Keras, sino que tendremos a nuestra
+disposición un dataset de imágenes acomodadas en carpetas con la siguiente distribución:
+
+> ## Nota:
+> Puedes encontrar el código completo [aquí](Competencia%20Kaggle/main.py)
+
+```
+data
+|----test
+|----|----cats
+|----|----|----cat.1500.jpg
+|----|----dogs
+|----|----|----dog.1500.jpg
+|----train
+|----|----cats
+|----|----|----cat.0.jpg
+|----|----dogs
+|----|----|----dog.0.jpg
+|----validation
+|----|----cats
+|----|----|----cat.1000.jpg
+|----|----dogs
+|----|----|----dog.1000.jpg
+```
+
+El dataset lo puedes encontrar en el siguiente repositorio: https://www.kaggle.com/datasets/alarcon7a/cnn-data-sources?select=cats_and_dogs
+
+El dataset contiene la siguiente distribución de datos:
+
+- Train: 2000 imágenes, 1000 gatos - 1000 perros
+- Test: 1000 imágenes, 500 gatos - 500 perros
+- Validation: 1000 imágenes, 500 gatos - 500 perros
+
+El nombre de las carpetas indica explícitamente en nombre de la etiqueta a la que pertenece la imagen. Sin embargo, cada
+imagen puede tener dimensiones diferentes, y estas no están normalizadas de ninguna manera. Nuestro trabajo será entonces
+convertir esta carpeta en un dataset de entrenamiento, validación y prueba para nuestra CNN. Para ello usaremos el método
+`datagen.flow_from_directory` del cual hablamos brevemente en [Aplicando data augmentation](#62-aplicando-data-augmentation), 
+pero en este ejemplo lo usaremos concretamente.
+
+
 ## 7.1 Clasificando entre perros y gatos
+
+**1: Importando bibliotecas**
+
+Como es costumbre, empecemos importando las bibliotecas necesarias.
+```python
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ModelCheckpoint
+from keras.models import Sequential
+from keras.optimizers import Adam
+from keras.models import load_model
+import matplotlib.pyplot as plt
+```
+
+**2: Definamos una arquitectura sencilla**
+
+Para este ejemplo, no nos centraremos en crear un modelo óptimo, sino en mostrar el flujo de información y como generar el dataset
+desde las imágenes de entrada distribuidas en diferentes carpetas.
+```python
+def architecture(n_filters, input_shape):
+    model = Sequential()
+
+    model.add(Conv2D(filters=n_filters, kernel_size=(3, 3), activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(2, 2))
+
+    model.add(Conv2D(filters=2*n_filters, kernel_size=(3, 3), activation="relu"))
+    model.add(MaxPooling2D(2, 2))
+
+    model.add(Conv2D(filters=4 * n_filters, kernel_size=(3, 3), activation="relu"))
+    model.add(MaxPooling2D(2, 2))
+
+    model.add(Conv2D(filters=4 * n_filters, kernel_size=(3, 3), activation="relu"))
+    model.add(MaxPooling2D(2, 2))
+
+    model.add(Flatten())
+    model.add(Dropout(0.5))
+    model.add(Dense(512, activation="relu"))
+    model.add(Dense(1, activation="sigmoid"))
+    model.summary()
+    
+    return model
+```
+
+**3: Creación de Image Data Generators**
+
+Para este particular problema usaremos `Image Data Generators` porque tenemos muy pocos datos de entrenamiento para nuestro
+problema, apenas contamos con `2,000` ejemplos `1,000` de cada clase.
+
+Para el generador de entrenamiento tendremos la siguiente configuración:
+```python
+train_dategen = ImageDataGenerator(rescale=1./255, rotation_range=40, width_shift_range=0.2, height_shift_range=0.2,
+                                       shear_range=0.2, zoom_range=0.2, horizontal_flip=True)
+```
+Como podemos observar, podemos permitir varias alteraciones a las imágenes originales. Pero el primer punto de rescale es que
+va a dividir toda la imagen entre 255, una normalización básica pero bastante útil.
+
+Para el generador de test lo único que haremos será utilizar él `rescale` para normalizar los datos, pero este objeto no será
+útil más adelante para cargar las imágenes de validation y test.
+
+```python
+test_datagen = ImageDataGenerator(rescale=1./255)
+```
+
+**4: Definimos el batch_size con el cual van a trabajar los generadores de imágenes**
+
+Este valor también será utilizado más adelante para definir `steps_per_epoch` y `validation_steps`
+```python
+bs = 32
+```
+
+**5: Creando los datasets de entrenamiento, validación y pruebas**
+
+Como podemos apreciar, nuestra data de entrenamiento éxiste en el `train_generator` que a su vez se crea por el objeto 
+`train_datage` que definimos anteriormente, adicionalmente, usamos el método `flow_from_directory` para decirle que las imáquenes
+que va a aumentar provienen del directorio `data/train`, adicionalmente, le pedimos que re-escale todas las imágenes a una 
+resolución de (150x150) píxeles, y que ocupe el `batch_size` que definimos anteriormente como `bs`, finalmente, este directorio
+solo cuenta con 2 clases, es por ello que elegimos `class_mode` como `binary`.
+
+Puedes leer más del uso de `ImageDataGenerator` [aquí](https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image/ImageDataGenerator)
+
+```python
+train_generator = train_dategen.flow_from_directory(directory="data/train", target_size=(150, 150), batch_size=bs,
+                                                    class_mode="binary")
+
+validation_generator = test_datagen.flow_from_directory(directory="data/validation", target_size=(150, 150),
+                                                        batch_size=bs, class_mode="binary")
+
+test_generator = test_datagen.flow_from_directory(directory="data/test", target_size=(150, 150),
+                                                  batch_size=bs, class_mode="binary")
+```
+Respuesta esperada:
+```commandline
+Found 2000 images belonging to 2 classes.
+Found 1000 images belonging to 2 classes.
+Found 1000 images belonging to 2 classes.
+```
+Finalmente, podemos observar como los datasets de `validation` y `test` no tienen ninguna transformación a los datos más que
+la normalización de dividir entre 255.
 
 ## 7.2 Entrenamiento del modelo de clasificación de perros y gatos
 
+Antes de entrenar el modelo, es buena idea crear un callback de tipo `checkpoint` para siempre tener guardado el `best_model`
+
+```python
+checkpoint_cb = ModelCheckpoint("models/cats_vs_dogs.h5", verbose=1, save_best_only=True, monitor="val_acc")
+```
+
+**6: Creando y compilando el modelo**
+
+```python
+md = architecture(n_filters=32, input_shape=(150, 150, 3))
+md.compile(loss="binary_crossentropy", optimizer=Adam(), metrics=["acc"])
+```
+Respuesta esperada:
+```commandline
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, 148, 148, 32)      896       
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, 74, 74, 32)       0         
+ )                                                               
+                                                                 
+ conv2d_1 (Conv2D)           (None, 72, 72, 64)        18496     
+                                                                 
+ max_pooling2d_1 (MaxPooling  (None, 36, 36, 64)       0         
+ 2D)                                                             
+                                                                 
+ conv2d_2 (Conv2D)           (None, 34, 34, 128)       73856     
+                                                                 
+ max_pooling2d_2 (MaxPooling  (None, 17, 17, 128)      0         
+ 2D)                                                             
+                                                                 
+ conv2d_3 (Conv2D)           (None, 15, 15, 128)       147584    
+                                                                 
+ max_pooling2d_3 (MaxPooling  (None, 7, 7, 128)        0         
+ 2D)                                                             
+                                                                 
+ flatten (Flatten)           (None, 6272)              0         
+                                                                 
+ dropout (Dropout)           (None, 6272)              0         
+                                                                 
+ dense (Dense)               (None, 512)               3211776   
+                                                                 
+ dense_1 (Dense)             (None, 1)                 513       
+                                                                 
+=================================================================
+Total params: 3,453,121
+Trainable params: 3,453,121
+Non-trainable params: 0
+_________________________________________________________________
+```
+**7: Entrenamos el modelo**
+```python
+history = md.fit(train_generator, steps_per_epoch=2000//bs, epochs=100, validation_data=validation_generator,
+                 validation_steps=1000//bs, callbacks=[checkpoint_cb], batch_size=64)
+```
+Respuesta esperada:
+```commandline
+Epoch 1/100
+62/62 [==============================] - ETA: 0s - loss: 0.6966 - acc: 0.4939
+Epoch 1: val_acc improved from -inf to 0.50000, saving model to models/cats_vs_dogs.h5
+62/62 [==============================] - 7s 93ms/step - loss: 0.6966 - acc: 0.4939 - val_loss: 0.6931 - val_acc: 0.5000
+Epoch 2/100
+62/62 [==============================] - ETA: 0s - loss: 0.6921 - acc: 0.5229
+Epoch 2: val_acc improved from 0.50000 to 0.53226, saving model to models/cats_vs_dogs.h5
+...
+Epoch 99: val_acc did not improve from 0.81653
+62/62 [==============================] - 5s 88ms/step - loss: 0.3666 - acc: 0.8359 - val_loss: 0.4386 - val_acc: 0.8075
+Epoch 100/100
+62/62 [==============================] - ETA: 0s - loss: 0.3402 - acc: 0.8471
+Epoch 100: val_acc did not improve from 0.81653
+62/62 [==============================] - 5s 88ms/step - loss: 0.3402 - acc: 0.8471 - val_loss: 0.4600 - val_acc: 0.8075
+```
+
+**8: Análisis de resultados**
+
+```python
+plot_results(history, "acc", "primeros_resultados.png")
+
+best_model = load_model("models/cats_vs_dogs.h5")
+
+acc = best_model.evaluate(test_generator)
+print(acc)
+```
+![primeros_resultados.png](Competencia%20Kaggle%2Fimgs%2Fprimeros_resultados.png)
+
+```commandline
+32/32 [==============================] - 1s 22ms/step - loss: 0.4797 - acc: 0.7920
+[0.4797414541244507, 0.7919999957084656]
+```
+
+### Conclusiones:
+
+Podemos observar como con muy pocas líneas de código y poca optimización y teniendo un modelo simple e intuitivo hemos logrado
+obtener aproximadamente un 80% de precisión al momento de clasificar entre perros y gatos. Sin embargo, nuestras gráficas de
+resultados muestran un ligero overfitting, el cual podríamos mejorar con algunas técnicas de normalización que ya hemos visto 
+a lo largo del curso.
+
+Este pequeño proyecto nos ha permitido tener el conocimiento de como entrenar a nuestros modelos de CNNs directamente desde
+datasets de imágenes obtenidas y clasificadas directamente por nosotros, esto nos brida mucha libertad, puesto que en problemas
+anteriores siempre habíamos utilizado datasets ya existentes de keras, los cuales ya estaban relativamente limpios y listos para su uso.
+
+> Nota: sería interesante hacer un problema con más de 2 clases, para ver como cambia el uso de `flow_from_directory`
+> 
+> Nota 2: La documentación de keras contiene el siguiente ejemplo:
+>
+> class_mode: One of "categorical", "binary", "sparse",
+>                "input", or None. Default: "categorical".
+>
+>                Determines the type of label arrays that are returned:
+>                - "categorical" will be 2D one-hot encoded labels,
+>                - "binary" will be 1D binary labels,
+>                    "sparse" will be 1D integer labels,
+>                - "input" will be images identical
+>                    to input images (mainly used to work with autoencoders).
+>                - If None, no labels are returned
+>                  (the generator will only yield batches of image data,
+>                  which is useful to use with `model.predict_generator()`).
+>                  Please note that in case of class_mode None,
+>                  the data still needs to reside in a subdirectory
+>                  of `directory` for it to work correctly.
+>
 # 8. Cierre
 
 ## 8.1 Siguientes pasos
