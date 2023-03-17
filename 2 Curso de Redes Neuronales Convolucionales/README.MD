@@ -734,6 +734,9 @@ La cual nos permitirá comparar una imagen de entrada, seleccionar un kernel y o
 
 Creemos nuestro ejemplo de kernel horizontal y vertical, utilizando una imagen nuestra como base.
 
+> ## Nota:
+> El código completo lo puedes encontrar [aquí](Fundamentos%20de%20redes/kernel%20en%20acción/main.py)
+
 **1: importando bibliotecas**
 ```python
 import numpy as np
