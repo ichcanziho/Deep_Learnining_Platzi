@@ -233,7 +233,7 @@ la mayor cantidad de herramientas que nos permitan cargar y manipular datos de t
 cargan sus imágenes en nubes como AMAZON, GCP, AZURE, entre otras y luego estas son consumidas.
 
 > ## Nota:
-> El código de esta sección lo puedes encontrar [aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos/2%20Cómo%20cargar%20datasets%20json/main.py)
+> El código de esta sección lo puedes encontrar [aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos/2%20Cómo%20cargar%20datasets%20json/read_json.py)
 
 Vamos a descargar las bases de datos que ocuparemos para esta clase y la siguiente:
 
@@ -347,14 +347,176 @@ Aquí adicionalmente, añadimos a las listas `X`, `y` los valores decodificados 
     plt.savefig("test.png")
 ```
 Respuesta esperada:
+
 ![test.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Ftest.png)
 
 > ## Nota:
-> El código de esta sección lo puedes encontrar [aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos/2%20Cómo%20cargar%20datasets%20json/main.py)
+> El código de esta sección lo puedes encontrar [aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos/2%20Cómo%20cargar%20datasets%20json/read_json.py)
 
 
 
 ## 2.3 Cargar bases de datos CSV y BASE 64
+
+### Ejemplo de Base 64
+
+Primero entendamos qué es Base 64:
+
+Base64 es una forma de codificar datos binarios en caracteres ASCII para que puedan ser transmitidos a través de canales que no admiten datos binarios, como el correo electrónico o la web. En Base64, cada conjunto de tres bytes (24 bits) se convierte en una cadena de cuatro caracteres ASCII.
+
+Base64 se utiliza para enviar archivos adjuntos de correo electrónico, imágenes y otros tipos de datos a través de Internet. Por ejemplo, si tienes una imagen en formato binario, puedes convertirla en Base64 y luego enviarla en un correo electrónico como una cadena de texto. Cuando el destinatario recibe el correo electrónico, puede decodificar la cadena Base64 y obtener la imagen original.
+
+Base64 es útil en situaciones donde los datos binarios no pueden ser transmitidos directamente. Sin embargo, es importante tener en cuenta que la codificación Base64 aumenta el tamaño de los datos en aproximadamente un tercio. Además, Base64 no proporciona ningún tipo de encriptación o seguridad, por lo que no se debe utilizar como una forma de proteger datos sensibles.
+
+> ## Nota:
+> Por experiencia laboral Base64 también es un formato muy útil para enviar imágenes a ser procesadas por un API, tiene sentido
+> que esta codificación b64 sea utilizada en un endpoint para analizar dicha imagen.
+
+Ahora que ya entendemos un poco más acerca de Base 64, veamos un ejemplo de nuestra base de datos [data.json](2%20Manejo%20y%20preprocesamiento%20de%20datos%2Fdatasets%2Fsign_mnist_base64%2Fdata.json):
+
+```commandline
+{
+  "b": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAcABwBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/AOhS246VBdyJbqyDmbaGVSOuWxTUk3XckDKcGVkjI/2VBOf1qcwc9K00i4rnNbCLrcSPMkQKJ97PUNnHHtmrllEf7US3dSJIEklcEdd7DBHtjP5VrGLmrSpxWHewQnxNHNOBsAJOfYZpvh8zXup394xPkKBAg9SDk/lx+db5j5pCcICO+K47X7+cL5uRv2kZxXW6TaRWek20UIIBQOSepZhkk/iasMxDV//Z"
+}
+```
+
+Nuestro dataset, vuelve a ser un archivo en formato `json`, sin embargo, este es diferente al anterior, ahora en lugar de
+tener como valores de las llaves la dirección de la imagen y su label, ahora tenemos algo más `simplificado`, tenemos
+únicamente como llave la `label` de la imagen y como valor la propia imagen pero en formato `b64`.
+
+#### Ejemplo en código
+
+>## Nota:
+> El código de esta sección lo puedes encontrar [Aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Fread_b64.py)
+
+Cómo ejemplo escalable ocuparemos el siguiente dataset [data2.json](2%20Manejo%20y%20preprocesamiento%20de%20datos%2Fdatasets%2Fsign_mnist_base64%2Fdata2.json)
+
+Es básicamente el mismo que el anterior, pero tiene varios datos en lugar de uno solo:
+
+```commandline
+[
+{"b": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAcABwBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/AOhS246VBdyJbqyDmbaGVSOuWxTUk3XckDKcGVkjI/2VBOf1qcwc9K00i4rnNbCLrcSPMkQKJ97PUNnHHtmrllEf7US3dSJIEklcEdd7DBHtjP5VrGLmrSpxWHewQnxNHNOBsAJOfYZpvh8zXup394xPkKBAg9SDk/lx+db5j5pCcICO+K47X7+cL5uRv2kZxXW6TaRWek20UIIBQOSepZhkk/iasMxDV//Z"},
+{"b": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAcABwBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/AOhS246VBdyJbqyDmbaGVSOuWxTUk3XckDKcGVkjI/2VBOf1qcwc9K00i4rnNbCLrcSPMkQKJ97PUNnHHtmrllEf7US3dSJIEklcEdd7DBHtjP5VrGLmrSpxWHewQnxNHNOBsAJOfYZpvh8zXup394xPkKBAg9SDk/lx+db5j5pCcICO+K47X7+cL5uRv2kZxXW6TaRWek20UIIBQOSepZhkk/iasMxDV//Z"}
+]
+```
+
+**1: Importando bibliotecas necesarias**
+
+Vamos a utilizar OpenCv para acceder a un método muy útil `imdecode` que me permitirá junto con numpy convertir un texto
+en formato b64 a un numpy array
+```python
+from json import load
+import base64
+import matplotlib.pyplot as plt
+import numpy as np
+import cv2 as cv
+```
+
+**2: Creamos función auxiliar de conversión b64 a numpy.array**
+
+```python
+def b64_to_np(b_string: str):
+    jpg_original = base64.b64decode(b_string)
+    jpg_as_np = np.frombuffer(jpg_original, dtype=np.uint8)
+    image_buffer = cv.imdecode(jpg_as_np, flags=1)
+    return image_buffer
+```
+
+**3: Leemos el archivo** [data2.json](2%20Manejo%20y%20preprocesamiento%20de%20datos%2Fdatasets%2Fsign_mnist_base64%2Fdata2.json)
+
+```python
+    with open("../datasets/sign_mnist_base64/data2.json", "r", encoding="utf-8") as d:
+        data = load(d)
+```
+
+**4: Convertimos cada b64 en un numpy array**
+
+```python
+	X, y = [], []
+    for example in data:
+        for label, b_image in example.items():
+            print(label, "-", b_image)
+            img = b64_to_np(b_image)
+			X.append(img)
+            y.append(label)
+```
+Respuesta esperada
+```commandline
+b - /9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAcABwBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/AOhS246VBdyJbqyDmbaGVSOuWxTUk3XckDKcGVkjI/2VBOf1qcwc9K00i4rnNbCLrcSPMkQKJ97PUNnHHtmrllEf7US3dSJIEklcEdd7DBHtjP5VrGLmrSpxWHewQnxNHNOBsAJOfYZpvh8zXup394xPkKBAg9SDk/lx+db5j5pCcICO+K47X7+cL5uRv2kZxXW6TaRWek20UIIBQOSepZhkk/iasMxDV//Z
+```
+
+**5: graficamos para observar el resultado**
+
+```python
+ 	    plt.imshow(img, cmap="gray")
+            plt.title(f"label = {label}")
+            plt.xticks([])
+            plt.yticks([])
+            plt.savefig("test_b64.png")
+```
+Respuesta esperada:
+
+![test_b64.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Ftest_b64.png)
+
+### Ejemplo de CSV
+
+> ## Nota 
+> El código de esta sección lo puedes encontrar [aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Fread_csv.py)
+
+Antes de continuar con este tema te recomiendo repasar la clase de: [Consejos para el manejo de imágenes](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#31-consejos-para-el-manejo-de-im%C3%A1genes)
+Del curso anterior. Por si note queda muy claro el código presente en este ejemplo.
+
+Primero familiaricémonos con nuestros datos [sign_mnist_test.csv](2%20Manejo%20y%20preprocesamiento%20de%20datos%2Fdatasets%2Fsign_mnist_test%2Fsign_mnist_test.csv)
+
+**1: Conozcamos los datos**
+
+```python
+data = pd.read_csv("../datasets/sign_mnist_train/sign_mnist_train.csv")
+samples = len(data)
+print("samples:", samples)
+print(data)
+```
+Respuesta esperada:
+```commandline
+samples: 27455
+       label  pixel1  pixel2  pixel3  ...  pixel781  pixel782  pixel783  pixel784
+0          3     107     118     127  ...       206       204       203       202
+1          6     155     157     156  ...       175       103       135       149
+2          2     187     188     188  ...       198       195       194       195
+3          2     211     211     212  ...       225       222       229       163
+4         13     164     167     170  ...       157       163       164       179
+...      ...     ...     ...     ...  ...       ...       ...       ...       ...
+27450     13     189     189     190  ...       234       200       222       225
+27451     23     151     154     157  ...       195       195       195       194
+27452     18     174     174     174  ...       203       202       200       200
+27453     17     177     181     184  ...        47        64        87        93
+27454     23     179     180     180  ...       197       205       209       215
+
+[27455 rows x 785 columns]
+```
+Podemos observar que la primera columna contiene un `label encoding` de las clases. Mientras que las siguientes columnas
+son el `flatten` de la imagen (28x28) píxeles.
+
+**2. Separamos el dataset en `X` & `y`**
+
+```python
+	y = data["label"].values
+    X = data.drop('label', axis=1).values.reshape((samples, 28, 28))
+```
+En realidad es todo, pandas almacena los datos como numpy arrays, solo necesitamos acceder a ellos y hacerles un
+`reshape` indicándole que tenemos `n` imágenes correspondientes al valor de `samples` y que cada imagen es de (28x28)
+
+**3. Graficamos**
+```python
+ 	    plt.imshow(img, cmap="gray")
+            plt.title(f"label = {label}")
+            plt.xticks([])
+            plt.yticks([])
+            plt.savefig("test_csv.png")
+```
+Respuesta esperada:
+
+![test_csv.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Ftest_csv.png)
+
 
 
 ## 2.4 Preprocesamiento y limpieza de datos

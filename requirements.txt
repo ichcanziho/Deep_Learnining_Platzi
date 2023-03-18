@@ -58,3 +58,5 @@ typing_extensions==4.5.0
 urllib3==1.26.14
 Werkzeug==2.2.3
 wrapt==1.15.0
+
+opencv-python~=4.7.0.72
