@@ -196,6 +196,7 @@ Para implementar un Data Pipeline en Python, se pueden utilizar varias herramien
 
 - `TensorFlow:` es una librería de Python que se utiliza para el aprendizaje profundo. TensorFlow ofrece una gran cantidad de herramientas para el desarrollo de modelos de aprendizaje profundo.
 
+![1.png](imgs%2F2%2F1.png)
 
 ### Basura que entra basura que sale
 
