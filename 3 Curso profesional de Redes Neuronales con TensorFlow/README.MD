@@ -226,12 +226,136 @@ cualquier problema de ML o DL a continuación enlisto algunos consejos a tener e
 Si tienes algunas dudas con los puntos anteriormente mencionados, también te invito a que le eches un vistazo a mi repositorio
 de [introducción a machine learning con scikit-learn](https://github.com/ichcanziho/cursos_platzi/tree/master/machine_learning_scikit_learn)
 
-
-
-
 ## 2.2 Cómo cargar bases de datos JSON
 
+En este escenario vamos a utilizar el formato `json` que contiene `urls` almacenadas en la nube de `gcp`. Es importante conocer
+la mayor cantidad de herramientas que nos permitan cargar y manipular datos de todas las fuentes posibles. Muchas empresas
+cargan sus imágenes en nubes como AMAZON, GCP, AZURE, entre otras y luego estas son consumidas.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos/2%20Cómo%20cargar%20datasets%20json/main.py)
+
+Vamos a descargar las bases de datos que ocuparemos para esta clase y la siguiente:
+
+```bash
+cd 2\ Manejo\ y\ preprocesamiento\ de\ datos/
+mkdir datasets
+cd datasets
+wget --no-check-certificate https://storage.googleapis.com/platzi-tf2/sign-language-img.zip -O sign-language-img.zip --no-check-certificate https://storage.googleapis.com/platzi-tf2/databasesLoadData.zip     -O databasesLoadData.zip
+unzip databasesLoadData.zip
+rm databasesLoadData.zip
+```
+La respuesta esperada es la siguiente estructura de carpetas:
+```commandline
+datasets
+--------|sign_mnist_base64
+--------|----------------|data.json
+--------|sign_mnist_json
+--------|----------------|data.json
+--------|sign_mnist_test
+--------|----------------|sign_mnist_test.csv
+--------|sign_mnist_train
+--------|----------------|sing_mnist_train.csv
+--------|----------------|sing_mnist_train_clean.csv
+--------|----------------|sing_mnist_train_no_clean.csv
+pixeles.png
+```
+
+Analicemos brevemente el archivo [data.json](2%20Manejo%20y%20preprocesamiento%20de%20datos%2Fdatasets%2Fsign_mnist_json%2Fdata.json)
+
+```commandline
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/29_B.jpg","label":"b"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/30_B.jpg","label":"b"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/95_B.jpg","label":"b"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/58_A.jpg","label":"a"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/50_A.jpg","label":"a"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/46_A.jpg","label":"a"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/3_C.jpg","label":"c"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/32_C.jpg","label":"c"}
+{"content": "https://storage.googleapis.com/platzi-tf2/img_mnist/2_C.jpg","label":"c"}
+```
+Básicamente, es una secuencia de diccionarios, que tiene como llaves: `content` para mostrar el URL de la imagen y `label` el
+cual contiene la clasificación de dicha imagen. Observamos que como tal NO es el formato más `correcto` de json, puesto que
+para que puediera ser cargado por `json.load` el archivo debería indicar que es una lista con `[]` y cada elemento debería
+ir separado por `,`, entonces debemos leer este archivo de una forma ligeramente diferente.
+
+### Ejemplo en código:
+
+El flujo más simple de trabajo para este ejemplo es:
+1. Leer el archivo [data.json](2%20Manejo%20y%20preprocesamiento%20de%20datos%2Fdatasets%2Fsign_mnist_json%2Fdata.json)
+2. Para cada url de content:
+   1. hacer un request para recibir la imagen
+   2. transformar el response en un numpy array
+3. Mostrar un ejemplo de la imagen y el label recibido
+
+**1: Importamos bibliotecas necesarias**
+```python
+import requests
+from json import loads
+from io import BytesIO
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+```
+
+**2: Leemos el archivo data.json**
+
+Lo podemos leer como un texto plano, y por cada línea dentro del archivo decodificar dicha linea como json ocupando su método `loads`
+```python
+with open("../datasets/sign_mnist_json/data.json", "r", encoding='utf-8') as d:
+    data = [loads(line) for line in d.readlines()]
+```
+
+**3: Acceder a cada elemento dentro de `data`**
+
+Como ahora cada línea es un archivo json, puedo acceder al valor de sus llaves utilizando `get`
+```python
+X, y = [], []
+for example in data:
+    print(example)
+    url_image = example.get("content", 0)
+    label = example.get("label", 0)
+```
+Respuesta esperada:
+```commandline
+{'content': 'https://storage.googleapis.com/platzi-tf2/img_mnist/29_B.jpg', 'label': 'b'}
+```
+
+**4: Descargando cada imagen y convirtiéndola a un numpy array**
+
+```python
+# Petición al servidor
+    response = requests.get(url_image).content
+    print(type(response), response)
+    # transformado `bytes` en PIL image
+    pil_image = Image.open(BytesIO(response))
+    print(pil_image)
+    # transformando pil_image en un numpy array
+    img = np.asarray(pil_image).reshape(28, 28)
+    X.append(img)
+    y.append(label)
+```
+Aquí adicionalmente, añadimos a las listas `X`, `y` los valores decodificados de las imágenes y labels pertinentes.
+
+**5: Mostrando un ejemplo de imagen clasificada**
+
+```python
+    plt.imshow(img, cmap="gray")
+    plt.title(f"label = {label}")
+    plt.xticks([])
+    plt.yticks([])
+    plt.savefig("test.png")
+```
+Respuesta esperada:
+![test.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Ftest.png)
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos/2%20Cómo%20cargar%20datasets%20json/main.py)
+
+
+
 ## 2.3 Cargar bases de datos CSV y BASE 64
+
 
 ## 2.4 Preprocesamiento y limpieza de datos
 
@@ -287,3 +411,4 @@ de [introducción a machine learning con scikit-learn](https://github.com/ichcan
 
 ## 6.4 Siguientes pasos con deep learning
 
+![test.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Ftest.png)
