@@ -60,3 +60,4 @@ Werkzeug==2.2.3
 wrapt==1.15.0
 
 opencv-python~=4.7.0.72
+seaborn~=0.12.2

@@ -518,8 +518,203 @@ Respuesta esperada:
 ![test_csv.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Ftest_csv.png)
 
 
-
 ## 2.4 Preprocesamiento y limpieza de datos
+
+El preprocesamiento y la limpieza de datos son procesos fundamentales en el análisis de datos, en particular, cuando se trabaja con conjuntos de datos para machine learning. El preprocesamiento se refiere a la transformación de datos brutos en una forma que sea adecuada para el análisis y la modelización. La limpieza de datos es un paso específico del preprocesamiento que se enfoca en detectar y corregir errores en los datos.
+
+A continuación, se describen algunos de los procesos comunes de preprocesamiento y limpieza de datos:
+
+- `Eliminación de valores atípicos:` Los valores atípicos `outliers` son valores que se encuentran fuera del rango esperado de una distribución. Pueden ser causados por errores de medición o entrada de datos incorrecta. Los valores atípicos pueden distorsionar los resultados del análisis y por lo tanto, deben ser identificados y eliminados o corregidos si es posible.
+
+![2.png](imgs%2F2%2F2.png)
+
+- `Imputación de valores faltantes:` Los valores faltantes pueden ser causados por diversas razones, como errores de medición o problemas de entrada de datos. La imputación se refiere a la estimación de valores faltantes en el conjunto de datos utilizando técnicas como la media, la mediana, la moda, la regresión u otros modelos estadísticos.
+
+![3.png](imgs%2F2%2F3.png)
+
+- `Normalización y estandarización:` Normalización se refiere al proceso de escalar los valores de una variable para que tengan una escala común. La estandarización, por otro lado, es el proceso de transformar los datos para que tengan una media cero y una desviación estándar de uno. La normalización y la estandarización se utilizan para que las variables tengan escalas similares y para mejorar el rendimiento de los modelos de machine learning.
+
+![4.png](imgs%2F2%2F4.png)
+
+- `Eliminación de variables irrelevantes:` Las variables irrelevantes son aquellas que no contribuyen significativamente al análisis y por lo tanto, se pueden eliminar. Eliminar variables irrelevantes puede mejorar la precisión del análisis y reducir el tiempo de procesamiento.
+
+![5.png](imgs%2F2%2F5.png)
+
+- `Detección y eliminación de duplicados:` Los datos duplicados pueden ser causados por errores de entrada de datos o por la duplicación de registros. La detección y eliminación de duplicados se realiza para asegurar que los datos sean precisos y no estén sesgados.
+
+![6.png](imgs%2F2%2F6.png)
+
+## Otro problema común: El desequilibrio de clases.
+
+El desequilibrio de clases es un problema común en machine learning, donde una clase minoritaria tiene muy pocos ejemplos en comparación con una clase mayoritaria. Si no se aborda este problema adecuadamente, los modelos pueden tener dificultades para aprender patrones en la clase minoritaria y pueden estar sesgados hacia la clase mayoritaria. A continuación, se describen algunas formas comunes de abordar el problema de desequilibrio de clases en machine learning:
+
+- `Oversampling:` El oversampling implica aumentar el número de ejemplos de la clase minoritaria mediante la generación de nuevos ejemplos sintéticos. Las técnicas comunes de oversampling incluyen SMOTE (Synthetic Minority Over-sampling Technique) y ADASYN (Adaptive Synthetic Sampling).
+	![7.png](imgs%2F2%2F7.png)
+
+- `Undersampling:` El undersampling implica reducir el número de ejemplos de la clase mayoritaria. Las técnicas comunes de undersampling incluyen la eliminación aleatoria de ejemplos de la clase mayoritaria y la selección de un subconjunto de ejemplos de la clase mayoritaria basado en algún criterio específico.
+	![8.png](imgs%2F2%2F8.png)
+
+- `Métodos híbridos:` Los métodos híbridos combinan técnicas de oversampling y undersampling para lograr un equilibrio en el conjunto de datos. Un ejemplo común de un método híbrido es la combinación de oversampling de la clase minoritaria y undersampling de la clase mayoritaria.
+	![9.png](imgs%2F2%2F9.png)
+	
+- `Cambio de umbral:` El cambio de umbral implica ajustar el umbral de decisión de un clasificador para que favorezca la clasificación de la clase minoritaria. Por ejemplo, en lugar de clasificar una instancia como positiva solo si la probabilidad es mayor que 0,5, se puede cambiar el umbral para clasificar una instancia como positiva si la probabilidad es mayor que 0,3.
+
+- `Cost-sensitive learning:` El cost-sensitive learning implica asignar un costo diferente a los errores de clasificación para cada clase. Por ejemplo, se puede asignar un mayor costo a los errores de clasificación de la clase minoritaria para que el modelo se enfoque en la clasificación correcta de la clase minoritaria.
+
+
+
+### Ejemplo en código 
+
+> ## Nota
+> El código de este ejemplo lo puedes encontrar [Aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F4%20preprocesamiento%20y%20limpieza%2Fmain.py)
+
+Veamos de nuevo nuestro dataset csv de imágenes de lenguaje de señas: [sign_mnist_train_clean.csv](2%20Manejo%20y%20preprocesamiento%20de%20datos%2Fdatasets%2Fsign_mnist_train%2Fsign_mnist_train_clean.csv)
+
+Vamos a hacer un análisis de datos y limpieza del mismo:
+
+**1: Importando bibliotecas**
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
+```
+
+**2: Leyendo nuestro dataset**
+
+```python
+train = pd.read_csv("../datasets/sign_mnist_train/sign_mnist_train_clean.csv")
+print(train)
+```
+Respuesta esperada:
+```commandline
+       label pixel1 pixel2 pixel3  ... pixel781 pixel782 pixel783 pixel784
+0          3    107    118    127  ...      206      204      203      202
+1          6    155    157    156  ...      175      103      135      149
+2          2    187    188    188  ...      198      195      194      195
+3          2    211    211    212  ...      225      222      229      163
+4         13    164    167    170  ...      157      163      164      179
+...      ...    ...    ...    ...  ...      ...      ...      ...      ...
+27450     13    189    189    190  ...      234      200      222      225
+27451     23    151    154    157  ...      195      195      195      194
+27452     18    174    174    174  ...      203      202      200      200
+27453     17    177    181    184  ...       47       64       87       93
+27454     23    179    180    180  ...      197      205      209      215
+
+[27455 rows x 785 columns]
+```
+¿Cuántas clases tiene nuestro dataset?
+```python
+y = train[["label"]]
+n_clases = sorted(y["label"].unique())
+print(len(n_clases), n_clases)
+```
+Respuesta esperada:
+```commandline
+24 [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+```
+¿Cuál es la distribución de datos de nuestro dataset por clase?
+```python
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.countplot(y, x="label")
+ax.bar_label(ax.containers[0], rotation=45, label_type="edge", fmt=lambda x: '{:.1f}%'.format(x/len(train) * 100))
+plt.xlabel("Classes", size=15)
+plt.ylabel("Frequency", size=15)
+plt.title("Data distribution")
+plt.savefig("freq.png")
+```
+Respuesta esperada:
+
+![freq.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F4%20preprocesamiento%20y%20limpieza%2Ffreq.png)
+
+En general podemos observar que nuestro dataset NO cuenta con un desequilibrio de claes notorio.
+
+¿Qué tipo de dato tienen nuestras features?
+
+```python
+print(X.dtypes)
+```
+Respuesta esperada:
+```commandline
+pixel1      object
+pixel2      object
+pixel3      object
+pixel4      object
+pixel5      object
+             ...  
+pixel780    object
+pixel781    object
+pixel782    object
+pixel783    object
+pixel784    object
+Length: 784, dtype: object
+```
+Esto indica la presencia de datos de texto en nuestras columnas, lo cuál NO es bueno porque se supone que solamente
+estamos guardando variables numéricas.
+
+¿Tenemos datos faltantes?
+
+```python
+print(X.isnull().values.any())
+```
+Respuesta esperada
+```commandline
+False
+```
+No, no tenemos missing values.
+
+¿Existen datos duplicados?
+```python
+print(X[X.duplicated()])
+```
+Respuesta esperada:
+```commandline
+     pixel1  pixel2  pixel3  pixel4  ... pixel781 pixel782 pixel783 pixel784
+317       0       0       0       0  ...        0        0        0        0
+487       0       0       0       0  ...        0        0        0        0
+595       0       0       0       0  ...        0        0        0        0
+689       0       0       0       0  ...        0        0        0        0
+802  fwefew  fwefew  fwefew  fwefew  ...   fwefew   fwefew   fwefew   fwefew
+861  fwefew  fwefew  fwefew  fwefew  ...   fwefew   fwefew   fwefew   fwefew
+```
+Sí, sí tenemos.
+
+**3: Limpiando el dataset**
+
+```python
+X = X.drop([595, 689, 727, 802, 861], axis=0)
+X = X.astype(str).astype(int)
+X /= 255
+print(X.head())
+print(X.dtypes)
+```
+Respuesta esperada:
+```commandline
+     pixel1    pixel2    pixel3  ...  pixel782  pixel783  pixel784
+0  0.419608  0.462745  0.498039  ...  0.800000  0.796078  0.792157
+1  0.607843  0.615686  0.611765  ...  0.403922  0.529412  0.584314
+2  0.733333  0.737255  0.737255  ...  0.764706  0.760784  0.764706
+3  0.827451  0.827451  0.831373  ...  0.870588  0.898039  0.639216
+4  0.643137  0.654902  0.666667  ...  0.639216  0.643137  0.701961
+
+[5 rows x 784 columns]
+pixel1      float64
+pixel2      float64
+pixel3      float64
+pixel4      float64
+pixel5      float64
+             ...   
+pixel780    float64
+pixel781    float64
+pixel782    float64
+pixel783    float64
+pixel784    float64
+Length: 784, dtype: object
+
+Process finished with exit code 0
+```
+Perfecto, nuestros datos ya están normalizados y ahora todos son datos numéricos.
 
 ## 2.5 Keras datasets
 
