@@ -819,6 +819,115 @@ Respuesta esperada:
 
 Este tema será un repaso del tema visto en: [3: Creación de Image Data Generators](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#71-clasificando-entre-perros-y-gatos)
 
+Recordemos que el dataset de Lenguaje de señas MNIST ya lo habíamos descargado
+[Consiguiendo datos del proyecto](#consiguiendo-datos-del-proyecto-de-lenguaje-de-señas)
+
+Hay un total de 27,455 imágenes en escala de grises de tamaño 28 * 28 píxeles cuyo valor oscila entre 0-255. Cada caso representa una etiqueta (0-25) como un mapa uno a uno para cada letra alfabética A-Z (y ningún caso para 9 = J o 25 = Z debido a movimientos gestuales).
+
+Los datos se almacenan de forma ordenada y son compatibles para su uso con generadores de flujo de datos en la API de TensorFlow. Cada carpeta recibe un nombre de acuerdo con la clase de imágenes almacenadas en su interior, lo que facilita su carga y visualización.
+
+Las imágenes se almacenan en formato de archivo 'JPEG'.
+
+#### Ejemplo en código
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [Aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F6%20Dataset%20generators%2Fmain.py)
+
+**1: Importando bibliotecas**
+
+```python
+from keras.preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+import string
+```
+
+**2: Creando nuestros ImageDataGenerators**
+
+Para este punto de la clase NO hemos hablado de `Data Augmentation` cosa que si has tomado este repositorio completo entonces 
+ya debes conocer y entender. Ahora lo único que vamos a hacer es utilizar el `ImageDataGenerator` para normalizar las imágenes
+y esta clase nos permita generar un objeto con el método `frow_from_directory`
+
+> Nota: 
+> Algo interesante es que del test_dataget también vamos a construir el validation test, por haber definido el parámetro `validation_split`
+```python
+    train_dir = "../../data/Train"
+    test_dir = "../../data/Test"
+
+    train_datagen = ImageDataGenerator(rescale=1 / 255)
+    test_datagen = ImageDataGenerator(rescale=1 / 255, validation_split=0.2)
+```
+
+**3: Creamos nuestros generadores de imágenes, para los conjuntos de train, validation y test**
+
+```python
+train_generator = train_datagen.flow_from_directory(
+        train_dir,
+        target_size=(28, 28),
+        batch_size=128,
+        class_mode="categorical",
+        color_mode="grayscale",
+        subset="training"
+    )
+
+    validation_generator = test_datagen.flow_from_directory(
+        test_dir,
+        target_size=(28, 28),
+        batch_size=128,
+        class_mode="categorical",
+        color_mode="grayscale",
+        subset="validation"
+    )
+
+    test_generator = test_datagen.flow_from_directory(
+        test_dir,
+        target_size=(28, 28),
+        batch_size=128,
+        class_mode="categorical",
+        color_mode="grayscale"
+    )
+```
+Respuesta esperada:
+```commandline
+Found 27455 images belonging to 24 classes.
+Found 1425 images belonging to 24 classes.
+Found 7172 images belonging to 24 classes.
+```
+
+**4: Generando el nombre de las clases**
+
+Sabemos que las clases están en `label_encoding` entonces hace falta definir el nombre de las labels de la siguiente manera
+```python
+    classes = [char for char in string.ascii_uppercase if char not in ("J", "Z")]
+    print("Classes:", classes)
+```
+Respuesta esperada:
+```commandline
+Classes: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y']
+```
+
+**4: Muestra de entrenamiento**
+
+Definimos una función auxiliar para mostrar imágenes:
+```python
+def plot_images(images_arr, title):
+    fig, axes = plt.subplots(1, 5, figsize=(10, 10))
+    axes = axes.flatten()
+    for img, ax in zip(images_arr, axes):
+        ax.imshow(img[:, :, 0], cmap="gray")
+        ax.axis("off")
+    plt.tight_layout()
+    plt.savefig(f"{title}.png")
+```
+Generamos una muestra de 5 imágenes de nuestro `train_generator`
+
+```python
+    sample_training_images, _ = next(train_generator)
+    plot_images(sample_training_images[:5], "Train Example")
+```
+Respuesta esperada:
+
+![Train Example.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F6%20Dataset%20generators%2FTrain%20Example.png)
+
 
 ## 2.7 Aprende a buscar bases de datos para deep learning
 
