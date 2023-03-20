@@ -718,7 +718,107 @@ Perfecto, nuestros datos ya están normalizados y ahora todos son datos numéric
 
 ## 2.5 Keras datasets
 
+A lo largo de los cursos anteriores, hemos utilizado varios Datasets de Keras, entre los que pudimos utilizar se encuentra:
+
+- [MNIST digits classification dataset](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#14-tu-primer-red-neuronal-con-keras)
+- [CIFAR10 small image classsification dataset](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#5-resolviendo-un-problema-de-clasificaci%C3%B3n)
+- [IMDB movie review sentiment classification dataset](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#32-resolviendo-un-problema-de-clasificaci%C3%B3n-binaria)
+- [Fashion MNIST dataset, an alternative to MNIST](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#2-mi-primera-red-neuronal-convolucional)
+- [Boston Housing price regression dataset](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#39-resolviendo-un-problema-de-regresi%C3%B3n)
+
+Para esta clase, veremos el último dataset disponible en Keras y repasaremos rápidamente como cargarlos y utilizarlos.
+
+El dataset de repaso que veremos será: [CIFAR100 small images classification dataset](https://keras.io/api/datasets/cifar100/)
+una curiosidad de este dataset es que cuenta con 2 clasificaciones `fine` y `coarse` indicando si quieres clasificar por super clase o por clase. A continuación las siguientes clases disponibles:
+
+![10.png](imgs%2F2%2F10.png)
+
+|         **Superclass**         |                      **Classes**                      |
+|:------------------------------:|:-----------------------------------------------------:|
+|         aquatic mammals        |          beaver, dolphin, otter, seal, whale          |
+|              fish              |       aquarium fish, flatfish, ray, shark, trout      |
+|             flowers            |      orchids, poppies, roses, sunflowers, tulips      |
+|         food containers        |           bottles, bowls, cans, cups, plates          |
+|      fruit and vegetables      |    apples, mushrooms, oranges, pears, sweet peppers   |
+|  household electrical devices  | clock, computer keyboard, lamp, telephone, television |
+|       household furniture      |           bed, chair, couch, table, wardrobe          |
+|             insects            |     bee, beetle, butterfly, caterpillar, cockroach    |
+|        large carnivores        |            bear, leopard, lion, tiger, wolf           |
+|  large man-made outdoor things |        bridge, castle, house, road, skyscraper        |
+|  large natural outdoor scenes  |          cloud, forest, mountain, plain, sea          |
+| large omnivores and herbivores |     camel, cattle, chimpanzee, elephant, kangaroo     |
+|      medium-sized mammals      |         fox, porcupine, possum, raccoon, skunk        |
+|    non-insect invertebrates    |           crab, lobster, snail, spider, worm          |
+|             people             |              baby, boy, girl, man, woman              |
+|            reptiles            |       crocodile, dinosaur, lizard, snake, turtle      |
+|          small mammals         |        hamster, mouse, rabbit, shrew, squirrel        |
+|              trees             |             maple, oak, palm, pine, willow            |
+|           vehicles 1           |     bicycle, bus, motorcycle, pickup truck, train     |
+|           vehicles 2           |      lawn-mower, rocket, streetcar, tank, tractor     |
+
+
+#### Ejemplo en código:
+
+>## Nota:
+> El código de esta sección lo puedes encontrar [Aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F5%20Keras%20datasets%2Fmain.py)
+
+**1: Importando bibliotecas**
+
+```python
+from keras.datasets import cifar100
+import matplotlib.pyplot as plt
+import json
+```
+
+**2: Descargando el dataset**
+
+```python
+(x_train, y_train), (x_test, y_test) = cifar100.load_data(label_mode="fine")
+print(x_train.shape)
+print(y_train.shape)
+```
+Respuesta esperada:
+```commandline
+(50000, 32, 32, 3)
+(50000, 1)
+```
+
+**3: Obteniendo el nombre de las clases**
+
+Primero debemos descargar el nombre de las clases
+```commandline
+mkdir labels
+cd labels
+wget --no-check-certificate https://storage.googleapis.com/platzi-tf2/cifar100_labels.json \
+    -O cifar100_labels.json
+cd ..
+```
+Cargamos los nombres:
+```python
+with open("labels/cifar100_labels.json", "r") as fine_labels:
+    cifar100_labels = json.load(fine_labels)
+```
+
+**4: Inspeccionando el dataset**
+
+```python
+num_image = 40
+y = y_train[num_image][0]
+x = x_train[num_image]
+y_name = cifar100_labels[y]
+plt.imshow(x)
+title = f"Class: {y_name} - Id Class: {y}"
+plt.title(title)
+plt.savefig("fig.png")
+```
+Respuesta esperada:
+
+![fig.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F5%20Keras%20datasets%2Ffig.png)
+
 ## 2.6 Datasets generators
+
+Este tema será un repaso del tema visto en: [3: Creación de Image Data Generators](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#71-clasificando-entre-perros-y-gatos)
+
 
 ## 2.7 Aprende a buscar bases de datos para deep learning
 
@@ -768,4 +868,3 @@ Perfecto, nuestros datos ya están normalizados y ahora todos son datos numéric
 
 ## 6.4 Siguientes pasos con deep learning
 
-![test.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F2%20C%C3%B3mo%20cargar%20datasets%20json%2Ftest.png)
