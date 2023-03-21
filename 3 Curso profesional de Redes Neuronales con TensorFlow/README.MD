@@ -828,6 +828,34 @@ Los datos se almacenan de forma ordenada y son compatibles para su uso con gener
 
 Las imágenes se almacenan en formato de archivo 'JPEG'.
 
+Antes de continuar con el código de ejemplo, es necesario definir qué es un `generador` en python:
+
+### Generadores
+
+En Python, un generador es una función que produce una secuencia de valores, pero en lugar de crear y retornar una lista completa de valores de una sola vez, produce cada valor uno por uno, en respuesta a las solicitudes del código que lo llama.
+
+Los generadores son muy útiles cuando se trabaja con grandes conjuntos de datos o cuando se desea generar valores de manera eficiente en función de alguna lógica o algoritmo. En lugar de calcular todos los valores de la secuencia al mismo tiempo y almacenarlos en memoria, un generador calcula cada valor a medida que se solicita, lo que puede ahorrar tiempo y recursos.
+
+![11.png](imgs%2F2%2F11.png)
+
+Para crear un generador en Python, se utiliza la sentencia "yield" en lugar de "return". Cuando el generador se llama, devuelve un objeto de generador, que se puede iterar para obtener cada valor de la secuencia. Cada vez que se solicita el siguiente valor, la función continúa desde donde se detuvo en la última llamada, en lugar de comenzar desde el principio.
+
+Por ejemplo, el siguiente código define una función generadora que produce los números impares menores que un número dado:
+
+```python
+def impares(n):
+    i = 1
+    while i < n:
+        yield i
+        i += 2
+```
+Para usar esta función generadora y obtener los números impares menores que 10, se puede hacer lo siguiente:
+
+```python
+for num in impares(10):
+    print(num)
+```
+
 #### Ejemplo en código
 
 > ## Nota:
