@@ -1190,6 +1190,22 @@ Respuesta esperada:
 ```
 ![base_results.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F7%20Crear%20la%20red%2Fbase_results.png)
 
+Para resumir, la estructura en código de este ejercicio fue:
+
+```python
+    classes, batch_size, train_generator, validation_generator, test_generator = get_data()
+
+    base_model = base_architecture(input_shape=(28, 28, 1), n_clases=len(classes))
+
+    base_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+
+    history = base_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128)
+
+    plot_results(history, "accuracy", "base_results.png")
+
+    results = base_model.evaluate(test_generator)
+```
+
 Para este momento hemos conseguido un `accuracy` del `76.5%` del modelo, sin embargo, nuestras gráficas de perdida y accuracy
 muestran como el desempeño en el conjunto de validación es bastante inferior al obtenido en entrenamiento, esto refleja un 
 claro caso de overfitting. Nuestro modelo debe ser optimizado para mejorar los resultados de validación y con ello mejorar
@@ -1202,9 +1218,221 @@ los resultados de testing. En próximas clases iremos mejorando estos resultados
 
 # 3 Optimización de precisión de modelos
 
+A lo largo de esta sección estaremos hablando de los siguientes temas:
+
+1. Underfitting y Overfitting
+2. Recomendaciones para ajustar mi modelo
+3. Métricas para medir eficacia: Callbacks
+4. Monitoreo del entrenamiento de modelos con early stopping
+5. Autotunning con Keras
+
+
 ## 3.1 Métodos de regularización: overfitting y underfitting
 
+Antes de leer el resumen de esta sección te recomiendo visitar el siguiente enlace a [Regularizadores en deep learning](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#34-regularizaci%C3%B3n---dropout)
+Del repositorio: [Fundamentos de deep learning](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#curso-de-fundamentos-de-redes-neuronales-con-python-y-keras)
+
+A continuación un pequeño resumen para refrescar nuestros conocimientos de Regularizadores:
+
+Los métodos de regularización son técnicas utilizadas en deep learning para prevenir el sobreajuste (overfitting) del modelo, es decir, cuando el modelo se ajusta demasiado bien a los datos de entrenamiento, lo que puede afectar su capacidad de generalización a nuevos datos.
+
+Aquí hay algunos métodos de regularización comunes en deep learning:
+
+- `Regularización L1 y L2:` La regularización L1 y L2 añaden un término de penalización a la función de pérdida del modelo. L1 penaliza la suma de los valores absolutos de los pesos, mientras que L2 penaliza la suma de los cuadrados de los pesos. Estos métodos reducen la magnitud de los pesos, lo que puede reducir la complejidad del modelo y prevenir el sobreajuste.
+	> Nota: L1 es utilizado para datos de entrada irrelevantes, L2 es para datos de entrada correlacionados entre ellos y existe ElasticNet que es L1 + L2 que se usa cuando hay un gran número de atributos
+
+- `Dropout:` El dropout es una técnica que consiste en apagar de manera aleatoria algunas neuronas durante el entrenamiento. Esto hace que el modelo sea menos dependiente de un subconjunto particular de neuronas, lo que puede reducir el sobreajuste.
+
+- `Data Augmentation:` La data augmentation es una técnica que implica aumentar artificialmente la cantidad de datos de entrenamiento mediante la aplicación de transformaciones como rotaciones, zooms, desplazamientos, etc. Esto puede ayudar a prevenir el sobreajuste al proporcionar al modelo más variabilidad en los datos de entrenamiento.
+
+- `Early stopping:` El early stopping es una técnica que se utiliza para evitar el sobreajuste al detener el entrenamiento antes de que el modelo alcance su convergencia. El modelo se detiene cuando la función de pérdida en el conjunto de validación comienza a aumentar, lo que indica que el modelo está comenzando a sobreajustar.
+
+- `Batch Normalization:` La normalización de batch es una técnica que normaliza las activaciones de cada capa del modelo. Esto ayuda a reducir la covariación de las activaciones y permite que el modelo se ajuste más fácilmente a los datos de entrenamiento.
+
+#### Ejemplo en código:
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [Aquí](3%20Optimizaci%C3%B3n%20del%20modelo%2F1%20M%C3%A9todos%20de%20regularizaci%C3%B3n%2Fmain.py)
+
+La estructura de código de esta clase se mantiene igual a la de la clase anterior, el único cambio relevante es el cambio
+de la arquitectura base del modelo por una regularizada:
+
+```python
+def base_architecture_w_regularizes(input_shape, n_clases):
+    model = Sequential()
+    model.add(Flatten(input_shape=input_shape))
+    model.add(Dense(256, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(128, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(n_clases, activation="softmax"))
+    print(model.summary())
+    return model
+```
+Respuesta esperada:
+```python
+
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ flatten (Flatten)           (None, 784)               0         
+                                                                 
+ dense (Dense)               (None, 256)               200960    
+                                                                 
+ dropout (Dropout)           (None, 256)               0         
+                                                                 
+ dense_1 (Dense)             (None, 128)               32896     
+                                                                 
+ dropout_1 (Dropout)         (None, 128)               0         
+                                                                 
+ dense_2 (Dense)             (None, 24)                3096      
+                                                                 
+=================================================================
+Total params: 236,952
+Trainable params: 236,952
+Non-trainable params: 0
+_________________________________________________________________
+```
+
+Ejecutamos el código principal:
+```python
+    classes, batch_size, train_generator, validation_generator, test_generator = get_data()
+
+    regularized_model = base_architecture_w_regularizes(input_shape=(28, 28, 1), n_clases=len(classes))
+
+    regularized_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+
+    history = regularized_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128)
+
+    plot_results(history, "accuracy", "regularized_results.png")
+
+    results = regularized_model.evaluate(test_generator)
+```
+Respuesta esperada:
+```commandline
+57/57 [==============================] - 1s 16ms/step - loss: 0.7687 - accuracy: 0.7835
+```
+![regularized_results.png](3%20Optimizaci%C3%B3n%20del%20modelo%2F1%20M%C3%A9todos%20de%20regularizaci%C3%B3n%2Fregularized_results.png)
+
+En este caso podemos observar como con unas simples líneas hemos podido reducir el overfitting presente en la versión base de nuestro modelo,
+sin embargo, aún estamos lejos de que los resultados de validación sean tan exitosos como los resultados de entrenamiento.
+
 ## 3.2 Recomendaciones prácticas para ajustar un modelo
+
+Cuando nos enfrentamos a un nuevo problema de Deep Learning es buena idea tener en cuantas los siguientes consejos:
+
+- Preprocesamiento
+  - Buscar datos null
+  - Archivos corruptos
+  - Balancea tu base de datos
+  - Aplicar normalización
+  - Visualiza la base de datos
+  - Entiende los datos
+- Recomendaciones de valores
+  - Convoluciones (3x3)
+  - Pooling (2x2)
+  - Flatten (imágenes)
+  - Neuronas (64, 128, 256, 512)
+  - Learning Rate (0.001) ADAM
+  - L1_L2 (1e-5)
+  - Dropout (0.2)
+- Recomendaciones para regularizadores
+  - L1, L2, L1+l2
+  - Agregar más datos
+  - Data augmentation
+  - Dropout
+  - Early stopping
+  - Callbacks
+- Recomendaciones de funciones de activación
+  - MultiClass: Softmax
+  - Binary: Sigmoidal
+  - Regression: linear function
+  - Predicciones mayor que 0: ReLU
+- Recomendaciones de configuración de red
+  - Aplicar capas convolucionales y poolings
+  - Almacena el modelo en cada epoch
+- Recomendaciones de la red
+  - Más capas no significa necesariamente una mejor red
+  - La solución NO siempre es redes neuronales
+  - Aliado del aprendizaje por transferencia
+
+En esta clase cambiaremos ligeramente nuestra arquitectura de la clase anterior para utilizar capas Convolucionales y ver
+la mejora en nuestro accuracy general.
+
+#### Ejemplo en código:
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [Aquí](3%20Optimizaci%C3%B3n%20del%20modelo%2F2%20CNN%20base%2Fmain.py)
+
+Para este momento del curso ya deberías estar familiarizado con CNNs, si tienes dudas del siguiente código visita el repositorio anterior.
+[Curso de Redes Neuronales Convolucionales](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales)
+
+```python
+def conv_architecture(input_shape, n_clases):
+    model = Sequential()
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Flatten())
+    model.add(Dense(256, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(128, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(n_clases, activation="softmax"))
+    print(model.summary())
+    return model
+```
+Respuesta esperada:
+```commandline
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, 26, 26, 128)       1280      
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, 13, 13, 128)      0         
+ )                                                               
+                                                                 
+ flatten (Flatten)           (None, 21632)             0         
+                                                                 
+ dense (Dense)               (None, 256)               5538048   
+                                                                 
+ dropout (Dropout)           (None, 256)               0         
+                                                                 
+ dense_1 (Dense)             (None, 128)               32896     
+                                                                 
+ dropout_1 (Dropout)         (None, 128)               0         
+                                                                 
+ dense_2 (Dense)             (None, 24)                3096      
+                                                                 
+=================================================================
+Total params: 5,575,320
+Trainable params: 5,575,320
+Non-trainable params: 0
+_________________________________________________________________
+```
+Ejecutamos el código principal:
+
+```python
+    classes, batch_size, train_generator, validation_generator, test_generator = get_data()
+
+    conv_model = conv_architecture(input_shape=(28, 28, 1), n_clases=len(classes))
+
+    conv_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+
+    history = conv_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128)
+
+    plot_results(history, "accuracy", "conv_results.png")
+
+    results = conv_model.evaluate(test_generator)
+```
+Respuesta esperada:
+
+```commandline
+57/57 [==============================] - 1s 11ms/step - loss: 0.7347 - accuracy: 0.8572
+```
+![conv_results.png](3%20Optimizaci%C3%B3n%20del%20modelo%2F2%20CNN%20base%2Fconv_results.png)
+
 
 ## 3.3 Métricas para medir la eficiencia de un modelo: Callback
 
