@@ -1564,6 +1564,127 @@ nuestra propuesta de EarlyStop basada en el `val_accuracy`.
 
 ## 3.4 Monitoreo del entrenamiento en tiempo real: early stopping y patience
 
+En esta clase veremos un el `callback` de `EarlyStopping` del cual ya hemos tenido una clase en [early stopping y checkpoints](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#63-callbacks-early-stopping-y-checkpoints) 
+
+Este es solamente un breve repaso:
+
+> ## Nota:
+> El código completo lo puedes encontrar [Aquí](3%20Optimizaci%C3%B3n%20del%20modelo%2F4%20Early%20stopping%2Fmain.py)
+
+Recordemos que:
+
+- `monitor:` Es la variable a la cuál vamos a estar monitoreando para detener el proceso de aprendizaje
+- `patience:` Es la cantidad de épocas que vamos a esperar a que un resultado mejore (en caso de ACC) o decremente (en caso de LOSS)
+- `mode:` Puede ser: `auto, min, max` dependiendo de si el monitor es acc o loss, por ejemplo si fuera loss entonces el modo debe ser min.
+
+
+```python
+from keras.callbacks import EarlyStopping
+
+callback = EarlyStopping(monitor="val_accuracy", patience=3, mode="auto")
+
+history = conv_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128,
+                         callbacks=[callback])
+```
+Respuesta esperada:
+
+```commandline
+Epoch 1/20
+215/215 [==============================] - 4s 10ms/step - loss: 1.6012 - accuracy: 0.5136 - val_loss: 0.7442 - val_accuracy: 0.7516
+Epoch 2/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.3211 - accuracy: 0.9085 - val_loss: 0.5699 - val_accuracy: 0.8470
+Epoch 3/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.1211 - accuracy: 0.9756 - val_loss: 0.5369 - val_accuracy: 0.8568
+Epoch 4/20
+215/215 [==============================] - 2s 9ms/step - loss: 0.0758 - accuracy: 0.9884 - val_loss: 0.6879 - val_accuracy: 0.8386
+Epoch 5/20
+215/215 [==============================] - 2s 9ms/step - loss: 0.0575 - accuracy: 0.9932 - val_loss: 0.6424 - val_accuracy: 0.8484
+Epoch 6/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0521 - accuracy: 0.9937 - val_loss: 0.7010 - val_accuracy: 0.8344
+```
+El mejor histórico lo alcanzo en la época 3 con un `val_accuracy` de 0.8568 y como durante 3 épocas NO mejoro este resultado, entonces
+automáticamente detuvo el proceso de entrenamiento.
+
+
+**PLUS: guardando el modelo con checkpoints**
+
+Crearemos otro `callback` para guardar el modelo cada que encuentre una época que optimice el parámetro de accuracy.
+Lo guardaremos en la carpeta `models` con el nombre de: `best_model.h5`.
+
+```python
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+callback = EarlyStopping(monitor="val_accuracy", patience=3, mode="auto")
+    
+checkpoint = ModelCheckpoint(filepath="models/best_model.h5", save_best_only=True, save_weights_only=False, 
+							 mode="auto", verbose=1, monitor="val_accuracy")
+
+history = conv_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128,
+						 callbacks=[callback, checkpoint])
+```
+Respuesta esperada:
+```commandline
+Epoch 1/20
+213/215 [============================>.] - ETA: 0s - loss: 1.5060 - accuracy: 0.5490
+Epoch 1: val_accuracy improved from -inf to 0.78667, saving model to models/best_model.h5
+215/215 [==============================] - 4s 11ms/step - loss: 1.4962 - accuracy: 0.5520 - val_loss: 0.6782 - val_accuracy: 0.7867
+Epoch 2/20
+211/215 [============================>.] - ETA: 0s - loss: 0.2680 - accuracy: 0.9291
+Epoch 2: val_accuracy improved from 0.78667 to 0.84561, saving model to models/best_model.h5
+215/215 [==============================] - 2s 10ms/step - loss: 0.2658 - accuracy: 0.9299 - val_loss: 0.5747 - val_accuracy: 0.8456
+Epoch 3/20
+211/215 [============================>.] - ETA: 0s - loss: 0.1038 - accuracy: 0.9800
+Epoch 3: val_accuracy improved from 0.84561 to 0.85965, saving model to models/best_model.h5
+215/215 [==============================] - 2s 10ms/step - loss: 0.1034 - accuracy: 0.9801 - val_loss: 0.5672 - val_accuracy: 0.8596
+Epoch 4/20
+211/215 [============================>.] - ETA: 0s - loss: 0.0667 - accuracy: 0.9913
+Epoch 4: val_accuracy did not improve from 0.85965
+215/215 [==============================] - 2s 10ms/step - loss: 0.0665 - accuracy: 0.9914 - val_loss: 0.6343 - val_accuracy: 0.8491
+Epoch 5/20
+210/215 [============================>.] - ETA: 0s - loss: 0.0542 - accuracy: 0.9947
+Epoch 5: val_accuracy did not improve from 0.85965
+215/215 [==============================] - 2s 10ms/step - loss: 0.0540 - accuracy: 0.9948 - val_loss: 0.6946 - val_accuracy: 0.8414
+Epoch 6/20
+212/215 [============================>.] - ETA: 0s - loss: 0.0473 - accuracy: 0.9957
+Epoch 6: val_accuracy improved from 0.85965 to 0.86456, saving model to models/best_model.h5
+215/215 [==============================] - 2s 10ms/step - loss: 0.0473 - accuracy: 0.9957 - val_loss: 0.6618 - val_accuracy: 0.8646
+Epoch 7/20
+211/215 [============================>.] - ETA: 0s - loss: 0.0440 - accuracy: 0.9963
+Epoch 7: val_accuracy did not improve from 0.86456
+215/215 [==============================] - 2s 10ms/step - loss: 0.0440 - accuracy: 0.9962 - val_loss: 0.6135 - val_accuracy: 0.8632
+Epoch 8/20
+215/215 [==============================] - ETA: 0s - loss: 0.0404 - accuracy: 0.9970
+Epoch 8: val_accuracy did not improve from 0.86456
+215/215 [==============================] - 2s 10ms/step - loss: 0.0404 - accuracy: 0.9970 - val_loss: 0.6987 - val_accuracy: 0.8618
+Epoch 9/20
+210/215 [============================>.] - ETA: 0s - loss: 0.0391 - accuracy: 0.9969
+Epoch 9: val_accuracy improved from 0.86456 to 0.86526, saving model to models/best_model.h5
+215/215 [==============================] - 2s 10ms/step - loss: 0.0392 - accuracy: 0.9969 - val_loss: 0.6518 - val_accuracy: 0.8653
+Epoch 10/20
+210/215 [============================>.] - ETA: 0s - loss: 0.0375 - accuracy: 0.9975
+Epoch 10: val_accuracy improved from 0.86526 to 0.86947, saving model to models/best_model.h5
+215/215 [==============================] - 2s 10ms/step - loss: 0.0373 - accuracy: 0.9976 - val_loss: 0.7292 - val_accuracy: 0.8695
+Epoch 11/20
+210/215 [============================>.] - ETA: 0s - loss: 0.0371 - accuracy: 0.9974
+Epoch 11: val_accuracy did not improve from 0.86947
+215/215 [==============================] - 2s 10ms/step - loss: 0.0370 - accuracy: 0.9974 - val_loss: 0.7306 - val_accuracy: 0.8632
+Epoch 12/20
+210/215 [============================>.] - ETA: 0s - loss: 0.0338 - accuracy: 0.9982
+Epoch 12: val_accuracy did not improve from 0.86947
+215/215 [==============================] - 2s 10ms/step - loss: 0.0339 - accuracy: 0.9982 - val_loss: 0.7325 - val_accuracy: 0.8421
+Epoch 13/20
+210/215 [============================>.] - ETA: 0s - loss: 0.0370 - accuracy: 0.9969
+Epoch 13: val_accuracy did not improve from 0.86947
+215/215 [==============================] - 2s 10ms/step - loss: 0.0370 - accuracy: 0.9969 - val_loss: 0.9151 - val_accuracy: 0.8428
+57/57 [==============================] - 1s 9ms/step - loss: 0.8228 - accuracy: 0.8509
+
+Process finished with exit code 0
+
+```
+
+![conv_results_early.png](3%20Optimizaci%C3%B3n%20del%20modelo%2F4%20Early%20stopping%2Fconv_results_early.png)
+
+En este momento hemos guardado un modelo funcional que ha logrado obtener `0.8509` en el test set.
+
 ## 3.5 kerasTuner: Construyendo el modelo
 
 ## 3.6 KerasTuner: Buscando la mejor configuración para tu modelo
