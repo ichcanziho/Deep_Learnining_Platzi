@@ -1010,6 +1010,196 @@ La distribución de las particiones de los datasets en deep learning puede varia
 
 ## 2.9 Crear la red neuronal, definir capas, compilar, entrenar, evaluar y predicciones
 
+> ## Nota:
+> El código completo lo puedes encontrar [Aquí](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F7%20Crear%20la%20red%2Fmain.py)
+
+Este será nuestra primera aproximación a resolver el problema de clasificación y de lenguaje de señas. Pero antes de continuar
+vamos a utilizar un par de funciones que ya hemos manejado en cursos anteriores.
+
+Primero: utilizaremos nuestra muy querida función `plot_results` que hemos usado en los cursos anteriores de `deep learning`
+
+```python
+def plot_results(history_, metric, fname):
+    history_dict = history_.history
+    loss_values = history_dict['loss']
+    val_loss_values = history_dict['val_loss']
+    metric_values = history_dict[metric]
+    val_metric_values = history_dict[f"val_{metric}"]
+    epoch = range(1, len(loss_values) + 1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 5))
+    fig.suptitle("Neural Network's Result")
+    ax1.set_title("Loss function over epoch")
+    ax2.set_title(f"{metric} over epoch")
+    ax1.set(ylabel="loss", xlabel="epochs")
+    ax2.set(ylabel=metric, xlabel="epochs")
+    ax1.plot(epoch, loss_values, 'go-', label='training')
+    ax1.plot(epoch, val_loss_values, 'ro-', label='validation')
+    ax2.plot(epoch, metric_values, 'go-', label='training')
+    ax2.plot(epoch, val_metric_values, 'ro-', label='validation')
+    ax1.legend()
+    ax2.legend()
+    plt.savefig(f"{fname}")
+    plt.close()
+```
+
+Para efectos de continuidad, vamos a definir una función `get_data()` con todo lo aprendido en la clase [Dataset generators](#26-datasets-generators)
+
+```python
+def get_data():
+    train_dir = "../../data/Train"
+    test_dir = "../../data/Test"
+
+    _bs = 128
+
+    train_datagen = ImageDataGenerator(rescale=1 / 255)
+    test_datagen = ImageDataGenerator(rescale=1 / 255, validation_split=0.2)
+
+    _train_generator = train_datagen.flow_from_directory(
+        train_dir,
+        target_size=(28, 28),
+        batch_size=_bs,
+        class_mode="categorical",
+        color_mode="grayscale",
+        subset="training"
+    )
+
+    _validation_generator = test_datagen.flow_from_directory(
+        test_dir,
+        target_size=(28, 28),
+        batch_size=_bs,
+        class_mode="categorical",
+        color_mode="grayscale",
+        subset="validation"
+    )
+
+    _test_generator = test_datagen.flow_from_directory(
+        test_dir,
+        target_size=(28, 28),
+        batch_size=_bs,
+        class_mode="categorical",
+        color_mode="grayscale"
+    )
+
+    _classes = [char for char in string.ascii_uppercase if char not in ("J", "Z")]
+
+    return _classes, _bs, _train_generator, _validation_generator, _test_generator
+```
+
+Ahora continuemos con la clase actual.
+
+Los pasos a seguir para esta clase serán los siguientes:
+
+1. Cargar las particiones de datos
+2. Crear la arquitectura base del modelo
+3. Compilar el modelo
+4. Entrenar el modelo
+5. Mostrar resultados
+
+**1: Cargar las particiones de datos**
+```python
+    classes, batch_size, train_generator, validation_generator, test_generator = get_data()
+```
+Respuesta esperada:
+```commandline
+Found 27455 images belonging to 24 classes.
+Found 1425 images belonging to 24 classes.
+Found 7172 images belonging to 24 classes.
+```
+
+**2: Crear la arquitectura base del modelo**
+
+Creamos una función auxiliar:
+```python
+def base_architecture(input_shape, n_clases):
+    model = Sequential()
+    model.add(Flatten(input_shape=input_shape))
+    model.add(Dense(256, activation="relu"))
+    model.add(Dense(128, activation="relu"))
+    model.add(Dense(n_clases, activation="softmax"))
+    print(model.summary())
+    return model
+```
+
+Llamamos a nuestra función auxiliar en nuestro ciclo principal.
+
+```python
+    base_model = base_architecture(input_shape=(28, 28, 1), n_clases=len(classes))
+```
+Respuesta esperada:
+```commandline
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ flatten (Flatten)           (None, 784)               0         
+                                                                 
+ dense (Dense)               (None, 256)               200960    
+                                                                 
+ dense_1 (Dense)             (None, 128)               32896     
+                                                                 
+ dense_2 (Dense)             (None, 24)                3096      
+                                                                 
+=================================================================
+Total params: 236,952
+Trainable params: 236,952
+Non-trainable params: 0
+```
+**3: Compilamos el modelo**
+
+```python
+    base_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+```
+Recordemos que como es un problema de clasificación multiple nuestra perdida debe ser:
+`categorical_crossentropy` y la última capa de clasificación del modelo tendrá 24 neuronas una por cada clase disponible 
+y a su vez esto nos hace necesitar usar `softmax` como función de activación.
+
+
+**4: Entrenamos el modelo**
+
+```python
+    history = base_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128)
+```
+Respuesta esperada:
+```commandline
+Epoch 1/20
+215/215 [==============================] - 3s 10ms/step - loss: 2.1329 - accuracy: 0.3710 - val_loss: 1.6110 - val_accuracy: 0.4821
+Epoch 2/20
+215/215 [==============================] - 2s 10ms/step - loss: 1.2105 - accuracy: 0.6255 - val_loss: 1.3437 - val_accuracy: 0.5923
+Epoch 3/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.8712 - accuracy: 0.7350 - val_loss: 1.1443 - val_accuracy: 0.6421
+Epoch 4/20
+...
+Epoch 18/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0271 - accuracy: 0.9955 - val_loss: 1.2362 - val_accuracy: 0.7474
+Epoch 19/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.1214 - accuracy: 0.9633 - val_loss: 1.3080 - val_accuracy: 0.7011
+Epoch 20/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0210 - accuracy: 0.9970 - val_loss: 1.2360 - val_accuracy: 0.7607
+```
+
+**5: Análisis de resultados**
+
+```python
+  plot_results(history, "accuracy", "base_results.png")
+
+  results = base_model.evaluate(test_generator)
+```
+Respuesta esperada:
+```commandline
+57/57 [==============================] - 1s 9ms/step - loss: 1.1455 - accuracy: 0.7655
+```
+![base_results.png](2%20Manejo%20y%20preprocesamiento%20de%20datos%2F7%20Crear%20la%20red%2Fbase_results.png)
+
+Para este momento hemos conseguido un `accuracy` del `76.5%` del modelo, sin embargo, nuestras gráficas de perdida y accuracy
+muestran como el desempeño en el conjunto de validación es bastante inferior al obtenido en entrenamiento, esto refleja un 
+claro caso de overfitting. Nuestro modelo debe ser optimizado para mejorar los resultados de validación y con ello mejorar
+los resultados de testing. En próximas clases iremos mejorando estos resultados. Las propuestas de mejora son:
+
+1. Usar regularizadores
+2. Cambiar arquitectura de la red por una CNN
+3. Usar DataAugmentation
+4. Usar transfer learning
+
 # 3 Optimización de precisión de modelos
 
 ## 3.1 Métodos de regularización: overfitting y underfitting
