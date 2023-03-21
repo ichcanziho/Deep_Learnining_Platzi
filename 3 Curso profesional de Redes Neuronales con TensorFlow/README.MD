@@ -959,7 +959,54 @@ Respuesta esperada:
 
 ## 2.7 Aprende a buscar bases de datos para deep learning
 
+Deep Learning NO es solamente código. Como ya hemos mencionado anteriormente, es sumamente importante contar con una base de
+datos de calidad para asegurar que un proyecto tenga éxito. Sin embargo, no existen el 100% de bases de datos para el 100% de
+nuestros problemas. Si estamos lidiando con un problema muy específico o de un nicho muy concreto como puede ser clasificar
+un tipo de planta que solamente crece en nuestro jardin es 100% probable que nadie haya compartido un dataset público de los tipos
+de planta que crecen en nuestra casa.
+
+A pesar de ello, existen diferentes plataformas donde podemos encontrar una gran variedad de datasets que podemos usar para
+nuestros proyectos de machine learning y deep learning. Entre algunas páginas donde puedes encontrar bases de datos podemos nombrar:
+
+- Páginas de datos públicos de tu pais. En México es: [datos.gob.mx](https://datos.gob.mx/)
+- Kaggle 
+- Dataset Search
+- Data.world (tiene costo)
+- GitHub [Awesome public datasets](https://github.com/awesomedata/awesome-public-datasets)
+
 ## 2.8 Cómo distribuir los datos
+
+Antes de continuar, te recomiendo darte una vuelta por mi repositorio de [Machine Learning con Python y Scikit-learn](https://github.com/ichcanziho/cursos_platzi/tree/master/machine_learning_scikit_learn)
+
+Especialmente al siguiente tema: [Optimización Paramétrica](https://github.com/ichcanziho/cursos_platzi/tree/master/machine_learning_scikit_learn#7-optimizaci%C3%B3n-param%C3%A9trica)
+
+Sin embargo, a continuación te brindo un poco de información por si no tienes muy claro como dividir nuestros datasets.
+
+La distribución de las particiones de los datasets en deep learning puede variar según el enfoque específico utilizado, pero aquí te presento algunas formas comunes en que se dividen los datos:
+
+- `Validación cruzada:` este método implica dividir el conjunto de datos en k pliegues, y realizar k experimentos diferentes en los que se utiliza un pliegue diferente como conjunto de validación cada vez. Este enfoque puede ayudar a obtener una estimación más precisa del rendimiento del modelo.
+
+- `División de entrenamiento y validación:` en este enfoque, el conjunto de datos se divide en dos conjuntos, uno para el entrenamiento y otro para la validación. El conjunto de entrenamiento se utiliza para ajustar los parámetros del modelo, mientras que el conjunto de validación se utiliza para evaluar el rendimiento del modelo y ajustar sus hiperparámetros.
+
+- `División de entrenamiento, validación y prueba:` este enfoque es similar al anterior, pero se divide el conjunto de datos en tres conjuntos: entrenamiento, validación y prueba. El conjunto de prueba se utiliza para evaluar el rendimiento final del modelo después de haber ajustado los parámetros y los hiperparámetros utilizando el conjunto de entrenamiento y el conjunto de validación.
+
+- `Bootstrap:` este método implica muestrear el conjunto de datos con reemplazo varias veces para generar múltiples conjuntos de entrenamiento y validación. Esto puede ayudar a reducir la varianza del modelo y mejorar su capacidad para generalizar a nuevos datos.
+
+- `División basada en el tiempo:` en algunos casos, puede ser útil dividir el conjunto de datos en función de la fecha o el tiempo. Por ejemplo, se podría utilizar el conjunto de datos más antiguo para el entrenamiento, el conjunto de datos más reciente para la validación y un conjunto de datos futuro para la prueba.
+
+> Nota:
+> Entre más pequeña es la base de datos más se recomienda usar `validación cruzada`, sin embargo, si la base de datos es muy larga
+> esto puede ser contraproducente y se recomienda mejor utilizar el enfoque: train, validation, test con una distribución 90, 5, 5.
+>
+
+![12.png](imgs%2F2%2F12.png)
+
+### Errores comunes en datasets
+
+- Agregar datos de entrenamiento a testeo
+- Bases de datos no balanceadas en clases
+- Muy pocos datos
+
 
 ## 2.9 Crear la red neuronal, definir capas, compilar, entrenar, evaluar y predicciones
 
