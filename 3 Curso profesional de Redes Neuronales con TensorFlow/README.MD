@@ -1433,8 +1433,134 @@ Respuesta esperada:
 ```
 ![conv_results.png](3%20Optimizaci%C3%B3n%20del%20modelo%2F2%20CNN%20base%2Fconv_results.png)
 
+En general la precisión del modelo ha mejorado notablemente respecto al modelo anterior, sin embargo, de nuevo estamos teniendo
+un claro ejemplo de overfitting esto es debido a que la complejidad del modelo general ha aumentado bastante. Debemos tomar
+esto en cuenta para generar una arquitectura más versátil en la parte convolucional.
+
 
 ## 3.3 Métricas para medir la eficiencia de un modelo: Callback
+
+En Keras, un callback es una función que se puede pasar como argumento al método fit() de un modelo y que se ejecuta en ciertos puntos durante el entrenamiento del modelo. Los callbacks se utilizan comúnmente para realizar tareas como la visualización del progreso del entrenamiento, el guardado de modelos intermedios, el ajuste de la tasa de aprendizaje, la detención temprana del entrenamiento, entre otras.
+
+Algunos ejemplos de cómo se pueden usar los callbacks en Keras incluyen:
+
+- [ModelCheckpoint:](https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/ModelCheckpoint) Permite guardar el modelo en puntos específicos durante el entrenamiento para evitar la pérdida de datos.
+
+- [EarlyStopping:](https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/EarlyStopping) Detiene el entrenamiento temprano si la mejora en la función de pérdida en el conjunto de validación disminuye.
+
+- [ReduceLROnPlateau:](https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/ReduceLROnPlateau) Reduce la tasa de aprendizaje del modelo si la mejora en la función de pérdida en el conjunto de validación se detiene o se estanca.
+
+- [TensorBoard:](https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/TensorBoard) Permite visualizar el progreso del entrenamiento en una interfaz gráfica de usuario fácil de usar.
+
+- [CustomCallbacks:](https://www.tensorflow.org/guide/keras/custom_callback?hl=es-419) Los usuarios pueden crear sus propios callbacks personalizados para realizar tareas específicas y/o implementar su lógica personalizada.
+
+### Ejemplo en código
+
+> ## Nota: 
+> El código de esta sección lo puedes encontrar [Aquí](3%20Optimizaci%C3%B3n%20del%20modelo%2F3%20Callback%2Fmain.py)
+
+En este ejemplo vamos a definir un pequeño `Custom Callback`
+
+Supongamos que queremos detener el proceso de entrenamiento del modelo cuando el mismo haya logrado alcanzar al menos 80%
+de accuracy en el set de validación.
+
+Lo único que necesitamos hacer es crear una clase que contenga nuestra `CustoCallback`:
+
+```python
+from keras.callbacks import Callback
+
+
+class TrainingCallbackStop(Callback):
+
+    def __init__(self, acc_stop):
+        super().__init__()
+        self.acc_stop = acc_stop
+
+    def on_epoch_end(self, epoch, logs=None):
+        if logs.get("val_accuracy") > self.acc_stop:
+            print(f"Lo hemos logrado, el modelo ha llegado a un {self.acc_stop*100}%")
+            self.model.stop_training = True
+```
+
+Existen varios overrides que podemos hacer para crear nuestras Callbacks propias, entre ellas podemos encontrar las siguientes:
+
+```python
+from keras.callbacks import Callback
+
+
+class TrainingCallback(Callback):
+    def on_train_begin(self, logs=None):
+        print('Starting training....')
+
+    def on_epoch_begin(self, epoch, logs=None):
+        print('Starting epoch {}'.format(epoch))
+
+    def on_train_batch_begin(self, batch, logs=None):
+        print('Training: Starting batch {}'.format(batch))
+
+    def on_train_batch_end(self, batch, logs=None):
+        print('Training: Finished batch {}'.format(batch))
+
+    def on_epoch_end(self, epoch, logs=None):
+        print('Finished epoch {}'.format(epoch))
+
+    def on_train_end(self, logs=None):
+        print('Finished training!')
+
+
+class TestingCallback(Callback):
+    def on_test_begin(self, logs=None):
+        print('Starting testing....')
+
+    def on_test_batch_begin(self, batch, logs=None):
+        print('Testing: Starting batch {}'.format(batch))
+
+    def on_test_batch_end(self, batch, logs=None):
+        print('Testing: Finished batch {}'.format(batch))
+
+    def on_test_end(self, logs=None):
+        print('Finished testing!')
+
+
+class PredictionCallback(Callback):
+    def on_predict_begin(self, logs=None):
+        print('Prediction testing....')
+
+    def on_predict_batch_begin(self, batch, logs=None):
+        print('Prediction: Starting batch {}'.format(batch))
+
+    def on_predict_batch_end(self, batch, logs=None):
+        print('Prediction: Finished batch {}'.format(batch))
+
+    def on_predict_end(self, logs=None):
+        print('Finished prediction!')
+```
+
+Las callbacks son asignadas durante el proceso de entrenamiento del modelo:
+
+```python
+    callback = TrainingCallbackStop(acc_stop=0.80)
+
+    history = conv_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128,
+                             callbacks=[callback])
+```
+
+Respuesta esperada:
+
+```commandline
+Epoch 1/20
+215/215 [==============================] - 4s 10ms/step - loss: 1.6634 - accuracy: 0.5015 - val_loss: 0.7740 - val_accuracy: 0.7698
+Epoch 2/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.3744 - accuracy: 0.8893 - val_loss: 0.7070 - val_accuracy: 0.7895
+Epoch 3/20
+209/215 [============================>.] - ETA: 0s - loss: 0.1551 - accuracy: 0.9629
+Lo hemos logrado, el modelo ha llegado a un 80.0%
+215/215 [==============================] - 2s 10ms/step - loss: 0.1538 - accuracy: 0.9633 - val_loss: 0.6205 - val_accuracy: 0.8337
+```
+
+Aquí el proceso se ha detenido a pesar de que le hemos pedido que hiciera `20 epochs` esto muestra como hemos hecho funcionar correctamente
+nuestra propuesta de EarlyStop basada en el `val_accuracy`.
+
 
 ## 3.4 Monitoreo del entrenamiento en tiempo real: early stopping y patience
 
