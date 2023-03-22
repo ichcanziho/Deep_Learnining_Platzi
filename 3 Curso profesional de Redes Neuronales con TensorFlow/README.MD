@@ -2150,6 +2150,99 @@ Excelente, ambos obtienen exactamente el mismo resultado.
 
 ## 4.2 Criterios para almacenar los modelos
 
+En la práctica real, normalmente NO almacenamos por separado la arquitectura de los pesos del modelo. Keras ofrece varias formas
+de almacenar esta información, por un lado, tenemos los métodos `save()` y `load_model()` que nos ayudaran a guardar y cargar 
+nuestros modelos completos. Por otro lado, podemos usar el `Callback` llamado `ModelCheckpoint` para ir guardando el modelo 
+cada que durante una `epoch` consigue obtener mejores resultados. Veamos el caso de ejemplo básico:
+
+Importamos las siguientes bibliotecas para usar correctamente el guardado de modelos:
+
+```python
+from keras.callbacks import ModelCheckpoint
+from keras import Model
+import keras.models
+```
+
+Podemos usar exactamente la misma arquitectura que la vez pasada:
+```python
+def conv_architecture(input_shape, n_clases):
+    model = Sequential()
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Flatten())
+    model.add(Dense(256, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(128, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(n_clases, activation="softmax"))
+    print(model.summary())
+    return model
+```
+
+Y ahora hacemos una función para guardar dos modelos `best` y `last`
+
+```python
+def save_model(classes, batch_size, train_generator, validation_generator, test_generator):
+
+    conv_model = conv_architecture(input_shape=(28, 28, 1), n_clases=len(classes))
+
+    checkpoint = ModelCheckpoint(filepath="models/best_model.h5", frecuency="epoch", save_weights_only=False,
+                                 monitor="val_accuracy", save_best_only=True, verbose=1)
+
+    conv_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+
+    conv_model.fit(train_generator, epochs=10, validation_data=validation_generator, batch_size=batch_size,
+                   callbacks=[checkpoint])
+
+    conv_model.evaluate(test_generator)
+
+    conv_model.save("models/last_model.h5")
+```
+Para guardar `best` usamos el `ModelCheckpoint` es importante tener activada en `True` el parámetro `save_best_only` y 
+para asegurarnos de que se está guardando el modelo completo ponemos en `False` el parámetro `save_only_weights`
+
+Recordemos que NO necesariamente cada `epoch` sí o sí va a mejorar el entrenamiento general, esto significa que el modelo generado
+en la última capa NO necesariamente es el que da el mejor resultado, es una buena práctica guardar de forma manual el
+último modelo producido con: `conv_model.save(models/last_model.h5`
+
+Ahora podemos hacer una función para cargar los modelos de `best` y `last`:
+
+```python
+def load_model(model: str) -> Model:
+    if model == "best":
+        return keras.models.load_model("models/best_model.h5")
+    elif model == "last":
+        return keras.models.load_model("models/last_model.h5")
+    else:
+        print("You must select (best or last)")
+        return
+```
+
+Podemos ejecutar el código completo:
+
+```python
+    classes, batch_size, train_generator, validation_generator, test_generator = get_data()
+
+    save_model(classes, batch_size, train_generator, validation_generator, test_generator)
+
+    best_model = load_model(model="best")
+    print("Best:")
+    best_model.evaluate(test_generator)
+
+    last_model = load_model(model="last")
+    print("Last")
+    last_model.evaluate(test_generator)
+```
+Respuesta esperada:
+```commandline
+Best:
+57/57 [==============================] - 1s 10ms/step - loss: 0.4993 - accuracy: 0.8836
+Last
+57/57 [==============================] - 1s 9ms/step - loss: 0.6007 - accuracy: 0.8656
+```
+Cómo es de esperarse, el mejor modelo tuvo un mejor desempeño que el último.
+
+
 # 5 Fundamentos de aprendizaje por transferencia
 
 ## 5.1 Introducción al aprendizaje por transferencia
