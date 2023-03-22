@@ -2038,11 +2038,115 @@ Hemos mejorado más de 2.5% únicamente cambiando una configuración de hiperpar
 
 > Nota: esta arquitectura también utilizo `BatchNormalization()` pero en general se entiende el punto de la clase. La clase original no utilizaba este método, yo lo he implementado buscando reducir el overfitting del modelo.
 
-
-
 # 4 Almacenamiento y carga de modelos
 
+En las próximas clases estaremos observando las formas en las que podemos almacenar nuestras redes neuronales. 
+
+![1.png](imgs%2F4%2F1.png)
+
+Por un lado, podemos guardar únicamente la arquitectura del modelo, o solamente sus pesos, o una combinación de ambas para
+tener el modelo completamente funcional y listo para llevar a deploy. A lo largo de estas notas y gracias a cursos anteriores
+ya hemos utilizado `callbacks` de `checkpoints` por lo cual estas 2 clases no son muy relevantes, sin embargo; vamos a poner
+ejemplos pequeños que nos sirvan de demostraciones teóricas como guardar nuestros modelos.
+
 ## 4.1 Almacenamiento y carga de modelos: pesos y arquitectura
+
+> ## Nota:
+> El código completo lo puedes encontrar [Aquí](4%20Almacenamiento%20y%20carga%20del%20modelo%2F1%20Almacenamiento%20de%20pesos%20y%20arquitectura%2Fmain.py)
+
+Primero importemos nuevas bibliotecas:
+```python
+import json
+from keras import Model
+```
+Estas serán usadas para guardar la arquitectura del modelo y cargar apropiadamente el modelo.
+
+Ahora podemos definir sencillamente la arquitectura del modelo:
+
+```python
+def conv_architecture(input_shape, n_clases):
+    model = Sequential()
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Flatten())
+    model.add(Dense(256, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(128, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(n_clases, activation="softmax"))
+    print(model.summary())
+    return model
+```
+
+Y aquí viene la parte interesante, vamos a crear una función para generar los archivos de `arquitectura` y `pesos` del modelo:
+
+```python
+def generate_weights(classes, batch_size, train_generator, validation_generator, test_generator):
+
+    conv_model = conv_architecture(input_shape=(28, 28, 1), n_clases=len(classes))
+
+    config_dict = conv_model.get_config()
+
+    with open('config_model.json', 'w') as outfile:
+        json.dump(config_dict, outfile)
+
+    conv_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+    #
+    conv_model.fit(train_generator, epochs=5, validation_data=validation_generator, batch_size=batch_size)
+
+    conv_model.evaluate(test_generator)
+
+    conv_model.save_weights('only_weights.h5')
+```
+
+Una vez creado el `conv_model` desde la función `conv_architecture` podemos acceder a su configuración con el método `get_config()`
+esto nos regresa un diccionario con la configuración del modelo el cual podemos guardar en formato json, en este caso con el nombre
+de `config_model.json`. Después debemos compilar el modelo y ponerlo a entrenar como siempre lo hemos hecho. Finalmente podemos evaluar 
+el rendimiento del modelo y salvar los pesos con el método `save_weights(weights_name.h5)`
+
+Respuesta esperada:
+```commandline
+Epoch 1/5
+215/215 [==============================] - 4s 10ms/step - loss: 1.6137 - accuracy: 0.5126 - val_loss: 0.8008 - val_accuracy: 0.7186
+Epoch 2/5
+215/215 [==============================] - 2s 9ms/step - loss: 0.3274 - accuracy: 0.9052 - val_loss: 0.6053 - val_accuracy: 0.8239
+Epoch 3/5
+215/215 [==============================] - 2s 10ms/step - loss: 0.1269 - accuracy: 0.9732 - val_loss: 0.6527 - val_accuracy: 0.8351
+Epoch 4/5
+215/215 [==============================] - 2s 9ms/step - loss: 0.0753 - accuracy: 0.9874 - val_loss: 0.6898 - val_accuracy: 0.8400
+Epoch 5/5
+215/215 [==============================] - 2s 10ms/step - loss: 0.0600 - accuracy: 0.9913 - val_loss: 0.6979 - val_accuracy: 0.8337
+
+57/57 [==============================] - 1s 9ms/step - loss: 0.6454 - accuracy: 0.8458
+```
+
+Ahora podemos crear una función que cargue los pesos y la arquitectura del modelo:
+
+```python
+def load_model_from_architecture_and_weights(architecture, weights) -> Model:
+    json_config = json.load(open(architecture))
+    new_model = Sequential.from_config(json_config)
+    new_model.load_weights(weights)
+    new_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+    return new_model
+```
+Vemos que algo que en ningún momento se guardó fue la información de compilado del modelo, entonces debemos volver a compilar el modelo
+idealmente de la misma forma en la que lo guardamos.
+
+Probamos el código:
+```python
+loaded_model = load_model_from_architecture_and_weights("config_model.json", "only_weights.h5")
+print("from loaded:")
+loaded_model.evaluate(test_generator)
+```
+Respuesta esperada:
+```commandline
+from loaded:
+57/57 [==============================] - 1s 9ms/step - loss: 0.6454 - accuracy: 0.8458
+```
+
+Excelente, ambos obtienen exactamente el mismo resultado.
+
 
 ## 4.2 Criterios para almacenar los modelos
 
