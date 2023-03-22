@@ -1687,7 +1687,358 @@ En este momento hemos guardado un modelo funcional que ha logrado obtener `0.850
 
 ## 3.5 kerasTuner: Construyendo el modelo
 
+Keras Tuner es una biblioteca de Python que ayuda a encontrar los mejores hiperparámetros para los modelos de Keras. Los hiperparámetros son configuraciones que no se aprenden durante el entrenamiento del modelo, pero que influyen en cómo se entrena el modelo y cómo se hace la predicción. Por ejemplo, el número de capas y nodos en una red neuronal, la tasa de aprendizaje, la función de activación, entre otros, son ejemplos de hiperparámetros que deben ajustarse adecuadamente para obtener un modelo preciso y eficiente.
+
+Keras Tuner utiliza la búsqueda de hiperparámetros para encontrar los mejores valores de hiperparámetros para un modelo específico. Hay varios tipos de búsquedas que se pueden realizar con Keras Tuner, como la búsqueda aleatoria, la búsqueda en cuadrícula y la búsqueda de hiperbanda.
+
+- `La búsqueda aleatoria` implica seleccionar aleatoriamente valores para cada hiperparámetro en un rango especificado. 
+
+- `La búsqueda en cuadrícula` implica seleccionar un conjunto discreto de valores para cada hiperparámetro y probar todas las combinaciones posibles. 
+
+- `La búsqueda de hiperbanda` es una combinación de las dos anteriores y se enfoca en identificar los mejores hiperparámetros mediante una eliminación temprana de modelos subóptimos.
+
+Keras Tuner puede utilizarse con cualquier modelo de Keras, desde una simple red neuronal hasta una red neuronal convolucional o una red neuronal recurrente. Los hiperparámetros se pueden definir de forma personalizada o utilizar las funciones predefinidas de Keras Tuner.
+
+Dentro del conjunto de `HyperParameters`que son óptimizables tenemos los siguientes:
+
+- [Boolean method](https://keras.io/api/keras_tuner/hyperparameters/#boolean-method)
+- [Choice method](https://keras.io/api/keras_tuner/hyperparameters/#choice-method)
+- [Fixed method](https://keras.io/api/keras_tuner/hyperparameters/#fixed-method)
+- [Float method](https://keras.io/api/keras_tuner/hyperparameters/#float-method)
+- [Int method](https://keras.io/api/keras_tuner/hyperparameters/#int-method)
+
+Entre otros.
+
+Y como mencionamos anteriormente, tenemos varios tipos de `tuner` entre los que podemos encontrar los siguientes:
+
+- [The base Tuner class](https://keras.io/api/keras_tuner/tuners/base_tuner)
+- [Objective class](https://keras.io/api/keras_tuner/tuners/objective)
+- [RandomSearch Tuner](https://keras.io/api/keras_tuner/tuners/random)
+- [GridSearch Tuner](https://keras.io/api/keras_tuner/tuners/grid)
+- [BayesianOptimization Tuner](https://keras.io/api/keras_tuner/tuners/bayesian)
+- [Hyperband Tuner](https://keras.io/api/keras_tuner/tuners/hyperband)
+- [Sklearn Tuner](https://keras.io/api/keras_tuner/tuners/sklearn)
+
+Para más información puedes leer la documentación oficial de [Keras Tuner](https://keras.io/keras_tuner/)
+
+Para instalar `keras-tuner`:
+```commandline
+pip install keras-tuner --upgrade
+```
+
+#### Información adicional:
+
+`Keras-tuner` NO es la única herramienta que nos permite hacer este ajuste de hiperparámetros, también existe otra herramienta
+llamada `talos` de forma similar se instala como `pip install talos` puedes leer la documentación oficial [Aquí](https://autonomio.github.io/talos/#/)
+
+#### Código de ejemplo:
+
+> ## Nota:
+> El código completo de esta y la próxima sección lo puedes encontrar [Aquí](3%20Optimizaci%C3%B3n%20del%20modelo%2F5%20Keras%20Tuner%2Fmain.py)
+
+En esta clase nos vamos a enfocar en construir la arquitectura del modelo que nos permita ser optimizable por el `Hyperband tuner`
+
+**1: Importando bibliotecas de siempre**
+```python
+from keras.preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+import string
+from keras.models import Sequential
+from keras.layers import Flatten, Dense, Dropout, Conv2D, MaxPooling2D, BatchNormalization
+from keras.regularizers import l2
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.optimizers import Adam
+```
+Sin embargo, en está ocasión vamos a importar nuevas librerías que NO habíamos utilizado antes:
+```python
+from abc import ABC
+from keras_tuner import HyperModel, Hyperband
+import json
+```
+
+Nos vamos a enfocar principalmente en `HyperModel` y en `Hyperband` las cuales nos van a permitir construir una clase con 
+la arquitectura del modelo y ciertos parámetros preestablecidos por el constructor de la clase.
+
+**2: Definiendo la clase de la arquitectura deseada**
+
+Por documentación de `keras tuner` para crear nuestra propia clase de `HyperModel` debemos heredar de ella y de `ABC`
+definimos nuevos parámetros que en este caso serán: `input_shape` y `n_classes` 
+
+```python
+class CNNArchitecture(HyperModel, ABC):
+
+    def __init__(self, input_shape, n_classes):
+        super().__init__()
+        self.input_shape = input_shape
+        self.n_classes = n_classes
+```
+De esta forma cuando creemos un objeto de la clase `CNNArchitecture` podremos definir esos parámetros, los cuáles no se definen
+por la arquitectura del modelo sino por la naturaleza del problema. En nuestro caso nuestras imágenes del dataset son de `(28x28x1)`
+y tenemos un total de `24` clases diferenciables.
+
+**3: Construimos la arquitectura del modelo y compilamos**
+
+El parámetro `hp` hace referencia a un diccionario que contenga los valores pre-cargados para los hiperparámetros.
+Si no se pasa un valor entonces utilizará los parámetros que tenga disponibles para entrenar.
+
+Hasta este momento nuestra arquitectura es idéntica a las que ya hemos venido creado en clases anteriores, con la única diferencia
+de que ahora al ser un método de una clase accedemos al `input_shape` como `self.input_shape` puesto que este valor lo definimos
+en el constructor de la clase.
+
+```python
+    def build(self, hp):
+        model = Sequential()
+
+        model.add(Conv2D(filters=128, kernel_size=(3, 3), activation="relu", input_shape=self.input_shape))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Flatten())
+```
+
+Aquí empieza lo verdaderamente interesante, definir las siguientes capas NO con valores fijos sino con valores que pueden ser
+variados dentro de un rango predeterminado de valores. Para la siguiente capa que normalmente habiamos definido de la siguiente manera:
+
+```python
+        model.add(Dense(256, activation="relu", kernel_regularizer=l2(1e-5)))
+        model.add(Dropout(0.2))
+```
+
+Podemos hacer que el número de neuronas `256` y el valor de dropout `0.2` No sean constantes si no que sean elegibles dentro de
+un rango conocido.
+
+```python
+        model.add(Dense(units=hp.Int("units_1", min_value=64, max_value=512, step=64, default=128),
+                        activation="relu", kernel_regularizer=l2(1e-5)))
+        model.add(Dropout(rate=hp.Float("dropout_1", min_value=0.2, max_value=0.6, default=0.5, step=0.10)))
+        model.add(BatchNormalization())
+```
+
+Lo más interesante es que en lugar de definir `256` neuronas para la capa `Dense` es que estamos proponiendo un rango de 64
+a 512 en intervalos de 64, con un valor por defecto de 128. Aquí estamos ocupando el método `Int` pero recordemos que tenemos otros
+disponibles. Como es el caso de `Float` el cual definimos para el cambiar el `rate` del dropout.
+
+Continuamos con la arquitectura de nuestro modelo:
+
+```python
+	model.add(Dense(128, activation="relu", kernel_regularizer=l2(1e-5)))
+        model.add(Dropout(0.2))
+        model.add(BatchNormalization())
+
+        model.add(Dense(self.n_classes, activation="softmax"))
+```
+
+Hasta aquí nada interesante, son cosas que ya entendemos y conocemos, salvo el hecho de que la última capa
+la encargada de clasificación está definida por `self.n_classes` variable definida por el constructor de la clase.
+
+Sin embargo, para terminar, debemos compilar el modelo:
+
+```python
+	model.compile(Adam(hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="LOG", default=1e-3,)),
+                      loss="categorical_crossentropy", metrics=['accuracy'])
+	# Alternativa a hp.Float -> hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4])
+        return model
+
+```
+Nota interesante, que el optimizador `ADAM` también puede verse beneficiado de `keras tuner` puesto que su learning rate
+ahora no es un solo valor si no que es un rango de valores, puesto que los valores son sumamente pequeños es necesario poner que el 
+`sampling` es `"LOG"`.
+
+La arquitectura completa del modelo queda de la siguiente manera:
+
+```python
+    def build(self, hp):
+        model = Sequential()
+
+        model.add(Conv2D(filters=128, kernel_size=(3, 3), activation="relu", input_shape=self.input_shape))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Flatten())
+
+        model.add(Dense(units=hp.Int("units_1", min_value=64, max_value=512, step=64, default=128),
+                        activation="relu", kernel_regularizer=l2(1e-5)))
+        model.add(Dropout(rate=hp.Float("dropout_1", min_value=0.2, max_value=0.6, default=0.5, step=0.10)))
+        model.add(BatchNormalization())
+
+        model.add(Dense(128, activation="relu", kernel_regularizer=l2(1e-5)))
+        model.add(Dropout(0.2))
+        model.add(BatchNormalization())
+
+        model.add(Dense(self.n_classes, activation="softmax"))
+
+        model.compile(Adam(hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="LOG", default=1e-3,)),
+                      loss="categorical_crossentropy", metrics=['accuracy'])
+        # Alternativa a hp.Float -> hp.Choice('learning_rate', values = [1e-2, 1e-3, 1e-4])
+        return model
+```
+
 ## 3.6 KerasTuner: Buscando la mejor configuración para tu modelo
+
+Cómo en la clase pasada ya hemos definido la arquitectura del modelo, en esta clase vamos a ver como utilizarla en conjunto al
+`Hyperband` para hacer nuestra búsqueda de parámetros óptimos para nuestra red:
+
+Empezamos con lo básico: Crear las particiones de nuestros datos
+
+```python
+    classes, batch_size, train_generator, validation_generator, test_generator = get_data()
+```
+
+Ahora podemos crear el modelo a partir de nuestra clase `CNNArchitecture`
+
+```python
+    cnn_model = CNNArchitecture(input_shape=(28, 28, 1), n_classes=len(classes))
+```
+
+Aquí empieza la búsqueda de los mejores hiperparámetros, primero debemos crear un objeto `tuner` de la clase `Hyperband`
+con nuestro `hypermodel` llamado `cnn_model`:
+
+```python
+    tuner = Hyperband(hypermodel=cnn_model, objective="val_accuracy", max_epochs=20, factor=3, directory="models/",
+                      project_name="test")
+```
+
+Te recomiendo leer [Hyperband Tuner](https://keras.io/api/keras_tuner/tuners/hyperband/) para entender más de la documentación de
+este `tuner` sin embargo, a continuación te dejo sus parámetros disponibles.
+
+```commandline
+keras_tuner.Hyperband(
+    hypermodel=None,
+    objective=None,
+    max_epochs=100,
+    factor=3,
+    hyperband_iterations=1,
+    seed=None,
+    hyperparameters=None,
+    tune_new_entries=True,
+    allow_new_entries=True,
+    max_retries_per_trial=0,
+    max_consecutive_failed_trials=3,
+    **kwargs
+)
+```
+
+Ahora nuestro objeto `tuner` es un `hypermodel` de `cnn_model` con `tuner` podemos empezar a hacer la busqueda de los mejores
+hiperparámetros:
+
+```python
+    tuner.search(train_generator, epochs=20, validation_data=validation_generator)
+```
+Respuesta esperada:
+```commandline
+Trial 29 Complete [00h 00m 44s]
+val_accuracy: 0.8933333158493042
+
+Best val_accuracy So Far: 0.9038596749305725
+Total elapsed time: 00h 08m 02s
+
+Search: Running Trial #30
+
+Value             |Best Value So Far |Hyperparameter
+512               |512               |units_1
+0.4               |0.2               |dropout_1
+0.0021972         |0.00048085        |learning_rate
+20                |7                 |tuner/epochs
+0                 |0                 |tuner/initial_epoch
+0                 |1                 |tuner/bracket
+0                 |0                 |tuner/round
+```
+
+Ahora nuestro `hypermodel` ya se encuentra entrenado, podemos acceder a los mejores hiperparámetros que encontro:
+
+```python
+    best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
+    print(best_hps)
+```
+Respuesta esperada:
+```commandline
+<keras_tuner.engine.hyperparameters.hyperparameters.HyperParameters object at 0x7fd2d8edcdf0>
+```
+Esta configuración la podemos usar para construir un modelo:
+```python
+    conv_model = tuner.hypermodel.build(best_hps)
+```
+De esta manera `conv_model` ya NO es un `hypermodel` ya es un modelo convencional como los que hemos estado trabajando a lo
+largo del curso. `conv_model` ya se encuentra tuneado para tener la mejor configuración de hiperparmáetros posible, entonces es buena
+idea guardar la arquitectura del modelo para reutilizarla después:
+
+```python
+    config_dict = conv_model.get_config()
+    print(config_dict)
+    with open('config_model.json', 'w') as outfile:
+        json.dump(config_dict, outfile)
+```
+Respuesta esperada:
+```commandline
+{'name': 'sequential_1', 'layers': [{'class_name': 'InputLayer', 'config': {'batch_input_shape': (None, 28, 28, 1), 'dtype': 'float32', 'sparse': False, 'ragged': False, 'name': 'conv2d_1_input'}}, {'class_name': 'Conv2D', 'config': {'name': 'conv2d_1', 'trainable': True, 'dtype': 'float32', 'batch_input_shape': (None, 28, 28, 1), 'filters': 128, 'kernel_size': (3, 3), 'strides': (1, 1), 'padding': 'valid', 'data_format': 'channels_last', 'dilation_rate': (1, 1), 'groups': 1, 'activation': 'relu', 'use_bias': True, 'kernel_initializer': {'class_name': 'GlorotUniform', 'config': {'seed': None}}, 'bias_initializer': {'class_name': 'Zeros', 'config': {}}, 'kernel_regularizer': None, 'bias_regularizer': None, 'activity_regularizer': None, 'kernel_constraint': None, 'bias_constraint': None}}, {'class_name': 'MaxPooling2D', 'config': {'name': 'max_pooling2d_1', 'trainable': True, 'dtype': 'float32', 'pool_size': (2, 2), 'padding': 'valid', 'strides': (2, 2), 'data_format': 'channels_last'}}, {'class_name': 'Flatten', 'config': {'name': 'flatten_1', 'trainable': True, 'dtype': 'float32', 'data_format': 'channels_last'}}, {'class_name': 'Dense', 'config': {'name': 'dense_3', 'trainable': True, 'dtype': 'float32', 'units': 512, 'activation': 'relu', 'use_bias': True, 'kernel_initializer': {'class_name': 'GlorotUniform', 'config': {'seed': None}}, 'bias_initializer': {'class_name': 'Zeros', 'config': {}}, 'kernel_regularizer': {'class_name': 'L2', 'config': {'l2': 9.999999747378752e-06}}, 'bias_regularizer': None, 'activity_regularizer': None, 'kernel_constraint': None, 'bias_constraint': None}}, {'class_name': 'Dropout', 'config': {'name': 'dropout_2', 'trainable': True, 'dtype': 'float32', 'rate': 0.2, 'noise_shape': None, 'seed': None}}, {'class_name': 'BatchNormalization', 'config': {'name': 'batch_normalization_2', 'trainable': True, 'dtype': 'float32', 'axis': ListWrapper([1]), 'momentum': 0.99, 'epsilon': 0.001, 'center': True, 'scale': True, 'beta_initializer': {'class_name': 'Zeros', 'config': {}}, 'gamma_initializer': {'class_name': 'Ones', 'config': {}}, 'moving_mean_initializer': {'class_name': 'Zeros', 'config': {}}, 'moving_variance_initializer': {'class_name': 'Ones', 'config': {}}, 'beta_regularizer': None, 'gamma_regularizer': None, 'beta_constraint': None, 'gamma_constraint': None}}, {'class_name': 'Dense', 'config': {'name': 'dense_4', 'trainable': True, 'dtype': 'float32', 'units': 128, 'activation': 'relu', 'use_bias': True, 'kernel_initializer': {'class_name': 'GlorotUniform', 'config': {'seed': None}}, 'bias_initializer': {'class_name': 'Zeros', 'config': {}}, 'kernel_regularizer': {'class_name': 'L2', 'config': {'l2': 9.999999747378752e-06}}, 'bias_regularizer': None, 'activity_regularizer': None, 'kernel_constraint': None, 'bias_constraint': None}}, {'class_name': 'Dropout', 'config': {'name': 'dropout_3', 'trainable': True, 'dtype': 'float32', 'rate': 0.2, 'noise_shape': None, 'seed': None}}, {'class_name': 'BatchNormalization', 'config': {'name': 'batch_normalization_3', 'trainable': True, 'dtype': 'float32', 'axis': ListWrapper([1]), 'momentum': 0.99, 'epsilon': 0.001, 'center': True, 'scale': True, 'beta_initializer': {'class_name': 'Zeros', 'config': {}}, 'gamma_initializer': {'class_name': 'Ones', 'config': {}}, 'moving_mean_initializer': {'class_name': 'Zeros', 'config': {}}, 'moving_variance_initializer': {'class_name': 'Ones', 'config': {}}, 'beta_regularizer': None, 'gamma_regularizer': None, 'beta_constraint': None, 'gamma_constraint': None}}, {'class_name': 'Dense', 'config': {'name': 'dense_5', 'trainable': True, 'dtype': 'float32', 'units': 24, 'activation': 'softmax', 'use_bias': True, 'kernel_initializer': {'class_name': 'GlorotUniform', 'config': {'seed': None}}, 'bias_initializer': {'class_name': 'Zeros', 'config': {}}, 'kernel_regularizer': None, 'bias_regularizer': None, 'activity_regularizer': None, 'kernel_constraint': None, 'bias_constraint': None}}]}
+```
+Excelente, ahora tenemos un archivo json llamado `config_model.json` el cual ha guarado toda la arquitectura con la mejor configuración
+posible para nuestro modelo.
+
+Ahora podemos seguir con los conocimientos que ya conocemos para con base en dicha arquitectura y ya con el modelo compilado
+utilizarlo para entrenarlo desde 0 con nuestro `train_generator` y utilizar `callbacks` para monitorear el mismo:
+
+```python
+    callback = EarlyStopping(monitor="val_accuracy", patience=3, mode="auto")
+
+    checkpoint = ModelCheckpoint(filepath="models/best_model.h5", save_best_only=True, save_weights_only=False,
+                                 mode="auto", verbose=1, monitor="val_accuracy")
+
+    history = conv_model.fit(train_generator, epochs=20, validation_data=validation_generator, batch_size=128,
+                             callbacks=[callback, checkpoint])
+```
+Respuesta esperada:
+
+```commandline
+Epoch 1/20
+212/215 [============================>.] - ETA: 0s - loss: 0.7691 - accuracy: 0.8091
+Epoch 1: val_accuracy improved from -inf to 0.65333, saving model to models/best_model.h5
+215/215 [==============================] - 3s 11ms/step - loss: 0.7590 - accuracy: 0.8117 - val_loss: 2.4074 - val_accuracy: 0.6533
+Epoch 2/20
+211/215 [============================>.] - ETA: 0s - loss: 0.0335 - accuracy: 0.9997
+Epoch 2: val_accuracy improved from 0.65333 to 0.84982, saving model to models/best_model.h5
+215/215 [==============================] - 2s 11ms/step - loss: 0.0333 - accuracy: 0.9997 - val_loss: 1.1209 - val_accuracy: 0.8498
+Epoch 3/20
+213/215 [============================>.] - ETA: 0s - loss: 0.0193 - accuracy: 1.0000
+Epoch 3: val_accuracy improved from 0.84982 to 0.88561, saving model to models/best_model.h5
+215/215 [==============================] - 2s 11ms/step - loss: 0.0193 - accuracy: 1.0000 - val_loss: 0.4633 - val_accuracy: 0.8856
+Epoch 4/20
+214/215 [============================>.] - ETA: 0s - loss: 0.0152 - accuracy: 1.0000
+Epoch 4: val_accuracy improved from 0.88561 to 0.89263, saving model to models/best_model.h5
+215/215 [==============================] - 2s 11ms/step - loss: 0.0152 - accuracy: 1.0000 - val_loss: 0.4295 - val_accuracy: 0.8926
+Epoch 5/20
+215/215 [==============================] - ETA: 0s - loss: 0.0131 - accuracy: 1.0000
+Epoch 5: val_accuracy did not improve from 0.89263
+215/215 [==============================] - 2s 10ms/step - loss: 0.0131 - accuracy: 1.0000 - val_loss: 0.4467 - val_accuracy: 0.8842
+Epoch 6/20
+214/215 [============================>.] - ETA: 0s - loss: 0.0121 - accuracy: 1.0000
+Epoch 6: val_accuracy did not improve from 0.89263
+215/215 [==============================] - 2s 10ms/step - loss: 0.0121 - accuracy: 1.0000 - val_loss: 0.4593 - val_accuracy: 0.8786
+Epoch 7/20
+215/215 [==============================] - ETA: 0s - loss: 0.0113 - accuracy: 1.0000
+Epoch 7: val_accuracy did not improve from 0.89263
+215/215 [==============================] - 2s 10ms/step - loss: 0.0113 - accuracy: 1.0000 - val_loss: 0.4980 - val_accuracy: 0.8800
+```
+Graficamos los resultados y evaluamos en el `test_generator`
+
+```python
+    plot_results(history, "accuracy", "hypermodel_results.png")
+
+    results = conv_model.evaluate(test_generator)
+```
+Respuesta esperada:
+
+![hypermodel_results.png](3%20Optimizaci%C3%B3n%20del%20modelo%2F5%20Keras%20Tuner%2Fhypermodel_results.png)
+
+```commandline
+57/57 [==============================] - 1s 19ms/step - loss: 0.5009 - accuracy: 0.8783
+```
+
+Genial, nos ha ido bastante bien, recordemos que en la última clase, nuestro último resultado de accuracy había sido el siguiente:
+```commandline
+57/57 [==============================] - 1s 9ms/step - loss: 0.8228 - accuracy: 0.8509
+```
+Hemos mejorado más de 2.5% únicamente cambiando una configuración de hiperparámetros del modelo.
+
+> Nota: esta arquitectura también utilizo `BatchNormalization()` pero en general se entiende el punto de la clase. La clase original no utilizaba este método, yo lo he implementado buscando reducir el overfitting del modelo.
+
+
 
 # 4 Almacenamiento y carga de modelos
 
