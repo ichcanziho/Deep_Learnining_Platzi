@@ -2245,7 +2245,51 @@ Cómo es de esperarse, el mejor modelo tuvo un mejor desempeño que el último.
 
 # 5 Fundamentos de aprendizaje por transferencia
 
+Lo que estaremos aprendiendo a lo largo de este módulo es:
+
+- Introducción al aprendizaje por transferencia
+- Cómo cargar sistemas pre-entrenados en Keras
+- Cómo utilizar sistemas pre-entrenados desde los repositorios de TensorFlow Hub
+- Aplicar modelo pre-entrenado a nuestro proyecto
+
 ## 5.1 Introducción al aprendizaje por transferencia
+
+Transfer learning es una técnica de Deep Learning en la que se utiliza un modelo pre-entrenado como punto de partida para 
+un nuevo problema (clasificación, detección, regresiones) etc. En lugar de entrenar un modelo desde cero, se usa un modelo 
+que ha sido entrenado previamente en una gran cantidad de datos y se ajusta para adaptarlo a una tarea específica (`Fine tuning`).
+
+![2.png](imgs%2F4%2F2.png)
+
+En Deep Learning, los modelos pre-entrenados se suelen entrenar en grandes conjuntos de datos, como `ImageNet`, que contiene 
+millones de imágenes de objetos clasificados en miles de categorías. El objetivo de entrenar en un conjunto de datos tan 
+grande es aprender características generales que se pueden aplicar a una amplia variedad de tareas, no sólo a la tarea 
+específica del conjunto de datos.
+
+![3.png](imgs%2F4%2F3.png)
+
+Una vez que se entrena el modelo pre-entrenado, se utiliza para extraer características de nuevas imágenes o datos relacionados 
+con la tarea específica. Estas características se usan como entrada para un nuevo modelo que se entrena específicamente 
+para la tarea de interés. El nuevo modelo puede ser una red neuronal completamente conectada o una red neuronal convolucional 
+que se entrena sólo en las últimas capas.
+
+La ventaja del transfer learning es que permite el uso de modelos pre-entrenados que han demostrado ser efectivos en tareas 
+relacionadas. En lugar de tener que entrenar un modelo completamente desde cero, se puede utilizar un modelo que ya ha 
+aprendido características generales que pueden ser útiles para la tarea de interés. Esto puede reducir significativamente 
+el tiempo y los recursos necesarios para entrenar un modelo, y a menudo resulta en una mejor precisión.
+
+**Un ejemplo sencillo**
+
+![4.png](imgs%2F4%2F4.png)
+
+Usar `transfer learning` puede ser tan sencillo como tener descargado en nuestra máquina local un archivo de pesos de un 
+modelo de nuestro interés. En este ejemplo `InceptionV3` creamos un `new_model` y a la primera capa le vamos a añadir
+el modelo `InceptionV3` con sus respectivos pesos, cabe mencionar que es importante NO incluir la última capa `include_top = False`
+esto es importante, porque lo que nosotros queremos es adaptar estos pesos ya aprendidos a nuestro nuevo problema.
+
+Podemos continuar con la arquitectura que nosotros propongamos, o en este caso agregar la última capa correspondiente a la capa 
+de clasificación. También es MUY importante decirle a keras que la `layer[0]` NO debe ser entrenable, esta se debe quedar 
+como ya estaba para cumplir con el propósito de `transfer learning` que es NO reentrenar el modelo desde 0.
+
 
 ## 5.2 Cuándo utilizar aprendizaje por transferencia
 
