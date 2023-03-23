@@ -2293,6 +2293,37 @@ como ya estaba para cumplir con el propósito de `transfer learning` que es NO r
 
 ## 5.2 Cuándo utilizar aprendizaje por transferencia
 
+Podemos usar modelos pre-entrenados cuando tratemos problemas de procesamiento de lenguaje natural y visión computarizada, 
+pasa ambos casos se suelen implementar arquitecturas robustas con altísimas cantidades de iteraciones, por lo que siempre 
+será ideal dedicar tiempo a investigar qué configuraciones se han implementado similares a tu caso de uso.
+
+![5.png](imgs%2F4%2F5.png)
+
+
+**¿Por qué usar aprendizaje por transferencia?**
+
+El aprendizaje por transferencia será especialmente útil cuando tengas muy pocos datos, dado que no tendrás que enseñar al 
+modelo desde 0 las abstracciones, también te permitirá generar iteraciones muy rápidas (en caso de que debas generar un 
+prototipo en poco tiempo o quieras tantear la calidad de tus datos). Estos modelos ya han generalizado las features, por lo 
+que se podrán adaptar a tus necesidades en pocas iteraciones.
+
+![6.png](imgs%2F4%2F6.png)
+
+Si deseas enriquecerte con la documentación de algunas implementaciones, puedes leer los paper de [YOLO V3](https://pjreddie.com/media/files/papers/YOLOv3.pdf) y [AlexNet](https://cvml.ista.ac.at/courses/DLWT_W17/material/AlexNet.pdf), algunas de las configuraciones más usadas en redes convolucionales.
+
+**¿Cómo saber cuál modelo seleccionar?**
+
+Las 2 métricas a seguir a la hora de seleccionar un modelo serán las de precisión y complejidad, donde según tu contexto 
+deberás elegir cuál es más relevante. Si tu modelo requiere de reacción rápida entonces podrás sacrificar un poco de precisión 
+por velocidad (este es el ejemplo de detección de objetos en vivo, como cámaras de seguridad o vehículos autónomos).
+
+Si la precisión lo es todo (como en la clasificación de células cancerígenas) puedes darte el lujo de correr un modelo por 
+bastante tiempo con el fin de obtener resultados precisos. Puedes guiarte en la noción de precisión vs cantidad de operaciones 
+para elegir tu modelo, como siempre, tú determinarás las prioridades de tu modelo.
+
+![7.png](imgs%2F4%2F7.png)
+
+
 ## 5.3 Carga de sistemas pre-entrenados en Keras
 
 ## 5.4 API funcional de Keras
