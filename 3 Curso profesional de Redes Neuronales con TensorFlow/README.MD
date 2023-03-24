@@ -2364,6 +2364,9 @@ tf.keras.applications.InceptionV3(
 )
 ```
 
+> ## Nota:
+> El código completo de estas secciones lo puedes encontrar [Aquí](5%20Fundamentos%20de%20aprendizaje%20por%20transferencia%2F3%20Carga%20de%20sistemas%20pre-entrenados%2Fmain.py)
+
 Empecemos importando las bibliotecas necesarias:
 
 ```python
