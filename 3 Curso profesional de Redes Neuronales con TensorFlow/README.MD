@@ -2714,6 +2714,156 @@ para usar transfer learning.
 
 ## 5.5 Uso de sistemas pre-entrenados de TensorFlow Hub
 
+### Introducción:
+
+TensorFlow Hub es una biblioteca de TensorFlow que permite a los desarrolladores compartir y reutilizar módulos de aprendizaje 
+profundo (también conocidos como "módulos de TensorFlow") que pueden utilizarse como bloques de construcción en modelos de 
+aprendizaje automático.
+
+![5.png](imgs%2F5%2F5.png)
+
+Los módulos de TensorFlow son bloques de construcción de aprendizaje profundo que contienen una o varias capas que han 
+sido entrenadas para resolver una tarea específica, como la clasificación de imágenes o el reconocimiento de voz. Los módulos 
+pueden ser utilizados como bloques de construcción para crear modelos de aprendizaje profundo personalizados, sin la necesidad 
+de entrenarlos desde cero.
+
+Los módulos de TensorFlow Hub están disponibles en diferentes formatos, incluyendo TensorFlow SavedModel, Keras y TensorFlow.js, 
+lo que los hace compatibles con diferentes entornos de implementación. Puedes consultar más en su página oficial: https://www.tensorflow.org/hub?hl=es-419
+
+TensorFlow Hub también proporciona una plataforma en línea donde los desarrolladores pueden compartir y buscar módulos de 
+TensorFlow pre-entrenados. Esto permite a los desarrolladores ahorrar tiempo y recursos al utilizar módulos de TensorFlow 
+que ya han sido entrenados y ajustados para tareas específicas. Los desarrolladores pueden buscar módulos por tarea, como 
+clasificación de imágenes o reconocimiento de voz, o por arquitectura de modelo, como redes neuronales convolucionales o 
+redes neuronales recurrentes.
+
+Además, TensorFlow Hub proporciona herramientas para personalizar y ajustar los módulos de TensorFlow pre-entrenados para 
+tareas específicas. Los desarrolladores pueden ajustar las capas de un módulo para adaptarlas a un conjunto de datos específico 
+o combinar varios módulos para crear un modelo más complejo.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [Aquí](5%20Fundamentos%20de%20aprendizaje%20por%20transferencia%2F5%20Tensorflow%20HUB%2Fmain.py)
+
+Para este ejemplo vamos a utilizar [mobilnet_v1_050_160](https://tfhub.dev/google/imagenet/mobilenet_v1_050_160/classification/5)
+
+> Mobilenets come in various sizes controlled by a multiplier for the depth (number of features) in the convolutional layers. They can also be trained for various sizes of input images to control inference speed. This TF Hub model uses the TF-Slim implementation of mobilenet_v1_050 with a depth multiplier of 0.5 and an input size of 160x160 pixels.
+>
+> The model contains a trained instance of the network, packaged to do the image classification that the network was trained on. If you merely want to transform images into feature vectors, use google/imagenet/mobilenet_v1_050_160/feature_vector/5 instead, and save the space occupied by the classification layer.
+
+
+
+El proceso es sumamente sencillo:
+
+Importamos bibliotecas
+```python
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, InputLayer, Flatten
+import tensorflow_hub as hub
+```
+Para este ejemplo seguiremos usando el método `get_data()` con su target size de `150x150`
+
+```python
+classes, batch_size, train_generator, validation_generator, test_generator = get_data(target_size=(150, 150),
+                                                                                          color_mode="rgb")
+
+```
+
+Creo una arquitectura con base en un modelo pre-entrenado de `tensorflow hub`:
+
+```python
+def hub_architecture(input_shape, n_clases, url_model):
+    print("HUB")
+    model_hub = Sequential(InputLayer(input_shape=input_shape))
+    # Una secuencia nueva
+    model_hub.add(hub.KerasLayer(url_model, trainable=False))
+    
+    model_hub.add(Flatten())
+    model_hub.add(Dense(128, activation="relu"))
+    model_hub.add(Dropout(0.2))
+    model_hub.add(Dense(n_clases, activation="sotfmax"))
+    print("BUILD")
+    # Una secuencia nueva por usar HUB de TensorFlow
+    model_hub.build((None, ) + input_shape)
+    
+    print(model_hub.summary())
+    return model_hub
+```
+
+La única diferencia ahora es que agregamos una capa al modelo como: `hub.KerasLayer` ponemos como parámetro el URL del modelo que
+nos interesa y en esta ocasión ponemos que el modelo NO sea `trainable`, finalmente, una última diferencia es que debemos hacer
+un `build` del modelo antes de continuar con el proceso de compile y fit.
+
+Respuesta esperada:
+```commandline
+Model: "sequential_5"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+keras_layer_1 (KerasLayer)   (None, 1001)              1343049   
+_________________________________________________________________
+flatten_9 (Flatten)          (None, 1001)              0         
+_________________________________________________________________
+dense_21 (Dense)             (None, 128)               128256    
+_________________________________________________________________
+dropout_13 (Dropout)         (None, 128)               0         
+_________________________________________________________________
+dense_22 (Dense)             (None, 24)                3096      
+=================================================================
+Total params: 1,474,401
+Trainable params: 131,352
+Non-trainable params: 1,343,049
+```
+Vemos como a diferencia de la implementación anterior, al usar `TensorFlow HUB` todo el modelo se encuentra en una capa enorme
+llamada `keras_layer_1`
+
+Finalmente, compilamos y entrenamos el modelo:
+
+```python
+def fit_model(classes_, batch_size_, train_generator_, validation_generator_, test_generator_):
+
+    url = "https://tfhub.dev/google/imagenet/mobilenet_v1_050_160/classification/4"
+
+    h_model = hub_architecture(input_shape=(150, 150, 3), n_clases=len(classes_), url_model=url)
+
+    h_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+
+    h_model.fit(train_generator_, epochs=5, validation_data=validation_generator_, batch_size=batch_size_)
+
+    h_model.evaluate(test_generator_)
+```
+Respuesta esperada:
+```commandline
+Epoch 1/5
+215/215 [==============================] - 28s 117ms/step - loss: 1.5822 - accuracy: 0.5156 - val_loss: 0.8558 - val_accuracy: 0.7228
+Epoch 2/5
+215/215 [==============================] - 25s 115ms/step - loss: 0.6975 - accuracy: 0.7729 - val_loss: 0.6246 - val_accuracy: 0.7747
+Epoch 3/5
+215/215 [==============================] - 25s 115ms/step - loss: 0.4832 - accuracy: 0.8419 - val_loss: 0.5053 - val_accuracy: 0.8168
+Epoch 4/5
+215/215 [==============================] - 25s 115ms/step - loss: 0.3800 - accuracy: 0.8744 - val_loss: 0.4488 - val_accuracy: 0.8337
+Epoch 5/5
+215/215 [==============================] - 25s 114ms/step - loss: 0.3175 - accuracy: 0.8960 - val_loss: 0.4326 - val_accuracy: 0.8344
+```
+Precisión en el test set:
+```commandline
+57/57 [==============================] - 6s 107ms/step - loss: 0.4522 - accuracy: 0.8296
+```
+
+Este modelo tiene mucho menos ACC que el modelo anterior, sin embargo, veamos que el modelo anterior tenía las siguientes características:
+
+```commandline
+Total params: 13,795,384
+Trainable params: 4,820,120
+Non-trainable params: 8,975,264
+```
+Sin embargo, el nuevo modelo tiene:
+```commandline
+Total params: 1,474,401
+Trainable params: 131,352
+Non-trainable params: 1,343,049
+```
+
+El nuevo modelo es más de 36x más pequeño que el modelo anterior (véase la cantidad de parámetros entrenables)
+
 # 6 Resultados de entrenamiento
 
 ## 6.1 Introducción a variables relevantes del TensorBoard
