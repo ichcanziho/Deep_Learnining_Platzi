@@ -2326,7 +2326,391 @@ para elegir tu modelo, como siempre, tú determinarás las prioridades de tu mod
 
 ## 5.3 Carga de sistemas pre-entrenados en Keras
 
+Existen múltiples métodos para cargar sistemas pre-entrenados, para esta ocasión interiorizaremos en el de Keras. Hasta 
+ahora hemos trabajado con la API secuencial de Keras que nos permite apilar capas de manera lineal, su recorrido es unidireccional 
+y siempre el mismo. La API Funcional de Keras rompe este paradigma y nos permite configurar redes a gusto, donde los saltos de 
+capas pueden ser alterados y se pueden implementar configuraciones infinitamente más complejas.
+
+![1.png](imgs%2F5%2F1.png)
+
+Estos modelos funcionales pueden dar mejores resultados que sus homólogos secuenciales, por lo que indagaremos como cargarlos y usarlos desde Keras.
+
+### Usando la API funcional de Keras
+
+Antes de cargar la configuración es de vital importancia reconocer las dimensiones de entrada del modelo a usar, esto es 
+especialmente necesario en contextos de detección de objetos y transfer learning. No importa si nuestro dataset consta de 
+imágenes en 4k, si el modelo espera un input de 300x300 debemos redimensionarlo, inclusive si perdemos features.
+
+Quieres conocer más modelos pre-entrenados, entonces date una vuelta por [Keras Applications](https://keras.io/api/applications/)
+
+![2.png](imgs%2F5%2F2.png)
+ 
+Para esta ocasión usaremos la arquitectura [inception V3](https://keras.io/api/applications/inceptionv3/) que podrás encontrar en la documentación de Keras, puedes notar 
+que sus dimensiones de entrada son (150, 150, 3) y nuestras imágenes son (28, 28, 1), por lo que debemos cambiar su tamaño 
+y escala de colores (escalar imágenes hacia arriba no es recomendable dada la pérdida de información, por lo que siempre 
+deberías buscar un modelo que se adapte a las dimensiones de tu dataset).
+
+InceptionV3 Function
+
+```commandline
+tf.keras.applications.InceptionV3(
+    include_top=True,
+    weights="imagenet",
+    input_tensor=None,
+    input_shape=None,
+    pooling=None,
+    classes=1000,
+    classifier_activation="softmax",
+)
+```
+
+Empecemos importando las bibliotecas necesarias:
+
+```python
+from keras import Model
+from keras.layers import Dense, Dropout, Input, Flatten
+from keras.applications.inception_v3 import InceptionV3
+from keras.callbacks import ModelCheckpoint
+```
+Lo más importante a resaltar aquí es que estamos usando un modelo pre-entrenado desde
+`keras.applications` en este caso `InceptionV3` y que estamos importando a `Model`desde `keras`, este nos permitirá acceder
+al `fucntional API` de `keras`.
+
+Conozcamos a [InceptionV3](https://keras.io/api/applications/inceptionv3/)
+
+**Input Shape**
+```commandline
+input_shape: Optional shape tuple, only to be specified if include_top is False (otherwise the input shape has to be 
+(299, 299, 3) (with channels_last data format) or (3, 299, 299) (with channels_first data format). It should have exactly 
+3 inputs channels, and width and height should be no smaller than 75. E.g. (150, 150, 3) would be one valid value. 
+input_shape will be ignored if the input_tensor is provided.
+```
+
+En términos sencillos nos está diciendo que el modelo fue creado con unas dimensiones de `(299*299*3)` y que las nuevas
+imágenes NO deben ser menores a `75*75` y debe ser una imagen `RGB`, para nuestro código ocuparemos una dimensión de `(150*150*3)`
+
+Así que lo primero que debemos hacer es modificar nuestra función `get_data()` para cambiar el `target_size` y el `color_mode` de las imágenes 
+del dataset de entrenamiento, validación y prueba.
+
+```python
+def get_data(target_size, color_mode):
+    train_dir = "../../data/Train"
+    test_dir = "../../data/Test"
+
+    _bs = 128
+
+    train_datagen = ImageDataGenerator(rescale=1 / 255)
+    test_datagen = ImageDataGenerator(rescale=1 / 255, validation_split=0.2)
+
+    _train_generator = train_datagen.flow_from_directory(
+        train_dir,
+        target_size=target_size,
+        batch_size=_bs,
+        class_mode="categorical",
+        color_mode=color_mode,
+        subset="training"
+    )
+
+    _validation_generator = test_datagen.flow_from_directory(
+        test_dir,
+        target_size=target_size,
+        batch_size=_bs,
+        class_mode="categorical",
+        color_mode=color_mode,
+        subset="validation"
+    )
+
+    _test_generator = test_datagen.flow_from_directory(
+        test_dir,
+        target_size=target_size,
+        batch_size=_bs,
+        class_mode="categorical",
+        color_mode= color_mode
+    )
+
+    _classes = [char for char in string.ascii_uppercase if char not in ("J", "Z")]
+
+    return _classes, _bs, _train_generator, _validation_generator, _test_generator
+
+```
+
+Perfecto, ahora nuestra función `get_data()` está parametrizada con los argumentos: `target_size, color_mode`
+
+Llamamos a la función para generar los datos:
+
+```python
+classes, batch_size, train_generator, validation_generator, test_generator = get_data(target_size=(150, 150),
+                                                                                          color_mode="rgb"
+```
+Respuesta esperada:
+```commandline
+Found 27455 images belonging to 24 classes.
+Found 1425 images belonging to 24 classes.
+Found 7172 images belonging to 24 classes.
+```
+
+Ahora creemos una función para cargar a nuestro modelo pre-entrenado `InceptionV3`:
+
+```python
+def load_inception_v3(shape, include_until: str):
+```
+
+Nuestra `función load_inception_v3` por el momento tendrá únicamente 2 parámetros:
+
+- `shape`: tamaño de las imágenes de entrenamiento, en este caso será `(150x150x3)`
+- `include_until`: Hasta que capa de la arquitectura del modelo original deseamos incluir para usarla en nuestra nueva red.
+
+```python
+def load_inception_v3(shape, include_until: str):
+    pretrained = InceptionV3(include_top=False, input_tensor=Input(shape=shape))
+    print(pretrained.summary())
+```
+Ahora podemos cargar el modelo al crear una instancia de la clase `InceptionV3` llamada `pretrained`, es importante decir que
+NO queremos incluir la capa de clasificación del modelo por eso ponemos en `False` al parámetro `include_top`. Podemos ver un 
+resumen de la arquitectura:
+
+Respuesta esperada:
+```commandline
+Model: "inception_v3"
+__________________________________________________________________________________________________
+ Layer (type)                   Output Shape         Param #     Connected to                     
+==================================================================================================
+ input_1 (InputLayer)           [(None, 150, 150, 3  0           []                               
+                                )]                                                                
+                                                                                                  
+ conv2d (Conv2D)                (None, 74, 74, 32)   864         ['input_1[0][0]']                
+                                                                                                  
+ batch_normalization (BatchNorm  (None, 74, 74, 32)  96          ['conv2d[0][0]']                 
+ alization)                                                                                       
+                                                                                                  
+ activation (Activation)        (None, 74, 74, 32)   0           ['batch_normalization[0][0]']    
+                                                                                                  
+ conv2d_1 (Conv2D)              (None, 72, 72, 32)   9216        ['activation[0][0]']             
+                                                                                                  
+ batch_normalization_1 (BatchNo  (None, 72, 72, 32)  96          ['conv2d_1[0][0]']               
+ rmalization)                                                                                     
+                                                                                                  
+ ...       
+                                                                                                  
+ activation_93 (Activation)     (None, 3, 3, 192)    0           ['batch_normalization_93[0][0]'] 
+                                                                                                  
+ mixed10 (Concatenate)          (None, 3, 3, 2048)   0           ['activation_85[0][0]',          
+                                                                  'mixed9_1[0][0]',               
+                                                                  'concatenate_1[0][0]',          
+                                                                  'activation_93[0][0]']          
+                                                                                                  
+==================================================================================================
+Total params: 21,802,784
+Trainable params: 21,768,352
+Non-trainable params: 34,432
+__________________________________________________________________________________________________
+
+```
+
+La arquitectura del modelo es MUY larga como para que valga la pena ponerla completa en este Readme, sin embargo, si quieres
+ver la arquitectura completa puedes consultarlo en el siguiente documento: [InceptionV3_full_arc.txt](5%20Fundamentos%20de%20aprendizaje%20por%20transferencia%2F3%20Carga%20de%20sistemas%20pre-entrenados%2FInceptionV3_full_arc.txt)
+
+El modelo es gigantesco, Tiene más de 21 Millones de parámetros entrenables, pero nosotros NO queremos reentrenar al modelo,
+por el contrario, queremos usar los pesos que YA conoce y aprovechar ese conocimiento adquirido en nuestro nuevo problema de
+clasificación. De forma sencilla lo que podemos hacer es que todas las capas de este modelo NO sean entrenables, de modo 
+que se conservan los pesos asignados:
+
+```python
+    for layer in pretrained.layers:
+        layer.trainable = False
+```
+Excelente, hasta este momento ya tenemos un modelo fijo, pero nosotros queremos por ejemplo NO incluir el modelo completo
+sino hasta una cierta capa en específico, para ello debemos hacer la siguiente configuración:
+
+```python
+    last_layers = pretrained.get_layer(include_until)
+```
+Le estamos pidiendo al modelo que nos devuelva la capa cuya valor está en la variable `include_until` que más adelante 
+decidiremos que el valor de está variable será `mixed7`. Ahora MUY importante, el modelo funcional, necesita operar NO directamente
+con las capas, sino con las salidas de las capas, es por ello que debemos asignar la salida de esta última capa:
+
+```python
+    last_output = last_layers.output
+```
+
+Veamos todo el código hasta este momento:
+
+```python
+def load_inception_v3(shape, include_until: str):
+    pretrained = InceptionV3(include_top=False, input_tensor=Input(shape=shape))
+	print(pretrained.summary())
+    for layer in pretrained.layers:
+        layer.trainable = False
+
+    last_layers = pretrained.get_layer(include_until)
+    last_output = last_layers.output
+    return pretrained, last_output
+```
+
+Hasta este momento hemos definido nuestra función `load_incetion_v3` la cuál nos permite cargar el modelo completo, y también
+decidir desde qué capa vamos a "recortar" el modelo para añadir la nuestra:
+
+Una simple, pero útil analogía de lo que hemos hecho hasta ahorita es la siguiente:
+
+Podemos imaginarnos a `InceptionV3` como una tira de video completa, y nuestro deber es editarla, removiendo la parte final del
+contenido, puesto que no la necesitamos.
+
+![3.png](imgs%2F5%2F3.png)
+
+Despues podemos crear nuestro propio "video" en este caso `continuar con la arquitectura de nuestro nuevo modelo` y finalmente
+unir ambas arquitecturas:
+
+![4.png](imgs%2F5%2F4.png)
+
+Esto es indispensable entender para manejar correctamente el `Functional API` de keras, puesto que esta herramienta no trabaja 
+necesariamente forma secuencial, puede dar saltos de ser necesario, por eso es necesario indicar de dónde viene y a dónde va.
+Pero esto lo veremos más a detalle en la siguiente clase.
+
 ## 5.4 API funcional de Keras
+
+Una vez que ya hemos definido nuestra función de carga del modelo pre-entrenado es momento de definir nuestra propuesta de arquitectura
+nueva que utilizará transfer learning para ganar las características que ya conocía el primer modelo. Empecemos por definir 
+una función que utilice `functional API de Keras`:
+
+```python
+def functional_architecture(input_shape, n_clases):
+    # Loading pretrained model
+    pretrained_model, last_output = load_inception_v3(input_shape, "mixed7")
+```
+Para este momento debería ser claro, que lo que estamos haciendo aquí es empezar nuestra nueva arquitectura tomando como base
+la arquitectura de `InceptionV3` tomando hasta la capa `mixed7`. Ahora viene la parte de adjuntarle nuestra nueva arquitectura:
+
+```python
+    # Attaching our new architecture
+    new_architecture = Flatten()(last_output)
+    new_architecture = Dense(128, activation="relu")(new_architecture)
+    new_architecture = Dropout(0.2)(new_architecture)
+    new_architecture = Dense(n_clases, activation="softmax")(new_architecture)
+```
+Excelente, vemos como en realidad nuestra porción de arquitectura es MUY simple, y básicamente solo está enfocada en la
+última etapa del modelo, la clasificación de las 24 clases que tiene nuestro problema. Podemos observar que estamos siguiendo
+un enfoque `Funcional` y NO `Secuencial` porque NO definimos un `model.Sequential()` y tampoco estamos añadiendo cada capa con
+`model.add()` si no que cada capa es una función, y estamos usando la función de una capa como entrada para una nueva capa, 
+de esta específica forma si tiene mucha forma de `secuencial` sin embargo, veamos donde está la parte más interesante de esta
+`Functional API`, para poder convertir estas capas en un modelo, es necesario usar la clase `Model()` que importamos y que no 
+habíamos utilizado antes.
+
+```python
+    model = Model(pretrained_model.input, new_architecture)
+    print(model.summary())
+```
+Aquí estamos diciéndole a Keras que queremos crear un nuevo Modelo, cuya primer capa sea la de `pretrained_model.input` (por eso
+era necesario que en esta capa definiéramos el `input_shape`) y cuya última capa del modelo sea la definida en `new_architecture`
+la cual nosotros definimos como una cada `Dense` de clasificación. 
+
+El código completo de esta función queda de la siguiente manera:
+
+```python
+def functional_architecture(input_shape, n_clases):
+
+    # Loading pretrained model
+    pretrained_model, last_output = load_inception_v3(input_shape, "mixed7")
+
+    # Attaching our new architecture
+    new_architecture = Flatten()(last_output)
+    new_architecture = Dense(128, activation="relu")(new_architecture)
+    new_architecture = Dropout(0.2)(new_architecture)
+    new_architecture = Dense(n_clases, activation="softmax")(new_architecture)
+
+    model = Model(pretrained_model.input, new_architecture)
+    print(model.summary())
+    return model
+```
+
+Respuesta esperada:
+```commandline
+Model: "model"
+__________________________________________________________________________________________________
+ Layer (type)                   Output Shape         Param #     Connected to                     
+==================================================================================================
+ input_1 (InputLayer)           [(None, 150, 150, 3  0           []                               
+                                )]                                                                
+                                                                                                  
+ conv2d (Conv2D)                (None, 74, 74, 32)   864         ['input_1[0][0]']                
+                                                                                                  
+ ...                                                                                   
+                                                                                                                                                           
+ mixed7 (Concatenate)           (None, 7, 7, 768)    0           ['activation_60[0][0]',          
+                                                                  'activation_63[0][0]',          
+                                                                  'activation_68[0][0]',          
+                                                                  'activation_69[0][0]']          
+                                                                                                  
+ flatten (Flatten)              (None, 37632)        0           ['mixed7[0][0]']                 
+                                                                                                  
+ dense (Dense)                  (None, 128)          4817024     ['flatten[0][0]']                
+                                                                                                  
+ dropout (Dropout)              (None, 128)          0           ['dense[0][0]']                  
+                                                                                                  
+ dense_1 (Dense)                (None, 24)           3096        ['dropout[0][0]']                
+                                                                                                  
+==================================================================================================
+Total params: 13,795,384
+Trainable params: 4,820,120
+Non-trainable params: 8,975,264
+__________________________________________________________________________________________________
+```
+De nuevo, la arquitectura real es bastante amplia, no tan amplia como la original porque eliminamos varias capas, pero si tienes
+curiosidad puedes ver la arquitectura completa en el siguiente documento: [transfer_learning_arc.txt](5%20Fundamentos%20de%20aprendizaje%20por%20transferencia%2F3%20Carga%20de%20sistemas%20pre-entrenados%2Ftransfer_learning_arc.txt) 
+
+Esta función devuelve la arquitectura de nuestro nuevo modelo, utilizando el `Functional API` y `transfer learning` pero 
+a este punto ya es una arquitectura como las que hemos manejado en el curso, así que vamos a compilarla, entrenarla y ponerle
+callbacks para guardar el modelo:
+
+```python
+    functional_model = functional_architecture(input_shape=(150, 150, 3), n_clases=len(classes_))
+
+    functional_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+
+    checkpoint = ModelCheckpoint(filepath="models/best_model.h5", frecuency="epoch", save_weights_only=False,
+                                 monitor="val_accuracy", save_best_only=True, verbose=1)
+
+    history = functional_model.fit(train_generator_, epochs=5, validation_data=validation_generator_,
+                                   batch_size=batch_size_, callbacks=[checkpoint])
+
+    plot_results(history, "accuracy", "pretrained results.png")
+
+    functional_model.evaluate(test_generator_)
+
+```
+Respuesta esperada:
+```commandline
+Epoch 1/5
+215/215 [==============================] - ETA: 0s - loss: 0.1294 - accuracy: 0.9632
+Epoch 1: val_accuracy improved from -inf to 0.98386, saving model to models/best_model.h5
+215/215 [==============================] - 19s 69ms/step - loss: 0.1294 - accuracy: 0.9632 - val_loss: 0.0554 - val_accuracy: 0.9839
+Epoch 2/5
+215/215 [==============================] - ETA: 0s - loss: 0.0030 - accuracy: 0.9998
+Epoch 2: val_accuracy did not improve from 0.98386
+215/215 [==============================] - 12s 58ms/step - loss: 0.0030 - accuracy: 0.9998 - val_loss: 0.0514 - val_accuracy: 0.9832
+Epoch 3/5
+215/215 [==============================] - ETA: 0s - loss: 0.0104 - accuracy: 0.9975
+Epoch 3: val_accuracy did not improve from 0.98386
+215/215 [==============================] - 12s 57ms/step - loss: 0.0104 - accuracy: 0.9975 - val_loss: 0.0784 - val_accuracy: 0.9754
+Epoch 4/5
+215/215 [==============================] - ETA: 0s - loss: 0.0038 - accuracy: 0.9989
+Epoch 4: val_accuracy did not improve from 0.98386
+215/215 [==============================] - 12s 57ms/step - loss: 0.0038 - accuracy: 0.9989 - val_loss: 0.0777 - val_accuracy: 0.9775
+Epoch 5/5
+215/215 [==============================] - ETA: 0s - loss: 5.7379e-04 - accuracy: 0.9999
+Epoch 5: val_accuracy did not improve from 0.98386
+215/215 [==============================] - 12s 58ms/step - loss: 5.7379e-04 - accuracy: 0.9999 - val_loss: 0.0621 - val_accuracy: 0.9796
+
+```
+
+![pretrained results.png](5%20Fundamentos%20de%20aprendizaje%20por%20transferencia%2F3%20Carga%20de%20sistemas%20pre-entrenados%2Fpretrained%20results.png)
+
+```commandline
+57/57 [==============================] - 3s 59ms/step - loss: 0.0649 - accuracy: 0.9791
+```
+
+Los resultados son excelentes, en solo 5 iteraciones, hemos logrado un `val accuracy` de casi 98% mismo que se ve reflejado
+en el test set. Y todo esto gracias a que hemos utilizado un modelo pre-entrenado y hemos ocupado el api funcional de keras 
+para usar transfer learning.
 
 ## 5.5 Uso de sistemas pre-entrenados de TensorFlow Hub
 
