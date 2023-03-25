@@ -2869,7 +2869,172 @@ El nuevo modelo es más de 36x más pequeño que el modelo anterior (véase la c
 
 # 6 Resultados de entrenamiento
 
+A través de los módulos hemos explorado gran parte del ciclo de vida de los algoritmos de deep learning, desde la carga y limpieza de datos hasta la creación y optimización de los mismos, culminando con la implementación de modelos preentrenados desde Keras Applications y TensorHub.
+
+Ahora indagaremos sobre TensorBoard, una herramienta que nos permitirá publicar los resultados de nuestros modelos a la comunidad.
+
+A través de las siguientes sesiones, comprenderemos qué es Tensorboard, sus variables relevantes, cómo analizar y publicar nuestros resultados, además de algunas nociones para escalar nuestros modelos a producción.
+
+- Introducción a variables relevantes de TensorBoard
+- Análisis y publicación de resultados del entrenamiento
+- Introducción para poner modelos en producción
+- Cómo poner en producción
+
+
 ## 6.1 Introducción a variables relevantes del TensorBoard
+
+TensorBoard es una herramienta de visualización para TensorFlow, un popular framework de aprendizaje automático. TensorBoard permite a los desarrolladores visualizar y monitorear el rendimiento de sus modelos de aprendizaje automático de manera interactiva y en tiempo real. Algunas de las características clave de TensorBoard incluyen:
+
+1. `Visualización de gráficos de TensorFlow:` Con TensorBoard, puedes visualizar los gráficos de TensorFlow para ver cómo se conectan las operaciones y cómo fluyen los datos en el modelo.
+
+2. `Visualización de métricas y resúmenes de TensorFlow:` TensorBoard permite la visualización de diferentes tipos de métricas, como las pérdidas y las métricas de precisión. También es posible agregar resúmenes personalizados a través de la API de TensorFlow.
+
+3. `Monitoreo de entrenamiento:` TensorBoard permite la visualización en tiempo real de los indicadores de entrenamiento, como la precisión y la pérdida. Esto permite a los desarrolladores monitorear el progreso del entrenamiento y ajustar los hiperparámetros según sea necesario.
+
+4. `Visualización de gráficos de distribución:` TensorBoard puede mostrar gráficos de distribución que permiten a los desarrolladores ver cómo se distribuyen los valores de los pesos y los sesgos del modelo.
+
+5. `Exploración de datos:` TensorBoard permite la visualización de imágenes y otros tipos de datos para comprender mejor cómo se relacionan con el modelo.
+
+Para este ejemplo vamos a ocupar una de nuestras primeras arquitecturas del curso véase: [3.2 Recomendaciones prácticas para ajustar un modelo](#32-recomendaciones-prácticas-para-ajustar-un-modelo)
+en donde definimos nuestra `conv_architecture` de la siguiente manera:
+
+```python
+def conv_architecture(input_shape, n_clases):
+    model = Sequential()
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), activation="relu", input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Flatten())
+    model.add(Dense(256, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(128, activation="relu", kernel_regularizer=l2(1e-5)))
+    model.add(Dropout(0.2))
+    model.add(Dense(n_clases, activation="softmax"))
+    print(model.summary())
+    return model
+```
+
+El código de la clase original está [Aquí](3%20Optimizaci%C3%B3n%20del%20modelo%2F2%20CNN%20base%2Fmain.py)
+
+Vamos a modificar ligeramente el código para agregar un `callback` a nuestro código durante el `model.fit`
+
+Primero importamos las nuevas bibliotecas que vamos a usar:
+
+```python
+from keras.callbacks import TensorBoard
+from datetime import date
+```
+
+Ahora generemos el modelo y añadamos el `TensorBoard` como un `callback`:
+
+```python
+classes, batch_size, train_generator, validation_generator, test_generator = get_data()
+
+    conv_model = conv_architecture(input_shape=(28, 28, 1), n_clases=len(classes))
+
+    conv_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['accuracy'])
+
+    current_day = date.today().strftime("%dd_%mm_%yyyy")
+    tensorboard_cb = TensorBoard(log_dir=f"logs/cnn_model_{current_day}")
+
+    history = conv_model.fit(train_generator, epochs=25, validation_data=validation_generator, batch_size=128,
+                             callbacks=[tensorboard_cb])
+
+    plot_results(history, "accuracy", "conv_results.png")
+
+    results = conv_model.evaluate(test_generator)
+```
+Respuesta esperada:
+
+```commandline
+Found 27455 images belonging to 24 classes.
+Found 1425 images belonging to 24 classes.
+Found 7172 images belonging to 24 classes.
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, 26, 26, 128)       1280      
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, 13, 13, 128)      0         
+ )                                                               
+                                                                 
+ flatten (Flatten)           (None, 21632)             0         
+                                                                 
+ dense (Dense)               (None, 256)               5538048   
+                                                                 
+ dropout (Dropout)           (None, 256)               0         
+                                                                 
+ dense_1 (Dense)             (None, 128)               32896     
+                                                                 
+ dropout_1 (Dropout)         (None, 128)               0         
+                                                                 
+ dense_2 (Dense)             (None, 24)                3096      
+                                                                 
+=================================================================
+Total params: 5,575,320
+Trainable params: 5,575,320
+Non-trainable params: 0
+_________________________________________________________________
+None
+Epoch 1/20
+215/215 [==============================] - 7s 21ms/step - loss: 1.5483 - accuracy: 0.5399 - val_loss: 0.7625 - val_accuracy: 0.7712
+Epoch 2/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.3161 - accuracy: 0.9114 - val_loss: 0.5910 - val_accuracy: 0.8218
+Epoch 3/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.1202 - accuracy: 0.9748 - val_loss: 0.5877 - val_accuracy: 0.8442
+Epoch 4/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0768 - accuracy: 0.9870 - val_loss: 0.6344 - val_accuracy: 0.8421
+Epoch 5/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0563 - accuracy: 0.9935 - val_loss: 0.6284 - val_accuracy: 0.8547
+Epoch 6/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0517 - accuracy: 0.9944 - val_loss: 0.7089 - val_accuracy: 0.8491
+Epoch 7/20
+215/215 [==============================] - 2s 9ms/step - loss: 0.0482 - accuracy: 0.9948 - val_loss: 0.7228 - val_accuracy: 0.8512
+Epoch 8/20
+215/215 [==============================] - 2s 9ms/step - loss: 0.0427 - accuracy: 0.9966 - val_loss: 0.7225 - val_accuracy: 0.8449
+Epoch 9/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0442 - accuracy: 0.9955 - val_loss: 0.7963 - val_accuracy: 0.8491
+Epoch 10/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0385 - accuracy: 0.9976 - val_loss: 0.7923 - val_accuracy: 0.8533
+Epoch 11/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0394 - accuracy: 0.9970 - val_loss: 0.7773 - val_accuracy: 0.8477
+Epoch 12/20
+215/215 [==============================] - 2s 11ms/step - loss: 0.0406 - accuracy: 0.9964 - val_loss: 0.7820 - val_accuracy: 0.8604
+Epoch 13/20
+215/215 [==============================] - 2s 12ms/step - loss: 0.0402 - accuracy: 0.9966 - val_loss: 0.9315 - val_accuracy: 0.8428
+Epoch 14/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0417 - accuracy: 0.9960 - val_loss: 0.8638 - val_accuracy: 0.8407
+Epoch 15/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0379 - accuracy: 0.9974 - val_loss: 0.7973 - val_accuracy: 0.8484
+Epoch 16/20
+215/215 [==============================] - 2s 11ms/step - loss: 0.0390 - accuracy: 0.9965 - val_loss: 0.7694 - val_accuracy: 0.8456
+Epoch 17/20
+215/215 [==============================] - 2s 11ms/step - loss: 0.0391 - accuracy: 0.9968 - val_loss: 0.7550 - val_accuracy: 0.8456
+Epoch 18/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0369 - accuracy: 0.9975 - val_loss: 0.8152 - val_accuracy: 0.8561
+Epoch 19/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0363 - accuracy: 0.9977 - val_loss: 0.8239 - val_accuracy: 0.8632
+Epoch 20/20
+215/215 [==============================] - 2s 10ms/step - loss: 0.0405 - accuracy: 0.9965 - val_loss: 0.8144 - val_accuracy: 0.8491
+57/57 [==============================] - 1s 18ms/step - loss: 0.7509 - accuracy: 0.8493
+
+Process finished with exit code 0
+```
+
+![conv_results.png](6%20Resultados%20de%20entrenamiento%2F1%20Tensorboard%2Fconv_results.png)
+
+Y podemos ver como genero la siguiente estructura de carpetas:
+
+```commandline
+logs/
+----cnn_model_24_03_2023/
+----/-------------------/train
+----/-------------------/---------/[events.out.tfevents.1679707300.ichcanziho.39824.0.v2](6%20Resultados%20de%20entrenamiento%2F1%20Tensorboard%2Flogs%2Fcnn_model_24_03_2023%2Ftrain%2Fevents.out.tfevents.1679707300.ichcanziho.39824.0.v2)
+----/-------------------/validation
+----/-------------------/---------/[events.out.tfevents.1679707307.ichcanziho.39824.1.v2](6%20Resultados%20de%20entrenamiento%2F1%20Tensorboard%2Flogs%2Fcnn_model_24_03_2023%2Fvalidation%2Fevents.out.tfevents.1679707307.ichcanziho.39824.1.v2)
+```
+
+En la siguiente clase vamos a ver como abrir estos logs y exportarlos a `Tensorflow.dev`
 
 ## 6.2 Análisis y publicación de resultados del entrenamiento
 
