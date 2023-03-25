@@ -8,9 +8,9 @@ Ya conoces cómo funcionan las redes neuronales. Incrementa tus habilidades usan
 - Pre-procesa datos con Keras datasets y datasets generators.
 
 > ## NOTA:
-> Antes de continuar te invito a que revises el curso anterior:
-> 
-> [Curso de redes neuronales convolucionales con Python y Keras](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales)
+> Antes de continuar te invito a que revises los cursos anteriores:
+> - [1: Curso profesional de Redes Neuronales con TensorFlow](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales)
+> - [2: Curso de Redes Neuronales Convolucionales con Python y keras](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales) 
 >
 > Este Curso es el Número 3 de una ruta de Deep Learning, quizá algunos conceptos no vuelvan a ser definidos en este repositorio,
 > por eso es indispensable que antes de empezar a leer esta guía hayas comprendido los temas vistos anteriormente.

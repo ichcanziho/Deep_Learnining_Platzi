@@ -9,7 +9,7 @@ En este curso avanzado eleva tus conocimientos de deep learning. Comprende el fu
 > ## NOTA:
 > Antes de continuar te invito a que revises el curso anterior:
 > 
-> [Curso de fundamentos de redes neuronales con Python y Keras](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales)
+> [1: Curso de fundamentos de redes neuronales con Python y Keras](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales)
 >
 > Sin más por agregar disfruta de este curso
 
