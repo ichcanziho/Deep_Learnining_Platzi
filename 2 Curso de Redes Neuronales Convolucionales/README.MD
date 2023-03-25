@@ -2320,4 +2320,4 @@ Aún queda mucho por aprender:
 ![A7.png](imgs%2FCierre%2FA7.png)
 
 
-Ahora acompáñame al siguiente curso de [Curso profesional de Redes Neuronales con TensorFlow]()
+Ahora acompáñame al siguiente curso de [Curso profesional de Redes Neuronales con TensorFlow](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow)

@@ -3076,5 +3076,47 @@ comunidad.
 
 ## 6.3 Introducción al despliegue de modelos en producción
 
+La generación de código para Machine Learning es una parte vasta y en la que se puede profundizar increíblemente, sin embargo, en el gran esquema de las cosas implica una pequeña parte del ciclo de vida entero de un proyecto.
+
+En las siguientes entregas de esta saga se interiorizará sobre el resto de etapas, donde aprenderás a profesionalizarlas.
+
+![8.png](imgs%2F5%2F8.png)
+
+**Ejemplos de producción**
+
+Puedes desplegar tus modelos en diferentes dispositivos según tu necesidad.
+
+Si tu proyecto va a ser de consumo masificado, entonces la opción natural será desplegarlo en la nube, donde Google Cloud, Azure, AWS u Oracle Cloud podrán ayudarte. Esta ventaja es especialmente útil si debes escalar tu modelo a mayores capacidades sin necesidad de adquirir un equipo propio.
+
+Si necesitas hacer inferencias en vivo entonces podrías optar por equipo IoT, donde dispositivos como la Raspberry Pi o el Jatson Nanon te ofrecerán una capacidad de cómputo decente para tareas en tiempo real.
+
+Si tienes los recursos necesarios o el proyecto no es tan robusto, puedes correr tus modelos de manera local, donde tus equipos se encargarán de las inferencias.
+
+Un caso final (y una extensión a los últimos 2 casos) sería el de usar un USB Accelerator, hardware con alta capacidad de cómputo que procesa las inferencias con alta facilidad.
+
+Puedes concentrar los recursos de predicción sobre este hardware y dejar descansar al resto del equipo.
+
 ## 6.4 Siguientes pasos con deep learning
 
+Muchas Felicidades si has llegado hasta aquí has terminado exitosamente el curso de [Curso Profesional de Redes Neuronales con TensorFlow](https://platzi.com/cursos/redes-neuronales-tensorflow/)
+El curso es impartido por el profesor [Adonaí Vera](https://platzi.com/profes/adonai-vera/) Y este repositorio me pertenece a mí:
+[Gabriel Ichcanziho](https://www.linkedin.com/in/ichcanziho/).
+
+A través de los módulos profesionalizamos el ciclo de vida de la creación del código de un proyecto de Machine Learning. A través de las sesiones aprendimos:
+
+- Carga de bases de datos en múltiples formatos.
+- Generación de modelos de Deep Learning.
+- Optimizadores y regularizadores.
+- Callbacks personalizados e inteligentes.
+- Buscadores inteligentes de hiperparámetros (Keras tuner).
+- Uso de redes pre-entrenadas (transfer learning).
+- Carga y descarga de configuraciones.
+- Análisis gráficos con TensorBoard.
+- Introducción y tips en la puestra a producción.
+
+El aprendizaje nunca para, por lo que puedes indagar sobre redes neuronales convolucionales, data augmentation, formatos TF Records, despliegue en producción y Computer Vision.
+
+![9.png](imgs%2F5%2F9.png)
+
+
+Ahora acompañame al siguiente curso de: [Curso de Transfer Learning con Hugging Face]())
