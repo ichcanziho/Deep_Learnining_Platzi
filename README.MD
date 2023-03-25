@@ -4,7 +4,7 @@
 
 - ![](https://geps.dev/progress/100) [1. Curso de fundamentos de redes neuronales](1%20Curso%20de%20fundamentos%20de%20redes%20neuronales) 
 - ![](https://geps.dev/progress/100) [2. Curso de Redes Neuronales Convolucionales](2%20Curso%20de%20Redes%20Neuronales%20Convolucionales)
-- ![](https://geps.dev/progress/55) [3. Curso profesional de Redes Neuronales con TensorFlow](3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow)
+- ![](https://geps.dev/progress/100) [3. Curso profesional de Redes Neuronales con TensorFlow](3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow)
 - ![](https://geps.dev/progress/0) [4. Curso de Transfer Learning con Hugging Face](5%20Curso%20de%20Transfer%20Learning%20con%20Hugging%20Face)
 - ![](https://geps.dev/progress/0) [5. Curso de introducción a Demos de Machine Learning con Hugging Face](6%20Curso%20de%20introducción%20a%20Demos%20de%20Machine%20Learning%20con%20Hugging%20Face%20)
 - ![](https://geps.dev/progress/0) [6. Curso de generación de imágenes](7%20Curso%20de%20generación%20de%20imágenes)
