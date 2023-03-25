@@ -3038,6 +3038,42 @@ En la siguiente clase vamos a ver como abrir estos logs y exportarlos a `Tensorf
 
 ## 6.2 Análisis y publicación de resultados del entrenamiento
 
+Conoce más información sobre TensorBoard.dev en https://tensorboard.dev/
+adicionalmente puedes ver otros ejemplos en: https://www.tensorflow.org/tensorboard/get_started?hl=es-419
+
+Estando en la carpeta dónde se genero el folder de `logs` vamos a una terminal y escribimos:
+
+```bash
+tensorboard --logdir logs
+```
+Lo cual me dara un servidor en `localhost:6006`
+```commandline
+Serving TensorBoard on localhost; to expose to the network, use a proxy or pass --bind_all
+TensorBoard 2.11.2 at http://localhost:6006/ (Press CTRL+C to quit)
+```
+Si accedo a dicha dirección en mi navegador:
+
+![6.png](imgs%2F5%2F6.png)
+
+Tengo acceso a los resultados de `TensorBoard`
+
+Y finalmente puedo compartir mis resultados con la comunidad de la siguiente manera:
+
+```bash
+tensorboard dev upload \
+  --logdir logs \
+  --name "Clasificador de lenguaje de señas usando CNNs" \
+  --description "Resultados del curso de Platzi: Curso profesional de redes neuronales con TensorFlow. Autor: Gabriel Ichcanziho" \
+  --one_shot
+  ```
+
+Ahora puedes acceder a mis resultados en: https://tensorboard.dev/experiment/t7JOk7kQTq6zdWi0slGe9Q/#scalars
+
+![7.png](imgs%2F5%2F7.png)
+
+Y ese link está disponible para cualquier persona. TensorBoard.dev es una excelente forma de compartir tus resultados con la
+comunidad.
+
 ## 6.3 Introducción al despliegue de modelos en producción
 
 ## 6.4 Siguientes pasos con deep learning
