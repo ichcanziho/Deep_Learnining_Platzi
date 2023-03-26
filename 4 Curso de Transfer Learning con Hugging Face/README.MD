@@ -93,6 +93,58 @@ incluyendo la clasificación de imágenes, el procesamiento del lenguaje natural
 
 ## 1.2 Machine Learning abierto para todo el mundo
 
+En la actualidad es MUY complejo e incluso inocente pensar que alguna empresa será capaz de "resolver la IA" por sí misma.
+Esto debido al alto nivel de complejidad de la tarea. Este tipo de problemas requieren el esfuerzo de una gran cantidad de
+personas trabajando por un bien común. Se requiere de una `comunidad`. Tener a más personas contribuyendo en los proyectos de
+IA es la forma más efectiva y eficiente de generar mejores y más poderosos modelos.
+
+Actualmente, `Hugging Face` es una comunidad de IA en donde podremos encontrar:
+
+- más 50 mil modelos
+- más de 5 mil datasets
+- más de 5 mil Spaces (demos)
+
+Los modelos son libres, y podemos usarlos como base para crear nuestras nuevas propuestas de modelos y solucionar problemas
+cada vez más específicos.
+
+Empecemos por conocer la página de Hugging Face: https://huggingface.co/
+
+![3.png](imgs%2F1%20Introducci%C3%B3n%2F3.png)
+
+
+De forma muy sencilla, podemos decir que dentro de Hugging Face, cada modelo es en sí mismo un repositorio de Git. Hugging Face
+nos permite filtrar por una amplia variedad de parámetros, desde el tipo de problema: Multimodal, NLP, Audio, Computer Vision.
+Hasta por el tipo de biblioteca que manejamos: Pytorch, TensorFlow, Keras, Scikit-learn etc. Por idioma, por licencia entre otros.
+
+
+![4.png](imgs%2F1%20Introducci%C3%B3n%2F4.png)
+
+Nuestros filtros no arrojaran que modelos cumplen con nuestros requisitos:
+
+![5.png](imgs%2F1%20Introducci%C3%B3n%2F5.png)
+
+Por ejemplo conozcamos a: [nlptown/bert-base-multilingual-uncased-sentiment](https://huggingface.co/nlptown/bert-base-multilingual-uncased-sentiment)
+
+![6.png](imgs%2F1%20Introducci%C3%B3n%2F6.png)
+
+Podemos observar como es una página bastante similar a GitHub. Incluso en su pestaña de `Files and versions` podemos encontrar
+una estructura muy similar a Github.
+
+![7.png](imgs%2F1%20Introducci%C3%B3n%2F7.png)
+
+Varios modelos de Hugging Face me van a permitir usar su `Hosted inference API`
+Una herramienta sumamente práctica que me va a dejar probar el funcionamiento del modelo de una forma muy simple.
+
+Por ejemplo: busquemos [xlm-roberta-base](https://huggingface.co/xlm-roberta-base?text=Hola+soy+una+persona+muy+%3Cmask%3E+y+me+encanta%21)
+
+![8.png](imgs%2F1%20Introducci%C3%B3n%2F8.png)
+
+De forma sumamente rápida podemos ver el funcionamiento de este modelo. Inlcuso en la ventaja de `Use in Transformers`
+nos dan un ejemplo de implementación simple en código:
+
+![9.png](imgs%2F1%20Introducci%C3%B3n%2F9.png)
+
+
 ## 1.3 Las tasks en machine learning
 
 ## 1.4 Quiz: introducción al hub de hugging face
