@@ -147,7 +147,54 @@ nos dan un ejemplo de implementación simple en código:
 
 ## 1.3 Las tasks en machine learning
 
+En esta clase aprenderemos ¿Qué son los tasks? Y ¿Cómo elegir el mejor modelo para nuestra aplicación?
+
+Una task es una aplicación específica para la que creas un modelo de Machine Learning. Por ejemplo, pensemos en las siguientes
+áreas de aplicación de Deep Learning y mencionemos algunas de sus `tasks`:
+
+- Computer Vision:
+  - Image Classification
+  - Image Segmentation
+  - Image-to-image
+  - Unconditional Image Generation
+  - Object Detection
+- Natural Language Processing
+  - Translation
+  - Token Classification
+  - Sentence Similarity
+  - Question Answering
+  - Summarization
+  - Zero-Shot Classification
+  - Text Classification
+  - Text2Text Generation
+- Audio
+  - Audio-Classification
+  - Text-to-Speech
+  - Audio-to-Audio
+- Multimodal
+  - Feature Extraction
+  - Image-to-Text
+  - Text-to-Image
+- Tabular
+  - Tabular Classification
+  - Tabular Regression
+- Reinforcement Learning
+  - Reinforcement Learning
+
+Todos estos y más `tasks` están disponibles en `Hugging Face`: https://huggingface.co/tasks
+
+![10.png](imgs%2F1%20Introducci%C3%B3n%2F10.png)
+
+Cada `task` nos brinda más información al respecto del mismo, modelos disponibles, bibliotecas compatibles y en algunos
+casos incluso códigos de ejemplo en formato NoteBook e incluso Datasets. Por ejemplo veamos el task de `Text Classification`
+
+![11.png](imgs%2F1%20Introducci%C3%B3n%2F11.png)
+
+
+
 ## 1.4 Quiz: introducción al hub de hugging face
+
+![12.png](imgs%2F1%20Introducci%C3%B3n%2F12.png)
 
 # 2 Primeros pasos con transfer learning y transformers
 
