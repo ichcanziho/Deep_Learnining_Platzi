@@ -200,6 +200,98 @@ casos incluso códigos de ejemplo en formato NoteBook e incluso Datasets. Por ej
 
 ## 2.1 Tus primeros modelos pre-entrenados usando pipeline
 
+> ## Nota:
+> Puedes encontrar el notebook completo de esta clase: [Aquí](2%20Primeros%20pasos%20con%20transfer%20learning%20y%20transformers%2F1%20Primeros%20modelos%20pre-entrenados%20con%20pipeline%2FIntroducci%C3%B3n_al_Hub_de_Hugging_Face.ipynb)
+
+En esta clase vamos a ver una forma sumamente simple de utilizar `pipeline` para utilizar modelos pre-entrenados de Hugging Face.
+El código completo de todas las pruebas se encuentra en el notebook descrito anteriormente. Sin embargo, en esta sección 
+solamente vamos a presentar un solo ejemplo, puesto que en general todos son básicamente lo mismo.
+
+Primero debemos empezar instalando la biblioteca de `transformers` de `Hugging Face`
+
+```bash
+pip install transformers
+```
+Respuesta esperada:
+```commandline
+Successfully installed filelock-3.10.7 huggingface-hub-0.13.3 pyyaml-6.0 regex-2023.3.23 tokenizers-0.13.2 transformers-4.27.3
+```
+
+Imaginemos que queremos clasificar una imagen y qué un modelo nos diga que entidad es capaz de reconocer en dicha imagen.
+Por ejemplo la siguiente:
+
+![coche.png](2%20Primeros%20pasos%20con%20transfer%20learning%20y%20transformers%2F1%20Primeros%20modelos%20pre-entrenados%20con%20pipeline%2Fcoche.png)
+
+Nosotros ya sabemos que se trata de un `coche`, pero veamos que tan fácil es para un modelo de `Hugging Face` determinar esto:
+
+```python
+from transformers import pipeline
+
+if __name__ == '__main__':
+
+    obj_classification = pipeline(task="image-classification")
+    ans = obj_classification("coche.png")
+    print(ans)
+```
+> Nota:
+> 
+> Para este ejemplo de código hemos puesto `lo mínimo` indispensable para correr un modelo a través de pipeline, lo cual
+> es especificar que `task` estamos buscando resolver. En este ejemplo ha sido `image-classification`, sin embargo, no hemos puesto
+> ningún otro parámetro, como por ejemplo: `model`. Esto obliga a `Hugging Face` a inferir cuál sería el mejor modelo que se
+> adapte a nuestra necesidad, automáticamente propone un modelo y lo descarga por nosotros
+>   >No model was supplied, defaulted to google/vit-base-patch16-224 and revision 5dca96d (https://huggingface.co/google/vit-base-patch16-224).
+Using a pipeline without specifying a model name and revision in production is not recommended.
+Downloading (…)lve/main/config.json: 100%|██████████| 69.7k/69.7k [00:00<00:00, 369kB/s]
+Downloading tf_model.h5: 100%|██████████| 347M/347M [00:36<00:00, 9.44MB/s]
+
+Respuesta esperada:
+```commandline
+[{'score': 0.6160857677459717, 'label': 'minivan'}, {'score': 0.2290043979883194, 'label': 'beach wagon, station wagon, wagon, estate car, beach waggon, station waggon, waggon'}, {'score': 0.03376132249832153, 'label': 'car wheel'}, {'score': 0.027296774089336395, 'label': 'jeep, landrover'}, {'score': 0.020214203745126724, 'label': 'grille, radiator grille'}]
+```
+
+Excelente, el modelo ha clasificado exitosamente a nuestra imagen no solo como un coche, sino que especifica mente un `minivan`
+Con esto hemos logrado resolver un problema de clasificación de imágenes con simplemente 3 líneas de código. Ha sido sumamente sencillo
+usar `pipeline` y dejar que `Hugging Face` se encargase de todo lo demás por nosotros.
+
+Sin embargo, cabe destacar que la clase `pipeline` tiene varios parámetros configurables, entre ellos podemos encontrar los siguientes:
+
+> `task (str)` — The task defining which pipeline will be returned. Currently accepted tasks are:
+> - "audio-classification": will return a AudioClassificationPipeline.
+> - "automatic-speech-recognition": will return a AutomaticSpeechRecognitionPipeline.
+> - "conversational": will return a ConversationalPipeline.
+> - "depth-estimation": will return a DepthEstimationPipeline.
+> - "document-question-answering": will return a DocumentQuestionAnsweringPipeline.
+> - "feature-extraction": will return a FeatureExtractionPipeline.
+> - "fill-mask": will return a FillMaskPipeline:.
+> -"image-classification": will return a ImageClassificationPipeline.
+>- "image-segmentation": will return a ImageSegmentationPipeline.
+>- "image-to-text": will return a ImageToTextPipeline.
+>- "object-detection": will return a ObjectDetectionPipeline.
+>- "question-answering": will return a QuestionAnsweringPipeline.
+>- "summarization": will return a SummarizationPipeline.
+>- "table-question-answering": will return a TableQuestionAnsweringPipeline.
+>- "text2text-generation": will return a Text2TextGenerationPipeline.
+>- "text-classification" (alias "sentiment-analysis" available): will return a TextClassificationPipeline.
+>- "text-generation": will return a TextGenerationPipeline:.
+>- "token-classification" (alias "ner" available): will return a TokenClassificationPipeline.
+> - "translation": will return a TranslationPipeline.
+>- "translation_xx_to_yy": will return a TranslationPipeline.
+>- "video-classification": will return a VideoClassificationPipeline.
+>- "visual-question-answering": will return a VisualQuestionAnsweringPipeline.
+>- "zero-shot-classification": will return a ZeroShotClassificationPipeline.
+>- "zero-shot-image-classification": will return a ZeroShotImageClassificationPipeline.
+> - "zero-shot-audio-classification": will return a ZeroShotAudioClassificationPipeline.
+>- "zero-shot-object-detection": will return a ZeroShotObjectDetectionPipeline.
+>
+> `model (str or PreTrainedModel or TFPreTrainedModel, optional)` — The model that will be used by the pipeline to make predictions. This can be a model identifier or an actual instance of a pretrained model inheriting from PreTrainedModel (for PyTorch) or TFPreTrainedModel (for TensorFlow).
+> If not provided, the default for the task will be loaded.
+>
+> `config (str or PretrainedConfig, optional) — The configuration that will be used by the pipeline to instantiate the model. This can be a model identifier or an actual pretrained model configuration inheriting from PretrainedConfig.
+> If not provided, the default configuration file for the requested model will be used. That means that if model is given, its default configuration will be used. However, if model is not supplied, this task’s default model’s config is used instead.
+
+Puedes leer la documentación completa en: [The pipeline abstraction](https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline)
+
+
 ## 2.2 Explorando los datasets
 
 ## 2.3 Introducción a los Transformers
