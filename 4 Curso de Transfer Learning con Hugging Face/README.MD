@@ -21,31 +21,31 @@ Eleva tus habilidades en deep learning aplicando transfer learning a modelos pre
 
 # Índice:
 - [1 Introducción al Hub de Hugging Face](#1-introducción-al-hub-de-hugging-face)
-- [1 Introducción al transfer learning](#11-introducción-al-transfer-learning)
-- [1.1 Machine Learning abierto para todo el mundo](#12-machine-learning-abierto-para-todo-el-mundo)
-- [1.2 Las tasks en machine learning](#13-las-tasks-en-machine-learning)
-- [1.3 Quiz: introducción al hub de hugging face](#14-quiz--introducción-al-hub-de-hugging-face)
+  - [1 Introducción al transfer learning](#11-introducción-al-transfer-learning)
+  - [1.1 Machine Learning abierto para todo el mundo](#12-machine-learning-abierto-para-todo-el-mundo)
+  - [1.2 Las tasks en machine learning](#13-las-tasks-en-machine-learning)
+  - [1.3 Quiz: introducción al hub de hugging face](#14-quiz--introducción-al-hub-de-hugging-face)
 - [2 Primeros pasos con transfer learning y transformers](#2-primeros-pasos-con-transfer-learning-y-transformers)
-- [2.1 Tus primeros modelos pre-entrenados usando pipeline](#21-tus-primeros-modelos-pre-entrenados-usando-pipeline)
-- [2.2 Explorando los datasets](#22-explorando-los-datasets)
-- [2.3 Introducción a los Transformers](#23-introducción-a-los-transformers)
-- [2.4 Aplicando transfer learning](#24-aplicando-transfer-learning)
-- [2.5 Quiz: Primeros pasos con transfer learning](#25-quiz--primeros-pasos-con-transfer-learning)
+  - [2.1 Tus primeros modelos pre-entrenados usando pipeline](#21-tus-primeros-modelos-pre-entrenados-usando-pipeline)
+  - [2.2 Explorando los datasets](#22-explorando-los-datasets)
+  - [2.3 Introducción a los Transformers](#23-introducción-a-los-transformers)
+  - [2.4 Aplicando transfer learning](#24-aplicando-transfer-learning)
+  - [2.5 Quiz: Primeros pasos con transfer learning](#25-quiz--primeros-pasos-con-transfer-learning)
 - [3 Computer Vision](#3-computer-vision)
-- [3.1 Carga de dataset para computer vision](#31-carga-de-dataset-para-computer-vision)
-- [3.2 Procesamiento de dataset para computer vision](#32-procesamiento-de-dataset-para-computer-vision)
-- [3.3 Configurando un Trainer para computer vision](#33-configurando-un-trainer-para-computer-vision)
-- [3.4 Entrenamiento y evaluación de modelo de computer vision](#34-entrenamiento-y-evaluación-de-modelo-de-computer-vision)
-- [3.5 Quiz: Computer vision con Hugging Face](#35-quiz--computer-vision-con-hugging-face)
+  - [3.1 Carga de dataset para computer vision](#31-carga-de-dataset-para-computer-vision)
+  - [3.2 Procesamiento de dataset para computer vision](#32-procesamiento-de-dataset-para-computer-vision)
+  - [3.3 Configurando un Trainer para computer vision](#33-configurando-un-trainer-para-computer-vision)
+  - [3.4 Entrenamiento y evaluación de modelo de computer vision](#34-entrenamiento-y-evaluación-de-modelo-de-computer-vision)
+  - [3.5 Quiz: Computer vision con Hugging Face](#35-quiz--computer-vision-con-hugging-face)
 - [4 Natural Language Processing](#4-natural-language-processing)
-- [4.1 Carga de datasets para NLP](#41-carga-de-datasets-para-nlp)
-- [4.2 Procesamiento de dataset para NLP](#42-procesamiento-de-dataset-para-nlp)
-- [4.3 Configurando un Trainer para NLP](#43-configurando-un-trainer-para-nlp)
-- [4.4 Entrenamiento y evaluación de modelo de NLP](#44-entrenamiento-y-evaluación-de-modelo-de-nlp)
-- [4.5 Quiz: NLP con hugging face](#45-quiz--nlp-con-hugging-face)
+  - [4.1 Carga de datasets para NLP](#41-carga-de-datasets-para-nlp)
+  - [4.2 Procesamiento de dataset para NLP](#42-procesamiento-de-dataset-para-nlp)
+  - [4.3 Configurando un Trainer para NLP](#43-configurando-un-trainer-para-nlp)
+  - [4.4 Entrenamiento y evaluación de modelo de NLP](#44-entrenamiento-y-evaluación-de-modelo-de-nlp)
+  - [4.5 Quiz: NLP con hugging face](#45-quiz--nlp-con-hugging-face)
 - [5 Comparte en el HUB](#5-comparte-en-el-hub)
-- [5.1 El Hub como tu curriculum para machine learning](#51-el-hub-como-tu-curriculum-para-machine-learning)
-- [5.2 Compartir tu modelo en el HUB de Hugging Face](#52-compartir-tu-modelo-en-el-hub-de-hugging-face)
+  - [5.1 El Hub como tu curriculum para machine learning](#51-el-hub-como-tu-curriculum-para-machine-learning)
+  - [5.2 Compartir tu modelo en el HUB de Hugging Face](#52-compartir-tu-modelo-en-el-hub-de-hugging-face)
 
 # 1 Introducción al Hub de Hugging Face
 
@@ -286,7 +286,7 @@ Sin embargo, cabe destacar que la clase `pipeline` tiene varios parámetros conf
 > `model (str or PreTrainedModel or TFPreTrainedModel, optional)` — The model that will be used by the pipeline to make predictions. This can be a model identifier or an actual instance of a pretrained model inheriting from PreTrainedModel (for PyTorch) or TFPreTrainedModel (for TensorFlow).
 > If not provided, the default for the task will be loaded.
 >
-> `config (str or PretrainedConfig, optional) — The configuration that will be used by the pipeline to instantiate the model. This can be a model identifier or an actual pretrained model configuration inheriting from PretrainedConfig.
+> `config (str or PretrainedConfig, optional)` — The configuration that will be used by the pipeline to instantiate the model. This can be a model identifier or an actual pretrained model configuration inheriting from PretrainedConfig.
 > If not provided, the default configuration file for the requested model will be used. That means that if model is given, its default configuration will be used. However, if model is not supplied, this task’s default model’s config is used instead.
 
 Puedes leer la documentación completa en: [The pipeline abstraction](https://huggingface.co/docs/transformers/main_classes/pipelines#transformers.pipeline)
