@@ -360,6 +360,9 @@ Transfer learning y fine-tuning son técnicas populares en el campo del aprendiz
 
 ## 2.5 Quiz: Primeros pasos con transfer learning
 
+![9.png](imgs%2F2%20Primeros%20pasos%2F9.png)
+
+
 # 3 Computer Vision
 
 ## 3.1 Carga de dataset para computer vision
