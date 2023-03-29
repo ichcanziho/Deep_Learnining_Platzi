@@ -294,6 +294,18 @@ Puedes leer la documentación completa en: [The pipeline abstraction](https://hu
 
 ## 2.2 Explorando los datasets
 
+Hugging Face tiene una gran variedad de `datasets` públicos y disponibles, puedes acceder a ellos en: https://huggingface.co/datasets
+De igual forma que los modelos, los datasets cuentan con la barra de búsqueda de la izquierda, en donde podremos filtrar 
+por `task`, por idioma, licencia entre otros. 
+
+![1.png](imgs%2F2%20Primeros%20pasos%2F1.png)
+
+Cuando entras a alguno de ellos, por ejemplo: [imdb](https://huggingface.co/datasets/imdb)
+Puedes observar: un preview del dataset, una descripción de qué es y para qué sirve, e incluso modelos que lo utilicen, 
+ya sea que hayan sido entrenados con dicha base o `fine-tuned`.
+
+![2.png](imgs%2F2%20Primeros%20pasos%2F2.png)
+
 ## 2.3 Introducción a los Transformers
 
 ## 2.4 Aplicando transfer learning
