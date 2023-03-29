@@ -308,6 +308,41 @@ ya sea que hayan sido entrenados con dicha base o `fine-tuned`.
 
 ## 2.3 Introducción a los Transformers
 
+El mundo de los `transformers` en Deep Learning nace en 2017 de la mano del siguiente artículo: [Attention is all you need](https://arxiv.org/pdf/1706.03762.pdf)
+
+![3.png](imgs%2F2%20Primeros%20pasos%2F3.png)
+
+A continuación un breve resumen del paper:
+
+"Attention is All You Need" es un artículo presentado en la conferencia de 2017 sobre Aprendizaje Profundo y Aprendizaje Representacional de la Asociación para el Avance de la Inteligencia Artificial (AAAI). El artículo propone una nueva arquitectura de red neuronal llamada Transformer, que utiliza exclusivamente mecanismos de atención para procesar secuencias de texto.
+
+La arquitectura Transformer fue diseñada para superar las limitaciones de las arquitecturas de redes neuronales recurrentes (RNN) y de las arquitecturas basadas en convoluciones (CNN), que habían sido las más utilizadas para procesar secuencias de texto hasta ese momento. La principal ventaja de la arquitectura Transformer es que elimina la necesidad de utilizar una red neuronal recurrente o una red neuronal convolucional para procesar las secuencias de entrada, lo que permite una mayor paralelización del procesamiento y un entrenamiento más rápido de la red.
+
+![4.png](imgs%2F2%20Primeros%20pasos%2F4.png)
+
+La arquitectura Transformer utiliza capas de auto-atención, en las que cada elemento de la secuencia de entrada se relaciona con todos los demás elementos de la secuencia para producir una representación contextualizada de cada elemento. Esto se logra mediante la combinación de tres subcapas: una capa de auto-atención multi-cabeza, una capa de normalización de capa y una capa de red neuronal completamente conectada. El uso de múltiples cabezas de atención permite a la red aprender diferentes relaciones entre los elementos de la secuencia, lo que mejora su capacidad para procesar secuencias de texto.
+
+El artículo demuestra la eficacia de la arquitectura Transformer en varias tareas de procesamiento de lenguaje natural, incluyendo la traducción automática y el modelado del lenguaje. La arquitectura Transformer ha demostrado ser muy exitosa y ha sido utilizada en varias aplicaciones de procesamiento de lenguaje natural desde entonces.
+
+A continuación, explicaremos con más detalle cómo funcionan los transformers:
+
+1. `Representación de la entrada:` La primera capa de la red transforma la entrada (por ejemplo, una secuencia de palabras) en una representación vectorial de alta dimensión. Cada elemento de la secuencia se representa mediante un vector de palabras (word embedding), que es una representación densa de baja dimensión de la palabra.
+
+2. `Módulo de atención:` La siguiente capa de la red utiliza un mecanismo de atención para calcular una puntuación de atención para cada elemento de la secuencia. Esto permite que la red se centre en partes específicas de la entrada mientras procesa la secuencia completa. Los valores de atención se calculan como un producto escalar entre vectores de consulta (query) y vectores de clave (key) asociados a cada elemento de la secuencia. El resultado se normaliza y se utiliza para ponderar los vectores de valor (value) asociados a cada elemento de la secuencia.
+
+3. `Capas de transformación:` Después del módulo de atención, la red utiliza varias capas de transformación para procesar la entrada. Cada capa de transformación se compone de varias subcapas, incluyendo una capa de normalización y dos capas completamente conectadas (feedforward). Estas capas ayudan a la red a aprender representaciones más complejas de la entrada y permiten que la red se adapte a una variedad de tareas diferentes.
+
+4. `Capa de salida:` Finalmente, la última capa de la red transforma la representación de salida en una salida específica para la tarea. Por ejemplo, si la tarea es clasificar el sentimiento de una reseña de película, la capa de salida podría ser una capa de clasificación que produce una etiqueta de sentimiento (por ejemplo, positivo o negativo) a partir de la representación de la entrada.
+
+Para una información más simple y amena de entender: [Las REDES NEURONALES ahora prestan ATENCIÓN](https://www.youtube.com/watch?v=aL-EmKuB078&ab_channel=DotCSV)
+
+![6.png](imgs%2F2%20Primeros%20pasos%2F6.png)
+
+Ampliamente Recomendable leer [Cómo funcionan los transformers](https://www.aprendemachinelearning.com/como-funcionan-los-transformers-espanol-nlp-gpt-bert/#:~:text=Los%20Transformers%20aparecieron%20como%20una,seq%20LSTM%20de%20aquel%20entonces)
+
+![7.png](imgs%2F2%20Primeros%20pasos%2F7.png)
+
+
 ## 2.4 Aplicando transfer learning
 
 ## 2.5 Quiz: Primeros pasos con transfer learning
