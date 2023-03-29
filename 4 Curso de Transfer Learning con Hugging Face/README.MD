@@ -345,6 +345,19 @@ Ampliamente Recomendable leer [Cómo funcionan los transformers](https://www.apr
 
 ## 2.4 Aplicando transfer learning
 
+Te recomiendo ampliamente leer el capítulo 5 [Introducción al aprendizaje por transferencia](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow#5-fundamentos-de-aprendizaje-por-transferencia) de mi curso anterior: [Curso profesional de Redes Neuronales con TensorFlow](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow#curso-profesional-de-redes-neuronales-con-tensorflow)
+en dónde encontrarás información detallada del proceso de `transfer learning`, adicionalmente encontrarás códigos ejemplo 
+de la implementación base en `TensorFlow` aquí el proceso se verá de forma más superficial, sin embargo, te comparto un breve
+resumen y recordatorio de como funciona `transfer learning` y `fine tuning`
+
+![8.png](imgs%2F2%20Primeros%20pasos%2F8.png)
+
+Transfer learning y fine-tuning son técnicas populares en el campo del aprendizaje profundo que se utilizan para mejorar la capacidad de generalización de las redes neuronales y reducir el tiempo y el costo de entrenamiento.
+
+- `Transfer Learning:` Esta técnica se basa en el uso de un modelo pre-entrenado en una tarea relacionada para inicializar la red neuronal y luego ajustarla a una tarea específica. El modelo pre-entrenado se entrena en una gran cantidad de datos y se ha demostrado que es eficaz en la extracción de características generales de la entrada. En lugar de entrenar la red desde cero en una tarea específica, se utiliza el modelo pre-entrenado como punto de partida y se ajusta para la tarea específica utilizando datos adicionales. La idea es que la red neuronal pre-entrenada ya haya aprendido algunas características generales útiles que se pueden reutilizar para la tarea específica. Esto ahorra tiempo y costo en el entrenamiento de la red neuronal.
+
+- `Fine-tuning:` Es una técnica de ajuste fino que se utiliza después de la transferencia de aprendizaje. La red neuronal pre-entrenada se ajusta (fine-tune) en la tarea específica mediante el entrenamiento en datos adicionales. En lugar de ajustar la red neuronal completa, se ajustan sólo las últimas capas de la red neuronal para que se ajusten mejor a la tarea específica. Esto se hace porque las últimas capas de la red neuronal son las más especializadas en la tarea específica, mientras que las capas anteriores pueden ser más generales.
+
 ## 2.5 Quiz: Primeros pasos con transfer learning
 
 # 3 Computer Vision
