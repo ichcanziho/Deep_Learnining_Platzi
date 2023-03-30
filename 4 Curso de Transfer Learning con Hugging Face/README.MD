@@ -462,8 +462,8 @@ import matplotlib.pyplot as plt
 # Mostremos un ejemplo:
 ex = ds["train"][400]
 print(ex)
-
-plt.imshow(ex["image"])
+test_image = ex["image"]
+plt.imshow(test_image)
 plt.savefig("ejemplo.png")
 plt.close()
 ```
@@ -503,6 +503,294 @@ bean_rust
 ```
 
 ## 3.2 Procesamiento de dataset para computer vision
+
+Recordemos que estamos usando un modelo `pre-entrenado` es por ello que necesitamos hacer que nuestras imágenes para el 
+`fine tuning` correspondan con las mismas caracterísitcas con las que fue implementado el modelo base, para ello necesitamos
+implementar un `Feature Extractor` que nos ayude a hacer que las imágenes de nuestro problema correspondan con las necesidades
+del modelo base. Para nuestra suerte, el modelo `google/vit-base-patch16-224-in21k` ya cuanta con un `Feature Extractor`
+que podremos usar de la siguiente manera:
+
+
+En esta clase necesitamos tener instalado `torch` estás son las instrucciones: 
+
+> Nota: recordemos que este repositorio fue creado con `linux` como sistema operativo.
+
+```bash
+conda install mkl mkl-include
+# CUDA only: Add LAPACK support for the GPU if needed
+conda install -c pytorch magma-cuda110  # or the magma-cuda* that matches your CUDA version from https://anaconda.org/pytorch/repo
+```
+```bash
+pip install torch
+```
+
+Hasta este momento, el código que aprendimos en la clase pasada fue el siguiente:
+
+```python
+from datasets import load_dataset
+
+ds = load_dataset("beans")
+ex = ds["train"][400]
+test_image = ex["image"]
+
+labels = ds["train"].features["labels"]
+label_name = labels.int2str(ex["labels"])
+```
+Tener en cuenta esto, porque más adelante estaremos usando `ds` y `test_image`
+
+Primero debemos obtener nuestro `Feature Extractor` para problemas de `Vision` es por ello que usaremos la clase
+`ViFeatureExtractor`, después le diremos que lo tome desde un modelo `pre-entrenado` y vamos a observar sus características:
+
+```python
+from transformers import ViTFeatureExtractor
+
+base_model_url = 'google/vit-base-patch16-224-in21k'
+feature_extractor = ViTFeatureExtractor.from_pretrained(base_model_url)
+print(feature_extractor)
+```
+Respuesta esperada:
+```commandline
+ViTFeatureExtractor {
+  "do_normalize": true,
+  "do_rescale": true,
+  "do_resize": true,
+  "image_mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "image_processor_type": "ViTFeatureExtractor",
+  "image_std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "resample": 2,
+  "rescale_factor": 0.00392156862745098,
+  "size": {
+    "height": 224,
+    "width": 224
+  }
+}
+```
+Observemos que el proceso de `Feature Extractor` de este modelo se basa principalmente en normalizar las imágenes y re-escalarlas
+a unas dimensiones de `224x224`.
+
+Veamos cómo podríamos `limpiar` una sola imagen de nuestro set de `train`. El objetivo será pasarle una imagen de prueba y 
+regresar la imagen ya normalizada con el `feature_extractor` en formato de `PyTorch - Tensor`
+
+```python
+feature_test = feature_extractor(test_image, return_tensors="pt")
+print(feature_test)
+print(feature_test.keys())
+print(feature_test["pixel_values"].shape)
+```
+Respuesta esperada
+```commandline
+{'pixel_values': tensor([[[[ 0.7882,  0.6706,  0.7098,  ..., -0.1922, -0.1294, -0.1765],
+          [ 0.7098,  0.6000,  0.6784,  ..., -0.2863, -0.1608, -0.1608],
+          [ 0.4902,  0.3882,  0.4667,  ..., -0.1922, -0.0196,  0.0275],
+          ...,
+          [ 0.3804,  0.5294,  0.4824,  ..., -0.8275, -0.8196, -0.8039],
+          [ 0.0902,  0.3725,  0.3804,  ..., -0.8667, -0.8431, -0.8510],
+          [-0.0510,  0.2784,  0.3176,  ..., -0.8588, -0.8275, -0.8353]],
+
+         [[ 0.4902,  0.3490,  0.3804,  ..., -0.6078, -0.5373, -0.5843],
+          [ 0.3569,  0.2000,  0.3176,  ..., -0.7255, -0.6000, -0.5922],
+          [ 0.0431, -0.0902,  0.0588,  ..., -0.6392, -0.4745, -0.4275],
+          ...,
+          [-0.2235, -0.0510, -0.0902,  ..., -0.9686, -0.9529, -0.9294],
+          [-0.5059, -0.2078, -0.1922,  ..., -0.9922, -0.9922, -1.0000],
+          [-0.6471, -0.2941, -0.2471,  ..., -0.9843, -0.9765, -0.9843]],
+
+         [[ 0.4196,  0.2706,  0.3020,  ..., -0.7098, -0.6392, -0.6863],
+          [ 0.2314,  0.0824,  0.2078,  ..., -0.8039, -0.6627, -0.6627],
+          [-0.1137, -0.2314, -0.0824,  ..., -0.7020, -0.5373, -0.4980],
+          ...,
+          [-0.2784, -0.1373, -0.2000,  ..., -0.9529, -0.9529, -0.9451],
+          [-0.6000, -0.3098, -0.3176,  ..., -0.9765, -0.9843, -0.9922],
+          [-0.7569, -0.4118, -0.3804,  ..., -0.9765, -0.9686, -0.9686]]]])}
+dict_keys(['pixel_values'])
+torch.Size([1, 3, 224, 224])
+```
+Ahora podemos comprobar que nuestra `test_image` se ha transformado en un diccionario que tiene una sola key `pixel_values`
+y que este contiene un `tensor` con unas dimensiones de `[1, 3, 224, 224]` lo cual significa que es una sola imagen de 224x224 en formato `RGB`
+
+Sin embargo, nosotros sabemos que para entrenar a un modelo de Deep Learning sin importar cuál sea la biblioteca que estemos
+usando, necesitamos al menos 2 ingredientes, imágenes y etiquetas. En este momento ya tenemos una forma de transformar él `dataset` a un formato
+entendible por el modelo de nuestra `red neuronal` sin embargo, debemos agregar a cuál clase pertenece cada imagen, esto es
+sumamente sencillo si tenemos en cuenta que las imágenes pre-procesadas con `feature_extractor` en realidad son diccionarios, esto
+nos permite simplemente añadirles una nueva `key` llamada `label`y ponerle su valor correspondiente, esto se hace de la siguiente manera:
+
+La siguiente función recibe un `example` de alguna de nuestras particiones que recordemos que a su vez son diccionarios que contienen:
+[image_file_path, image, labels], sin embargo, ahora solo nos interesa enfocarnos en las últimas dos claves. Esta funcion se
+encarga de recibir esta muestra y transformarla con `feature_extractor` y adjuntarle su `example["labels"]`
+```python
+def process_example(example):
+    inputs = feature_extractor(example["image"], return_tensors="pt")
+    inputs["labels"] = example["labels"]
+    return inputs
+```
+
+Veamos un ejemplo, primero seleccionemos una muestra, digamos el `train` número 10:
+
+```python
+preprocess_test = ds["train"][10]
+print(preprocess_test)
+```
+Respuesta esperada
+```commandline
+{'image_file_path': '/home/ichcanziho/.cache/huggingface/datasets/downloads/extracted/e2e91becfe5d52af03524711c3b7bb9eb49cc8c6672e84d1f38bda746b2df8ef/train/angular_leaf_spot/angular_leaf_spot_train.107.jpg', 'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=500x500 at 0x7F035C2589A0>, 'labels': 0}
+{'pixel_values': tensor([[[[ 0.0275, -0.0196,  0.0196,  ...,  0.0275,  0.2157, -0.0039],
+          [-0.0353,  0.0902, -0.0275,  ...,  0.2000,  0.3569,  0.1922],
+          [-0.0902,  0.1216,  0.0353,  ...,  0.1686,  0.3333,  0.3098],
+          ...,
+          [-0.0353, -0.2784, -0.4353,  ..., -0.2863, -0.1843, -0.3882],
+          [ 0.2157, -0.1765, -0.3804,  ..., -0.1294, -0.1608, -0.3647],
+          [ 0.3020, -0.0275, -0.3255,  ..., -0.2471, -0.1686, -0.3333]],
+
+         [[-0.3412, -0.3569, -0.2627,  ..., -0.3176, -0.1373, -0.3412],
+          [-0.4039, -0.2549, -0.3255,  ..., -0.1373, -0.0118, -0.1843],
+          [-0.4745, -0.2314, -0.2863,  ..., -0.1922, -0.0275, -0.0510],
+          ...,
+          [ 0.2000,  0.0431, -0.0196,  ..., -0.5373, -0.3569, -0.5216],
+          [ 0.3412,  0.0745,  0.0118,  ..., -0.4039, -0.3490, -0.4980],
+          [ 0.3725,  0.1922,  0.0588,  ..., -0.5216, -0.3647, -0.4745]],
+
+         [[-0.5059, -0.5294, -0.4824,  ..., -0.4431, -0.2784, -0.4745],
+          [-0.5686, -0.4431, -0.5294,  ..., -0.3333, -0.1922, -0.3490],
+          [-0.6314, -0.4196, -0.4588,  ..., -0.3647, -0.2157, -0.2314],
+          ...,
+          [-0.5686, -0.7176, -0.7333,  ..., -0.6941, -0.5137, -0.6235],
+          [-0.3020, -0.6314, -0.6863,  ..., -0.5765, -0.5137, -0.6078],
+          [-0.1843, -0.4667, -0.6235,  ..., -0.7176, -0.5373, -0.5922]]]]), 
+          'labels': 0}
+```
+Excelente, nosotros ya esperábamos ver un formato de 3 `keys`, pero ahora vamos a transformar esta imagen en un formato útil:
+
+```python
+preprocess_test = process_example(preprocess_test)
+print(preprocess_test)
+print(preprocess_test["pixel_values"].shape)
+```
+```commandline
+{'pixel_values': tensor([[[[ 0.0275, -0.0196,  0.0196,  ...,  0.0275,  0.2157, -0.0039],
+          [-0.0353,  0.0902, -0.0275,  ...,  0.2000,  0.3569,  0.1922],
+          [-0.0902,  0.1216,  0.0353,  ...,  0.1686,  0.3333,  0.3098],
+          ...,
+          [-0.0353, -0.2784, -0.4353,  ..., -0.2863, -0.1843, -0.3882],
+          [ 0.2157, -0.1765, -0.3804,  ..., -0.1294, -0.1608, -0.3647],
+          [ 0.3020, -0.0275, -0.3255,  ..., -0.2471, -0.1686, -0.3333]],
+
+         [[-0.3412, -0.3569, -0.2627,  ..., -0.3176, -0.1373, -0.3412],
+          [-0.4039, -0.2549, -0.3255,  ..., -0.1373, -0.0118, -0.1843],
+          [-0.4745, -0.2314, -0.2863,  ..., -0.1922, -0.0275, -0.0510],
+          ...,
+          [ 0.2000,  0.0431, -0.0196,  ..., -0.5373, -0.3569, -0.5216],
+          [ 0.3412,  0.0745,  0.0118,  ..., -0.4039, -0.3490, -0.4980],
+          [ 0.3725,  0.1922,  0.0588,  ..., -0.5216, -0.3647, -0.4745]],
+
+         [[-0.5059, -0.5294, -0.4824,  ..., -0.4431, -0.2784, -0.4745],
+          [-0.5686, -0.4431, -0.5294,  ..., -0.3333, -0.1922, -0.3490],
+          [-0.6314, -0.4196, -0.4588,  ..., -0.3647, -0.2157, -0.2314],
+          ...,
+          [-0.5686, -0.7176, -0.7333,  ..., -0.6941, -0.5137, -0.6235],
+          [-0.3020, -0.6314, -0.6863,  ..., -0.5765, -0.5137, -0.6078],
+          [-0.1843, -0.4667, -0.6235,  ..., -0.7176, -0.5373, -0.5922]]]]), 'labels': 0}
+torch.Size([1, 3, 224, 224])
+```
+Excelente ahora podemos ver como nuestro ejemplo ya es un dato útil, un diccionario que contiene dos llaves: `pixel_values` y `labels`
+y no solo eso, la imagen ya está en formato de `tensor` y tiene un `shape`de `[1, 3, 224, 224]`, hasta este punto hemos logrado
+exitosamente transformar un ejemplo del `train` en un dato listo para ser entrenado por una red neuronal.
+
+Sin embargo, nos gustaría tener una función que NO solo funcione para una unica imagen sino para un `lote` de imágenes, eso es
+sumamente sencillo, simplemente se trata de repetir el proceso para una lista de imágenes, creemos la función `transform` 
+que recibirá un `batch` de ejemplos en lugar de uno solo.
+
+```python
+def transform(example_batch):
+    inputs = feature_extractor([x for x in example_batch["image"]], return_tensors="pt")
+    inputs["labels"] = example_batch["labels"]
+    return inputs
+```
+Y ahora podemos usar un método sumamente útil de los `datasets` de `hugging face` llamado: `wit_transform(function)`que recibe
+como parámetro de entrada una función de transformación, en este caso la que acabamos de crear.
+```python
+print("batch")
+clean = ds.with_transform(transform)
+print(clean["train"][0:2])
+print(clean["train"][0:2]["pixel_values"].shape)
+
+```
+Respuesta esperada:
+```commandline
+batch
+{'pixel_values': tensor([[[[-0.5686, -0.5686, -0.5608,  ..., -0.0275,  0.1843, -0.2471],
+          [-0.6078, -0.6000, -0.5765,  ..., -0.0353, -0.0196, -0.2627],
+          [-0.6314, -0.6314, -0.6078,  ..., -0.2314, -0.3647, -0.2235],
+          ...,
+          [-0.5373, -0.5529, -0.5843,  ..., -0.0824, -0.0431, -0.0902],
+          [-0.5608, -0.5765, -0.5843,  ...,  0.3098,  0.1843,  0.1294],
+          [-0.5843, -0.5922, -0.6078,  ...,  0.2627,  0.1608,  0.2000]],
+
+         [[-0.7098, -0.7098, -0.7490,  ..., -0.3725, -0.1608, -0.6000],
+          [-0.7333, -0.7333, -0.7569,  ..., -0.3647, -0.3255, -0.5686],
+          [-0.7490, -0.7490, -0.7725,  ..., -0.5373, -0.6549, -0.5373],
+          ...,
+          [-0.7725, -0.7804, -0.8196,  ..., -0.2235, -0.0353,  0.0824],
+          [-0.7961, -0.8118, -0.8118,  ...,  0.1922,  0.3098,  0.3725],
+          [-0.8196, -0.8196, -0.8275,  ...,  0.0824,  0.2784,  0.3961]],
+
+         [[-0.9922, -0.9922, -1.0000,  ..., -0.5451, -0.3569, -0.7255],
+          [-0.9922, -0.9922, -1.0000,  ..., -0.5529, -0.5216, -0.7176],
+          [-0.9843, -0.9922, -1.0000,  ..., -0.6549, -0.7569, -0.6392],
+          ...,
+          [-0.8431, -0.8588, -0.8980,  ..., -0.5765, -0.5529, -0.5451],
+          [-0.8588, -0.8902, -0.9059,  ..., -0.2000, -0.2392, -0.2627],
+          [-0.8824, -0.9059, -0.9216,  ..., -0.2549, -0.2000, -0.1216]]],
+
+
+        [[[-0.5137, -0.4902, -0.4196,  ..., -0.0275, -0.0039, -0.2157],
+          [-0.4902, -0.4667, -0.4196,  ..., -0.0588, -0.0118, -0.2392],
+          [-0.4588, -0.4902, -0.5137,  ..., -0.0745,  0.0039, -0.3020],
+          ...,
+          [-0.4980, -0.4980, -0.5294,  ..., -0.2000, -0.2157, -0.3882],
+          [-0.5451, -0.5294, -0.5216,  ..., -0.1922, -0.1922, -0.3882],
+          [-0.5216, -0.5373, -0.5451,  ..., -0.1294, -0.1529, -0.2627]],
+
+         [[-0.1843, -0.2000, -0.1529,  ...,  0.2157,  0.2078, -0.0902],
+          [-0.1686, -0.1686, -0.1529,  ...,  0.1922,  0.2235, -0.0902],
+          [-0.1529, -0.2000, -0.2392,  ...,  0.1686,  0.2549, -0.1294],
+          ...,
+          [-0.7725, -0.7569, -0.7569,  ..., -0.4196, -0.4588, -0.6471],
+          [-0.7961, -0.7804, -0.7647,  ..., -0.4196, -0.4510, -0.6627],
+          [-0.7725, -0.7961, -0.8039,  ..., -0.3725, -0.4196, -0.5451]],
+
+         [[-0.7569, -0.8510, -0.8353,  ..., -0.3255, -0.2706, -0.5608],
+          [-0.7804, -0.8431, -0.8118,  ..., -0.3490, -0.2706, -0.5608],
+          [-0.8118, -0.8588, -0.8510,  ..., -0.3647, -0.2314, -0.5373],
+          ...,
+          [-0.5216, -0.5137, -0.5294,  ..., -0.2471, -0.2627, -0.4431],
+          [-0.5529, -0.5373, -0.5216,  ..., -0.2235, -0.2235, -0.4431],
+          [-0.5294, -0.5529, -0.5608,  ..., -0.1686, -0.1922, -0.3333]]]]), 'labels': [0, 0]}
+torch.Size([2, 3, 224, 224])
+```
+Excelente, hemos logrado convertir nuestras imágenes del dataset de forma éxitosa en un formato listo para usar en Deep Learning
+pero como último paso y cereza del pastel vamos a crear una función que reciba justamente este diccionario y cree un único `tensor`
+uno después de otro:
+
+```python
+import torch
+
+
+def collate_fn(batch):
+    return {
+        "pixel_values": torch.stack([x["pixel_values"] for x in batch]),
+        "labels": torch.tensor([x["labels"] for x in batch])
+    }
+```
+
+Excelente, hemos creado perfectamente nuestra función `collate` que usaremos más adelante para entrenar a nuestro modelo.
 
 ## 3.3 Configurando un Trainer para computer vision
 

@@ -8,8 +8,8 @@ print(ds)
 # Mostremos un ejemplo:
 ex = ds["train"][400]
 print(ex)
-
-plt.imshow(ex["image"])
+test_image = ex["image"]
+plt.imshow(test_image)
 plt.savefig("ejemplo.png")
 plt.close()
 
