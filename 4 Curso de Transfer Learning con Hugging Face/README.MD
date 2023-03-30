@@ -510,6 +510,8 @@ implementar un `Feature Extractor` que nos ayude a hacer que las imágenes de nu
 del modelo base. Para nuestra suerte, el modelo `google/vit-base-patch16-224-in21k` ya cuanta con un `Feature Extractor`
 que podremos usar de la siguiente manera:
 
+> ## Nota:
+> El código de esta clase lo puedes encontrar [Aquí](3%20Computer%20vision%2F2%20Preprocesamiento%2FFeature%20Extractor.py)
 
 En esta clase necesitamos tener instalado `torch` estás son las instrucciones: 
 
@@ -777,7 +779,14 @@ torch.Size([2, 3, 224, 224])
 ```
 Excelente, hemos logrado convertir nuestras imágenes del dataset de forma éxitosa en un formato listo para usar en Deep Learning
 pero como último paso y cereza del pastel vamos a crear una función que reciba justamente este diccionario y cree un único `tensor`
-uno después de otro:
+uno después de otro.
+
+Los data collators, o recopiladores de datos, son objetos que forman batches utilizando una lista de ejemplos de nuestros datasets. Para poder generar los batches, los data collators pueden aplicar algún procesamiento (como padding en los ejemplos con texto).
+
+Definimos una función, collate_fn, que fungirá como nuestro data collator. Devolverá un diccionario por cada batch. Recibirá un batch de datos que luego serán procesadas.
+
+Los batches llegan como listas de dicts. Cada dict tiene los label y pixel_values de sus respectivos ejemplos, por lo que puedes simplemente desempaquetarlos y apilarlos en tensores de batches. torch.stack nos permite concatenar (pegar) tensores.
+
 
 ```python
 import torch
