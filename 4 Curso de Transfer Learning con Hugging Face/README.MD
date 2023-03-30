@@ -365,7 +365,142 @@ Transfer learning y fine-tuning son técnicas populares en el campo del aprendiz
 
 # 3 Computer Vision
 
+Para este capítulo estaremos trabajando con una tarea de clasificación de imágenes. Nuestro problema será resolver el problema
+del dataset [beans](https://huggingface.co/datasets/beans) el cual contiene imágenes de hojas de frijol y queremos clasificar
+entre 3 tipos de clases:
+
+```commandline
+{
+  "angular_leaf_spot": 0,
+  "bean_rust": 1,
+  "healthy": 2,
+}
+```
+
+El dataset contiene 3 particiones: Train 1034 imágenes, Validation 133 imágenes, Test 128 imágenes.
+
+![1.png](imgs%2F3%20Computer%20Vision%2F1.png)
+
+Para ello usaremos `transfer learning`, usaremos como modelo base [google / vit-base-patch16-224-in21k](https://huggingface.co/google/vit-base-patch16-224-in21k)
+
+
+>Vision Transformer (base-sized model)
+Vision Transformer (ViT) model pre-trained on ImageNet-21k (14 million images, 21,843 classes) at resolution 224x224. It was introduced in the paper An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale by Dosovitskiy et al. and first released in this repository. However, the weights were converted from the timm repository by Ross Wightman, who already converted the weights from JAX to PyTorch. Credits go to him.
+>Disclaimer: The team releasing ViT did not write a model card for this model so this model card has been written by the Hugging Face team.
+
+Para poder trabajar éxitosamente con `transfer learning` y `PyTorch` y `Transformers` vamos a necesitar definir los siguientes puntos:
+
+- `model`=model,
+- `args`=training_args,
+- `data_collator`=collate_fn,
+- `compute_metrics`=compute_metrics,
+- `train_dataset`=prepared_ds.train,
+- `eval_dataset`=prepared_ds.validation,
+- `tokenizer`=feature_extractor
+
+Cada uno de estos puntos los estaremos definiendo en las próximas clases, y cada clase tendrá su código especializado, adicionalmente
+la clase 2 tendrá todo el código de la clase 1, pero solo explicación de la clase más reciente y así sucesivamente.
+
 ## 3.1 Carga de dataset para computer vision
+
+El primer paso de nuestra tarea será descargar el dataset de `beans`, para ello necesitamos instalar `datasets` y `transformers` bibliotecas de 
+`hugging face` que estaremos usando a lo largo de este mini proyecto.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar [Aquí](3%20Computer%20vision%2F1%20Carga%20de%20datasets%2Fcarga_datasets.py)
+
+```bash
+pip install datasets transformers
+```
+
+El primer paso de nuestro `journey` será descargar el dataset `beans` con ayuda de `datasets`
+
+```python
+from datasets import load_dataset
+
+ds = load_dataset("beans")
+
+print(ds)
+```
+
+La primera vez que ejecutes el código descargara todos los datos necesarios de las particiones de `train`, `validation`, `test`
+```commandline
+Downloading builder script: 100%|██████████| 3.61k/3.61k [00:00<00:00, 5.43MB/s]
+Downloading metadata: 100%|██████████| 2.24k/2.24k [00:00<00:00, 1.44MB/s]
+Downloading readme: 100%|██████████| 4.75k/4.75k [00:00<00:00, 7.66MB/s]
+Downloading data: 100%|██████████| 144M/144M [00:16<00:00, 8.68MB/s]
+Downloading data: 100%|██████████| 18.5M/18.5M [00:02<00:00, 6.33MB/s]
+Downloading data: 100%|██████████| 17.7M/17.7M [00:02<00:00, 5.91MB/s]
+Downloading data files: 100%|██████████| 3/3 [00:30<00:00, 10.14s/it]
+Extracting data files: 100%|██████████| 3/3 [00:00<00:00,  7.72it/s]
+100%|██████████| 3/3 [00:00<00:00, 1621.30it/s]
+```
+Respuesta esperada:
+```commandline
+DatasetDict({
+    train: Dataset({
+        features: ['image_file_path', 'image', 'labels'],
+        num_rows: 1034
+    })
+    validation: Dataset({
+        features: ['image_file_path', 'image', 'labels'],
+        num_rows: 133
+    })
+    test: Dataset({
+        features: ['image_file_path', 'image', 'labels'],
+        num_rows: 128
+    })
+})
+```
+
+Conozcamos un poco las imágenes del `train set`, como ya sabemos nuestra variable `ds`es un diccionario, entonces podemos 
+acceder a sus elementos de la misma forma que lo hacemos en `python` en este caso si queremos acceder al conjunto de `train`
+basta con pedir el valor de la llave `train` -> `ds["train"]` ahora veamos un ejemplo en concreto:
+
+```python
+import matplotlib.pyplot as plt
+# Mostremos un ejemplo:
+ex = ds["train"][400]
+print(ex)
+
+plt.imshow(ex["image"])
+plt.savefig("ejemplo.png")
+plt.close()
+```
+Respuesta esperada:
+```commandline
+{'image_file_path': '/home/ichcanziho/.cache/huggingface/datasets/downloads/extracted/e2e91becfe5d52af03524711c3b7bb9eb49cc8c6672e84d1f38bda746b2df8ef/train/bean_rust/bean_rust_train.148.jpg', 
+'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=500x500 at 0x7F882B754F70>, 
+'labels': 1}
+```
+Podemos observar como cada uno de los elementos del `train set` tiene 3 valores: 
+
+- `image_file_path:` La dirección en memoria de donde se encuentra la imagen
+- `image:` La imagen en formato `PIL`
+- `labels:` La etiqueta de clasificación de la imagen
+
+![ejemplo.png](3%20Computer%20vision%2F1%20Carga%20de%20datasets%2Fejemplo.png)
+
+Sin embargo, a nosotros como seres humanos nos parece mucho más como y entendible leer a qué clase corresponde dicha hoja
+y no únicamente el elemento numérico que lo representa, entonces primero, conozcamos cuales son las clases disponibles:
+
+```python
+labels = ds["train"].features["labels"]
+print(labels)
+```
+Respuesta esperada:
+```commandline
+ClassLabel(names=['angular_leaf_spot', 'bean_rust', 'healthy'], id=None)
+```
+La variable `labels` cuanta con una función muy útil llamada `int2str` que a partir de un número regresa la etiqueta correspondiente:
+```python
+label_name = labels.int2str(ex["labels"])
+print(label_name)
+```
+Respuesta esperada:
+```commandline
+bean_rust
+```
 
 ## 3.2 Procesamiento de dataset para computer vision
 

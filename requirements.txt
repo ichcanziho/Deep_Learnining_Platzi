@@ -62,3 +62,4 @@ wrapt==1.15.0
 opencv-python~=4.7.0.72
 seaborn~=0.12.2
 transformers~=4.27.3
+datasets~=2.11.0
