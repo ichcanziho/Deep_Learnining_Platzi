@@ -1389,6 +1389,10 @@ A continuación vamos a crear a nuestro modelo desde un `pretrained` como el mod
 importar usando `AutoModelForSquencueClassification`, es importante conocer `transformers` para conocer todas las clases que
 podemos utilizar para cargar modelos pre-entrenados, pero en este curso ya vimos las 2 más populares.
 
+> ## NOTA:
+> Más adelante cuando hayamos terminado el entrenado del modelo, veremos cuáles son las métricas, y observaremos que el método de evaluate.load() cargo
+> dos métricas ACC y F1 score, algo sumamente interesante y curioso que vale la pena poner como nota.
+
 ```python
 from transformers import AutoModelForSequenceClassification
 
@@ -1443,6 +1447,146 @@ Es importante que antes de proceder a evaluar nuestro modelo, hagamos logging a 
 ```bash
 huggingface-cli login
 ```
+Respuesta esperada:
+```commandline
+    _|    _|  _|    _|    _|_|_|    _|_|_|  _|_|_|  _|      _|    _|_|_|      _|_|_|_|    _|_|      _|_|_|  _|_|_|_|
+    _|    _|  _|    _|  _|        _|          _|    _|_|    _|  _|            _|        _|    _|  _|        _|
+    _|_|_|_|  _|    _|  _|  _|_|  _|  _|_|    _|    _|  _|  _|  _|  _|_|      _|_|_|    _|_|_|_|  _|        _|_|_|
+    _|    _|  _|    _|  _|    _|  _|    _|    _|    _|    _|_|  _|    _|      _|        _|    _|  _|        _|
+    _|    _|    _|_|      _|_|_|    _|_|_|  _|_|_|  _|      _|    _|_|_|      _|        _|    _|    _|_|_|  _|_|_|_|
+    
+    A token is already saved on your machine. Run `huggingface-cli whoami` to get more information or `huggingface-cli logout` if you want to log out.
+    Setting a new token will erase the existing one.
+    To login, `huggingface_hub` requires a token generated from https://huggingface.co/settings/tokens .
+Token: 
+Add token as git credential? (Y/n) y
+Token is valid.
+Your token has been saved in your configured git credential helpers (store).
+Your token has been saved to /home/ichcanziho/.cache/huggingface/token
+Login successful
+
+```
+
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar [Aquí](4%20NLP%2F4%20Entrenamiento%20y%20Evaluaci%C3%B3n%2Fentrenamiento%20nlp.py)
+
+Hasta este momento nuestro código completo y limpio es el siguiente:
+
+```python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from datasets import load_dataset
+from transformers import AutoTokenizer
+from transformers import DataCollatorWithPadding
+from transformers import AutoModelForSequenceClassification
+from transformers import TrainingArguments
+from transformers import Trainer
+import evaluate
+import numpy as np
+
+
+def tokenize_fn(example):
+    return tokenizer(example["sentence1"], example["sentence2"], truncation=True)
+
+
+def compute_metrics(eval_pred):
+    metric = evaluate.load("glue", "mrpc")
+    logits, labels_ = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return metric.compute(predictions=predictions, references=labels_)
+
+
+if __name__ == '__main__':
+
+    # 1. Descarga de dataset
+    ds = load_dataset("glue", "mrpc")
+    labels = ds["train"].features["label"].names
+
+    # 2. Descarga de tokenizador de DistilRoberta
+    base_model_url = "distilroberta-base"
+    tokenizer = AutoTokenizer.from_pretrained(base_model_url)
+
+    # 3. Limpiamos la base de datos original
+    clean_ds = ds.map(tokenize_fn, batched=True)
+
+    # 4. Creamos nuestro DataCollator
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
+    # 5. Definimos el modelo
+    model = AutoModelForSequenceClassification.from_pretrained(
+        base_model_url,
+        num_labels=len(labels),
+        id2label={str(i): c for i, c in enumerate(labels)},
+        label2id={c: str(i) for i, c in enumerate(labels)}
+    )
+
+    # 6. Definimos los argumentos de entrenamiento del modelo
+    training_args = TrainingArguments(
+        output_dir="./platzi-distilroberta-base-mrpc-glue-gabriel-ichcanziho",
+        evaluation_strategy="steps",
+        num_train_epochs=4,
+        push_to_hub_organization="platzi",
+        push_to_hub=True,
+        load_best_model_at_end=True
+    )
+
+    # 7. Definimos al propio entrenador
+    trainer = Trainer(
+        model,
+        training_args,
+        train_dataset=clean_ds["train"],
+        eval_dataset=clean_ds["validation"],
+        data_collator=data_collator,
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics
+    )
+
+```
+Vamos a agregar las últimas líneas de código para entrenar al modelo y subirlo al HUB de Hugging Face y observar sus resultados de entrenamiento, evaluación y test.
+
+Agregamos el código para entrenar el modelo:
+
+```python
+# 8. Entrenamos al modelo
+train_results = trainer.train()
+trainer.save_model()
+trainer.log_metrics("train", train_results.metrics)
+trainer.save_metrics("train", train_results.metrics)
+```
+Respuesta esperada
+```commandline
+***** train metrics *****
+  epoch                    =        4.0
+  train_loss               =     0.3213
+  train_runtime            = 0:01:57.42
+  train_samples_per_second =    124.948
+  train_steps_per_second   =     15.636
+{'eval_loss': 0.8058812022209167, 'eval_accuracy': 0.8455882352941176, 'eval_f1': 0.8868940754039497, 'eval_runtime': 1.7026, 'eval_samples_per_second': 239.639, 'eval_steps_per_second': 29.955, 'epoch': 3.27}
+
+```
+Finalmente evaluamos el modelo en el set de `test`:
+```python
+# 9. Evaluando en el conjunto de test
+metrics = trainer.evaluate(clean_ds["test"])
+trainer.log_metrics("eval", metrics)
+trainer.save_metrics("eval", metrics)
+```
+Respuesta esperada:
+```commandline
+***** eval metrics *****
+  epoch                   =        4.0
+  eval_accuracy           =      0.793
+  eval_f1                 =     0.8415
+  eval_loss               =     0.6225
+  eval_runtime            = 0:00:03.62
+  eval_samples_per_second =    476.381
+  eval_steps_per_second   =     59.651
+```
+
+Felicidades, ya hemos terminado nuestro proyecto de NLP. Y hemos logrado obtener un `accuracy` de casi 80% en el set de pruebas y un 84% En F1 score.
+Nuestro modelo ya se encuentra en linea en el siguiente link: https://huggingface.co/platzi/platzi-distilroberta-base-mrpc-glue-gabriel-ichcanziho
+
+![results.png](4%20NLP%2F4%20Entrenamiento%20y%20Evaluaci%C3%B3n%2Fresults.png)
 
 
 ## 4.5 Quiz: NLP con hugging face
