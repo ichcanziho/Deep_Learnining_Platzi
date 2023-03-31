@@ -1144,6 +1144,9 @@ más pequeño y rápido que un modelo `BERT` convencional.
 
 Como primer paso debemos descargar el dataset que vamos a utilizar para este proyecto:
 
+> ## Nota:
+> El códido completo de esta clase lo puedes encontrar [Aquí](3%20Computer%20vision%2F1%20Carga%20de%20datasets%2Fcarga_datasets.py)
+
 ```python
 from datasets import load_dataset
 
@@ -1228,6 +1231,106 @@ Perfecto, hasta este momento ya estamos familiarizados con el dataset que estare
 el proyecto es sumamente parecido al proyecto pasado, continuemos en la siguiente clase.
 
 ## 4.2 Procesamiento de dataset para NLP
+
+Al igual que en el ejemplo de `Computer Vision`, se debe hacer un preprocesamiento para trabajar con el texto de entrada de modo
+que tenga la forma correcta que está buscando nuestro modelo `pre-entrenado` específicamente en `NLP` El texto NO puede ser
+clasificado directamente, debe ser convertido en una representación numerica para poder trabajar con ellos. A este proceso de 
+transformación se le conoce como: `Word Embeddings` Para conocer más acerca de este tema te recomiendo ver el siguiente video:
+[Intro al NLP ¿Qué es un EMBEDDING?](https://www.youtube.com/watch?v=RkYuH_K7Fx4&ab_channel=DotCSV). Ya hemos trabajado con
+este concepto en otros cursos anteriores de esta ruta de `Deep Learning` si quieres leer un poco más al respecto te recomiendo ver:
+[Variables Estadísticas](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#2-normalizado-de-datos)
+
+> ## Nota:
+> El código de esta clase lo puedes encontrar [Aquí](4%20NLP%2F2%20Preprocesamiento%2FFeature%20Extractor%20NLP.py)
+
+En general el objetivo de este paso es pre-procesar los datos de texto de nuestro dataset en una representación vectorial que sea compatible con
+el modelo que vas a usar. Para ello vamos a usar el propio `Tokenizer` del modelo que vamos a utilizar en este proyecto:
+Primero, tengamos en cuenta que vamos a usar el modelo `distilroberta-base`, vamos a utilizar `AutoTokenizer` para obtener el
+tokenizador correspondiente a nuestro modelo:
+
+```python
+from transformers import AutoTokenizer
+
+base_model_url = "distilroberta-base"
+tokenizer = AutoTokenizer.from_pretrained(base_model_url)
+
+ejemplo = ds["train"][400]["sentence1"]
+print(ejemplo)
+print(tokenizer(ds["train"][400]["sentence1"]))
+```
+Respuesta esperada:
+```commandline
+U.S. Agriculture Secretary Ann Veneman , who announced Tuesdays ban , also said Washington would send a technical team to Canada to help .
+{'input_ids': [0, 791, 4, 104, 4, 8004, 1863, 3921, 10336, 5649, 2156, 54, 585, 20423, 7033, 2020, 2156, 67, 26, 663, 74, 2142, 10, 3165, 165, 7, 896, 7, 244, 479, 2], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
+```
+
+**¿Qué significa cada uno de los valores que nos retorna el tokenizador?**
+
+- `input_ids` es la traducción de palabras a números.
+- `attention_mask` es un tensor con la misma forma que input_ids, pero lleno de 0 y 1: los 1 indican que se debe atender a los tokens correspondientes y los 0 indican que no se deben atender. Es decir, deben ser ignorados por el modelo.
+- `token_type_ids` dice al modelo qué parte de la entrada es la primera oración y cuál es la segunda oración.
+
+Existen otros modelos más complejos como: `"bert-base-uncased"` cuyo tokenizador contiene un método especializado en transformar
+de regreso los `inputs_ids` en el texto original: `tokenizer.convert_ids_to_tokens(inputs["input_ids"])`En este caso, nuestro modelo
+ligero NO contiene dicho método, pero es bueno tener en cuenta que otros modelos sí tienen esta capacidad.
+
+**Creemos una función Tokenizadora:**
+
+```python
+def tokenize_fn(example):
+    return tokenizer(example["sentence1"], example["sentence2"], truncation=True)
+```
+Afortunadamente, nuestro objeto `tokenizer` permite recibir multiples `parámetros` separados por `,` esto me permite transformar
+nuestras 2 oraciones de ejemplo al mismo tiempo. El parámetro `truncatoion = True` significa que oraciones sumamente largas serán
+recortadas a unas más pequeñas de un tamaño predefinido por el modelo.
+
+Finalmente, vamos a `limpiar` todo nuestro dataset, a diferencia del dataset de imágenes que ocupábamos el método `ds.with_transform(transform)`
+y utilizábamos una función `transform` para modificar el dataset, como específicamente podemos transformar nuestros datos de entrada a su versión
+tokenizada con `tokenize_fn` podemos usar el método `map` para mapear los parámetros de `sentence1` y `sentence2` de cada muestra del dataset
+
+Veamos un ejemplo del dataset ya limpio
+```python
+clean_ds = ds.map(tokenize_fn, batched=True)
+print(clean_ds["train"][400])
+```
+Respuesta esperada:
+```commandline
+{
+'sentence1': 'U.S. Agriculture Secretary Ann Veneman , who announced Tuesdays ban , also said Washington would send a technical team to Canada to help .', 
+'sentence2': "U.S. Agriculture Secretary Ann Veneman , who announced yesterday 's ban , also said Washington would send a technical team to Canada to assist in the Canadian situation .", 
+'label': 1, 
+'idx': 446, 
+'input_ids': [0, 791, 4, 104, 4, 8004, 1863, 3921, 10336, 5649, 2156, 54, 585, 20423, 7033, 2020, 2156, 67, 26, 663, 74, 2142, 10, 3165, 165, 7, 896, 7, 244, 479, 2, 2, 791, 4, 104, 4, 8004, 1863, 3921, 10336, 5649, 2156, 54, 585, 2350, 128, 29, 2020, 2156, 67, 26, 663, 74, 2142, 10, 3165, 165, 7, 896, 7, 3991, 11, 5, 1563, 1068, 479, 2], 
+'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+}
+```
+Excelente, ahora nuestro diccionario de una muestra de entrenamiento contiene `6 keys` las 4 originales y 2 adicionales, `input_ids` y `attention_mask  
+
+Finalmente, a pesar de que él `dataset` ya está `limpio` al igual que en el ejemplo de `Computer Vision` necesitamos definir un `Data Collactor`
+
+### Definiendo el data collator: Dynamic padding
+
+Necesitamos que nuestros tensores tengan una forma rectangular. Es decir que tengan el mismo tamaño cada uno de los ejemplos. Sin embargo, los textos no necesariamente tienen el mismo tamaño.
+
+Para ello usamos el relleno o padding. El padding se asegura de que todas nuestras oraciones tengan la misma longitud al agregar una palabra especial llamada padding token a las oraciones con menos valores. Por ejemplo, si tenemos 10 oraciones con 10 palabras y 1 oración con 20 palabras, el relleno garantizará que todas las oraciones tengan 20 palabras.
+
+Dejamos el argumento de padding del tokenizer vacío en nuestra función de tokenización por ahora. Esto se debe a que rellenar (hacer padding) todas las muestras hasta la longitud máxima del dataset no es eficiente, es mejor rellenar las muestras cuando estamos construyendo un batch, ya que entonces solo necesitamos rellenar hasta la longitud máxima en ese batch, y no la longitud máxima en todo el dataset. ¡Esto puede ahorrar mucho tiempo y potencia de procesamiento cuando las entradas tienen longitudes muy variables!
+
+Usaremos un DataCollator para esto. Rellenemos (hagamos padding) todos los ejemplos con la longitud del elemento más largo del batch. A esta técnica se le conoce como relleno dinámico o dynamic padding.
+
+```python
+from transformers import DataCollatorWithPadding
+
+data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+print(data_collator)
+```
+Respuesta esperada:
+
+```commandline
+DataCollatorWithPadding(tokenizer=RobertaTokenizerFast(name_or_path='distilroberta-base', vocab_size=50265, model_max_length=512, is_fast=True, padding_side='right', truncation_side='right', special_tokens={'bos_token': '<s>', 'eos_token': '</s>', 'unk_token': '<unk>', 'sep_token': '</s>', 'pad_token': '<pad>', 'cls_token': '<s>', 'mask_token': AddedToken("<mask>", rstrip=False, lstrip=True, single_word=False, normalized=False)}), padding=True, max_length=None, pad_to_multiple_of=None, return_tensors='pt')
+```
+Perfecto, ya hemos definido exitosamente a nuestro `DataCollator` esto nos permite definir a nuestro `Trainer` pero esto lo veremos en la siguiente clase.
+
 
 ## 4.3 Configurando un Trainer para NLP
 
