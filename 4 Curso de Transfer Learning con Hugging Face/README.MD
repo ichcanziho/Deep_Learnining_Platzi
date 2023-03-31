@@ -1591,8 +1591,20 @@ Nuestro modelo ya se encuentra en linea en el siguiente link: https://huggingfac
 
 ## 4.5 Quiz: NLP con hugging face
 
+![2.png](imgs%2F4%20Natural%20Language%20Processing%20%2F2.png)
+
+
 # 5 Comparte en el HUB
 
 ## 5.1 El Hub como tu curriculum para machine learning
+
+El resumen de esta clase es muy sencillo, podemos crear un buen perfil en el HUB de Hugging Face para poder compartirlo como nuestro curriculum
+de machine learning y compartir con el público en general como han sido nuestros modelos, espacios, datasets entre otros.
+
+![1.png](imgs%2F5%20HUB%2F1.png)
+
+![2.png](imgs%2F5%20HUB%2F2.png)
+
+El HUB nos permite observar la cantidad de descargas de nuestras contribuciones.
 
 ## 5.2 Compartir tu modelo en el HUB de Hugging Face
