@@ -1123,6 +1123,8 @@ https://huggingface.co/platzi/platzi-vit-model-gabriel-ichcanziho
 
 ## 3.5 Quiz: Computer vision con Hugging Face
 
+![quizz.png](imgs%2F3%20Computer%20Vision%2Fquizz.png)
+
 # 4 Natural Language Processing
 
 ## 4.1 Carga de datasets para NLP
