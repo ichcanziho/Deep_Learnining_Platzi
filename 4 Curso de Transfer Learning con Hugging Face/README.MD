@@ -1334,7 +1334,116 @@ Perfecto, ya hemos definido exitosamente a nuestro `DataCollator` esto nos permi
 
 ## 4.3 Configurando un Trainer para NLP
 
+Hasta este momento el código completo y limpio es el siguiente:
+
+```python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from datasets import load_dataset
+from transformers import AutoTokenizer
+from transformers import DataCollatorWithPadding
+
+
+def tokenize_fn(example):
+    return tokenizer(example["sentence1"], example["sentence2"], truncation=True)
+
+
+if __name__ == '__main__':
+    # Descarga de dataset
+    ds = load_dataset("glue", "mrpc")
+    labels = ds["train"].features["label"].names
+    # Descarga de tokenizador de DistilRoberta
+    base_model_url = "distilroberta-base"
+    tokenizer = AutoTokenizer.from_pretrained(base_model_url)
+    clean_ds = ds.map(tokenize_fn, batched=True)
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+```
+En esta clase vamos a definir las funciones que nos faltan para poder crear a nuestro `Trainer`
+
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar [Aquí](4%20NLP%2F3%20Configurando%20Trainer%2Fconfigurando%20trainer%20nlp.py)
+
+Vamos a empezar por definir nuestra métrica de éxito para ello vamos a instalar una nueva biblioteca:
+
+```bash
+pip install evaluate
+```
+
+Esta biblioteca nos va a ayudar con el mismo objetivo que lo hizo `from datasets import load_metric` pero en este caso, la métrica que vamos
+a utilizar va a estar definida por el propio dataset, en el curso no queda muy claro porque usar está metodología en lugar de la habitual.
+
+En general observamos que la estructura de la función `compute_metrics` es sumamente similar a la que ya conociamos, solo que en lugar de usar `load_metric`
+estamos usando `evaluate.load()`, en general me pareció más entendible la forma pasada.
+
+```python
+import evaluate
+import numpy as np
+
+def compute_metrics(eval_pred):
+    metric = evaluate.load("glue", "mrpc")
+    logits, labels_ = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return metric.compute(predictions=predictions, references=labels_)
+```
+A continuación vamos a crear a nuestro modelo desde un `pretrained` como el modelo es una clasificación de texto, lo debemos
+importar usando `AutoModelForSquencueClassification`, es importante conocer `transformers` para conocer todas las clases que
+podemos utilizar para cargar modelos pre-entrenados, pero en este curso ya vimos las 2 más populares.
+
+```python
+from transformers import AutoModelForSequenceClassification
+
+model = AutoModelForSequenceClassification.from_pretrained(
+    base_model_url,
+    num_labels=len(labels),
+    id2label={str(i): c for i, c in enumerate(labels)},
+    label2id={c: str(i) for i, c in enumerate(labels)}
+)
+```
+
+Ahora podemos definir nuestros argumentos de entrenamiento:
+
+```python
+from transformers import TrainingArguments
+
+training_args = TrainingArguments(
+    output_dir="./platzi-distilroberta-base-mrpc-glue-gabriel-ichcanziho",
+    evaluation_strategy="steps",
+    num_train_epochs=4,
+    push_to_hub_organization="platzi",
+    push_to_hub=True,
+    load_best_model_at_end=True
+)
+```
+Esto fue sumamente parecido al problema de clasificación de imágenes, pero noto que aquí NO pusimos `learning_rate=2e-4,
+        remove_unused_columns=False,` en la clase no se explica el porqué de este cambio.
+
+Y para terminar con esta clase, vamos a definir a nuestro `trainer`:
+
+```python
+from transformers import Trainer
+
+trainer = Trainer(
+    model,
+    training_args,
+    train_dataset=clean_ds["train"],
+    eval_dataset=clean_ds["validation"],
+    data_collator=data_collator,
+    tokenizer=tokenizer,
+    compute_metrics=compute_metrics
+)
+```
+
+Felicidades, ya tenemos TODO listo para empezar a entrenar a nuestro modelo, pero esto lo haremos en la siguiente clase.
+
+
 ## 4.4 Entrenamiento y evaluación de modelo de NLP
+
+Es importante que antes de proceder a evaluar nuestro modelo, hagamos logging a `hugging face`:
+
+```bash
+huggingface-cli login
+```
+
 
 ## 4.5 Quiz: NLP con hugging face
 
