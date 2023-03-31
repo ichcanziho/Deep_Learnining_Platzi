@@ -995,7 +995,131 @@ Estamos a punto de acabar con el tutorial, ya solo es necesario poner a entrenar
 y finalmente evaluar los resultados con el dataset de `test`.
 
 > ## Nota:
-> El código completo de esta sección lo puedes encontrar 
+> El código completo de esta sección lo puedes encontrar [Aquí](3%20Computer%20vision%2F4%20Entrenamiento%20y%20Evaluaci%C3%B3n%2Fentrenamiento.py)
+
+Antes de continuar con la última parte de este tutorial, veamos todo el código limpio que hemos creado hasta el momento:
+
+```python
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from datasets import load_dataset
+from datasets import load_metric
+from transformers import ViTFeatureExtractor
+from transformers import ViTForImageClassification
+from transformers import TrainingArguments
+from transformers import Trainer
+import numpy as np
+import torch
+
+
+def collate_fn(batch):
+    return {
+        "pixel_values": torch.stack([x["pixel_values"] for x in batch]),
+        "labels": torch.tensor([x["labels"] for x in batch])
+    }
+
+
+def transform(example_batch):
+    inputs = feature_extractor([x for x in example_batch["image"]], return_tensors="pt")
+    inputs["labels"] = example_batch["labels"]
+    return inputs
+
+
+def compute_metrics(prediction):
+    return metric.compute(predictions=np.argmax(prediction.predictions, axis=1), references=prediction.label_ids)
+
+
+if __name__ == '__main__':
+    ds = load_dataset("beans")
+
+    labels = ds["train"].features["labels"].names
+
+    base_model_url = 'google/vit-base-patch16-224-in21k'
+    feature_extractor = ViTFeatureExtractor.from_pretrained(base_model_url)
+    clean = ds.with_transform(transform)
+
+    metric = load_metric("accuracy")
+
+    model = ViTForImageClassification.from_pretrained(
+        base_model_url,
+        num_labels=len(labels),
+        id2label={str(i): c for i, c in enumerate(labels)},
+        label2id={c: str(i) for i, c in enumerate(labels)}
+    )
+
+    training_args = TrainingArguments(
+        output_dir="./platzi-vit-model-gabriel-ichcanziho",
+        evaluation_strategy="steps",
+        num_train_epochs=4,
+        push_to_hub_organization="platzi",
+        learning_rate=2e-4,
+        remove_unused_columns=False,
+        push_to_hub=True,
+        load_best_model_at_end=True,
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        data_collator=collate_fn,
+        compute_metrics=compute_metrics,
+        train_dataset=clean["train"],
+        eval_dataset=clean["validation"],
+        tokenizer=feature_extractor
+    )
+
+```
+
+Podemos observar una secuencia muy lógica entre todas las funciones que hemos creado, y vemos como todas las bibliotecas que hemos
+importado tienen una función muy en concreto dentro de nuestro código, ahora para terminar este proceso solo falta empezar a entrenar
+el modelo y evaluar los resultados finales:
+
+```python
+train_results = trainer.train()
+trainer.save_model()
+trainer.log_metrics("train", train_results.metrics)
+trainer.save_metrics("train", train_results.metrics)
+```
+Resultado esperado:
+```commandline
+{'loss': 0.1373, 'learning_rate': 7.692307692307694e-06, 'epoch': 3.85}
+{'eval_loss': 0.014603369869291782, 'eval_accuracy': 0.9924812030075187, 'eval_runtime': 1.5139, 'eval_samples_per_second': 87.852, 'eval_steps_per_second': 11.229, 'epoch': 3.85}
+{'train_runtime': 130.2439, 'train_samples_per_second': 31.756, 'train_steps_per_second': 3.993, 'train_loss': 0.13224817431316926, 'epoch': 4.0}
+***** train metrics *****
+  epoch                    =        4.0
+  train_loss               =     0.1322
+  train_runtime            = 0:02:10.24
+  train_samples_per_second =     31.756
+  train_steps_per_second   =      3.993
+```
+
+Evaluamos en nuestro `split` de `test`:
+
+```python
+metrics = trainer.evaluate(clean["test"])
+trainer.log_metrics("eval", metrics)
+trainer.save_metrics("eval", metrics)
+```
+Resultado esperado:
+```commandline
+***** eval metrics *****
+  epoch                   =        4.0
+  eval_accuracy           =     0.9609
+  eval_loss               =     0.1104
+  eval_runtime            = 0:00:01.46
+  eval_samples_per_second =      87.12
+  eval_steps_per_second   =      10.89
+```
+
+Felicidades, nuestro modelo ha logrado un 96% De Accuracy en predecir entre las 3 categorías de hojas de frijol.
+
+Puedes encontrar nuestro modelo en el Hub de Hugging Face en:
+
+https://huggingface.co/platzi/platzi-vit-model-gabriel-ichcanziho
+
+![2.png](imgs%2F3%20Computer%20Vision%2F2.png)
+
 
 ## 3.5 Quiz: Computer vision con Hugging Face
 
