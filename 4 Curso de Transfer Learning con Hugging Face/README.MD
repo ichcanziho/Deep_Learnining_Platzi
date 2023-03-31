@@ -803,7 +803,199 @@ Excelente, hemos creado perfectamente nuestra función `collate` que usaremos m�
 
 ## 3.3 Configurando un Trainer para computer vision
 
+Si has llegado hasta aquí con un entendimiento de cada parte del código entonces estás listo para continuar con la creación
+del entrenador del modelo.
+
+> ## Nota:
+> El código de esta clase lo puedes encontrar [Aquí](3%20Computer%20vision%2F3%20Configurando%20Trainer%2Fconfigurando_trainer.py)
+
+Hasta este momento nuestro código limpio y funcional, es el siguiente:
+
+```python
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+from datasets import load_dataset
+from transformers import ViTFeatureExtractor
+import torch
+
+
+def collate_fn(batch):
+    return {
+        "pixel_values": torch.stack([x["pixel_values"] for x in batch]),
+        "labels": torch.tensor([x["labels"] for x in batch])
+    }
+
+
+def transform(example_batch):
+    inputs = feature_extractor([x for x in example_batch["image"]], return_tensors="pt")
+    inputs["labels"] = example_batch["labels"]
+    return inputs
+
+
+if __name__ == '__main__':
+    ds = load_dataset("beans")
+
+    labels = ds["train"].features["labels"].names
+    print(labels)
+
+    base_model_url = 'google/vit-base-patch16-224-in21k'
+    feature_extractor = ViTFeatureExtractor.from_pretrained(base_model_url)
+    clean = ds.with_transform(transform)
+
+```
+
+Asi que continuemos con los demás puntos de esta clase:
+
+En esta clase nuestro objetivo es definir el resto de los argumentos necesarios para Trainer.
+
+Y debemos comenzar con definir la métrica de evaluación que usaremos para nuestro modelo:
+
+```python
+import numpy as np
+from datasets import load_metric
+
+metric = load_metric("accuracy")
+
+
+def compute_metrics(prediction):
+    return metric.compute(predictions=np.argmax(prediction.predictions, axis=1), references=prediction.label_ids)
+```
+
+Esto parece un poco más engorroso de lo que realmente es, pero si prestamos atención sigue siendo como se computa cualquier otra
+métrica de ML como en scikit-learn, básicamente `load_metric` tiene varias métricas disponibles entre ellas se encuentra:
+```commandline
+['accuracy',
+ 'bertscore',
+ 'bleu',
+ 'bleurt',
+ 'brier_score',
+ 'cer',
+ 'character',
+ ...
+ ition_math',
+ ypchang/sklearn_proxy',
+ 'yulong-me/yl_metric',
+ 'yzha/ctc_eval',
+ 'zbeloki/m2']
+```
+
+Para conocer toda la lista de métricas puedes ejecutar:
+
+```python
+import datasets
+datasets.list_metrics()
+```
+
+Puedes conocer más información en: https://huggingface.co/docs/datasets/how_to_metrics
+
+La función `metric.compute(predictions, references)` recibe 2 parámetros, el primero es el valor de las predicciones, que en nuestro caso
+las predicciones serán una lista de probabilidades, por eso usamos `np.argmax` para obtener el resultado más probable, en este caso nuestra función:
+`compute_metrics` recibe una `prediction` que cuenta con 2 valores `prediction.prediction` y `prediction.label_ids` 
+
+### Configurando `Trainer`
+
+Carguemos el modelo pre-entrenado. Agregaremos `num_labels` para que el modelo cree un encabezado de clasificación con el número correcto de etiquetas. También incluiremos las asignaciones `id2label` y `label2id` para tener etiquetas legibles por humanos en el widget del Hub.
+
+```python
+from transformers import ViTForImageClassification
+
+labels = ds["train"].features["labels"].names
+
+model = ViTForImageClassification.from_pretrained(
+    base_model_url,
+    num_labels=len(labels),
+    id2label={str(i): c for i, c in enumerate(labels)},
+    label2id={c: str(i) for i,c in enumerate(labels)}
+)
+```
+Hasta este momento, solo habíamos usado él `base_model_url` para obtener su `feature extractor` pero NO habiamos descargado
+el modelo en sí mismo, esto lo logramos con: `ViForImageClassification.from_pretrained`
+
+Respuesta esperada:
+```commandline
+Downloading (…)lve/main/config.json: 100%|██████████| 502/502 [00:00<00:00, 441kB/s]
+Downloading pytorch_model.bin: 100%|██████████| 346M/346M [00:56<00:00, 6.09MB/s]
+Some weights of the model checkpoint at google/vit-base-patch16-224-in21k were not used when initializing ViTForImageClassification: ['pooler.dense.bias', 'pooler.dense.weight']
+- This IS expected if you are initializing ViTForImageClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing ViTForImageClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of ViTForImageClassification were not initialized from the model checkpoint at google/vit-base-patch16-224-in21k and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+```
+Excelente, hemos logrado descargar exitosamente el modelo y ya hemos cambiado la última capa del mismo por una capa de 3 salidas
+correspondientes a nuestro número de `labels` y el propio modelo nos dice que se ha añadido una nueva última capa y que esta 
+debería ser `TRAIN` para ser capaz de ser usada en predictions e inferencias.
+
+Lo último que se necesita antes de eso es establecer la configuración de entrenamiento definiendo TrainingArguments.
+
+Pero antes de eso vamos a hacer `login` en `hugging face`
+
+```bash
+huggingface-cli login
+```
+Respuesta esperada:
+```commandline
+    _|    _|  _|    _|    _|_|_|    _|_|_|  _|_|_|  _|      _|    _|_|_|      _|_|_|_|    _|_|      _|_|_|  _|_|_|_|
+    _|    _|  _|    _|  _|        _|          _|    _|_|    _|  _|            _|        _|    _|  _|        _|
+    _|_|_|_|  _|    _|  _|  _|_|  _|  _|_|    _|    _|  _|  _|  _|  _|_|      _|_|_|    _|_|_|_|  _|        _|_|_|
+    _|    _|  _|    _|  _|    _|  _|    _|    _|    _|    _|_|  _|    _|      _|        _|    _|  _|        _|
+    _|    _|    _|_|      _|_|_|    _|_|_|  _|_|_|  _|      _|    _|_|_|      _|        _|    _|    _|_|_|  _|_|_|_|
+    
+    To login, `huggingface_hub` requires a token generated from https://huggingface.co/settings/tokens .
+Token: 
+```
+
+Nos pedirá un token de autentificación, debemos entrar al link que nos ofrece: https://huggingface.co/settings/tokens y copiar el
+token que nos generó automáticamente.
+
+![token.png](3%20Computer%20vision%2F3%20Configurando%20Trainer%2Ftoken.png)
+
+La mayoría de estos se explican por sí mismos, pero uno que es bastante importante aquí es remove_unused_columns=False. Este eliminará cualquier función que no utilice la función de llamada del modelo. De forma predeterminada es True porque, por lo general, es ideal eliminar las columnas de funciones no utilizadas, lo que facilita el desempaquetado de las entradas en la función de llamada del modelo. Pero, en nuestro caso, necesitamos las funciones no utilizadas ('imagen' en particular) para crear 'pixel_values'.
+
+```python
+from transformers import TrainingArguments
+
+    training_args = TrainingArguments(
+        output_dir="./platzi-vit-model-gabriel-ichcanziho",
+        evaluation_strategy="steps",
+        num_train_epochs=4,
+        push_to_hub_organization="platzi",
+        learning_rate=2e-4,
+        remove_unused_columns=False,
+        push_to_hub=True,
+        load_best_model_at_end=True,
+    )
+```
+
+Finalmente, definamos nuestro `Trainer`
+
+```python
+from transformers import Trainer
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        data_collator=collate_fn,
+        compute_metrics=compute_metrics,
+        train_dataset=clean["train"],
+        eval_dataset=clean["validation"],
+        tokenizer=feature_extractor
+    )
+```
+
+Excelente, hasta este momento ya hemos definido TODO lo necesario para empezar a hacer `fine-tuning` y entrenar a nuestro modelo
+con base en el modelo de Google pero adaptándolo a nuestras necesidades. Ha sido un proceso un poco engorroso, puesto que en 
+`TensorFlow` estos pasos al ser en una capa de abstracción más baja se tiene mayor control sobre lo que se hace y se siente más
+cómo definir las cosas en lugar de estar usando funciones que ya existen para todo; sin embargo, el proceso ha sido bastante similar hasta este momento.
+
+
 ## 3.4 Entrenamiento y evaluación de modelo de computer vision
+
+Estamos a punto de acabar con el tutorial, ya solo es necesario poner a entrenar nuestro modelo, guardar el mejor resultado
+y finalmente evaluar los resultados con el dataset de `test`.
+
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar 
 
 ## 3.5 Quiz: Computer vision con Hugging Face
 
