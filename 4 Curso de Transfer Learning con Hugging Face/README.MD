@@ -1127,7 +1127,105 @@ https://huggingface.co/platzi/platzi-vit-model-gabriel-ichcanziho
 
 # 4 Natural Language Processing
 
+En lineamientos generales este proyecto es sumamente similar al proyecto pasado, pero enfocado a trabajar con texto. Este
+mini proyecto estará dividido en las mismas 4 secciones que el proyecto anterior.
+
+Vamos a trabajar con el dataset [glue](https://huggingface.co/datasets/glue) Expecificamente con el subset `MRPC`.
+
+![1.png](imgs%2F4%20Natural%20Language%20Processing%20%2F1.png)
+
+El tema de `MRPC` es dada dos oraciones `sentence1, sentence2` etiquetar si ambos textos son equivalentes o no lo son.
+Cómo `Feature_Extractor` y `Pretrained Model` vamos a usar [distilroberta-base](https://huggingface.co/distilroberta-base) el cual es un modelo
+más pequeño y rápido que un modelo `BERT` convencional.
+
+
+
 ## 4.1 Carga de datasets para NLP
+
+Como primer paso debemos descargar el dataset que vamos a utilizar para este proyecto:
+
+```python
+from datasets import load_dataset
+
+ds = load_dataset("glue", "mrpc")
+```
+La primera vez que corramos el código anterior va a descargar el dataset:
+```commandline
+Downloading builder script: 100%|██████████| 28.8k/28.8k [00:00<00:00, 319kB/s]
+Downloading metadata: 100%|██████████| 28.7k/28.7k [00:00<00:00, 312kB/s]
+Downloading readme: 100%|██████████| 27.9k/27.9k [00:00<00:00, 280kB/s]
+Downloading and preparing dataset glue/mrpc to /home/ichcanziho/.cache/huggingface/datasets/glue/mrpc/1.0.0/dacbe3125aa31d7f70367a07a8a9e72a5a0bfeb5fc42e75c9db75b96da6053ad...
+...
+Downloading data files: 100%|██████████| 3/3 [00:02<00:00,  1.24it/s]
+100%|██████████| 3/3 [00:00<00:00, 1703.85it/s]
+Dataset glue downloaded and prepared to /home/ichcanziho/.cache/huggingface/datasets/glue/mrpc/1.0.0/dacbe3125aa31d7f70367a07a8a9e72a5a0bfeb5fc42e75c9db75b96da6053ad. Subsequent calls will reuse this data.
+```
+Una vez descargado el dataset podemos observar que su estructura es la siguiente:
+```python
+print(ds)
+```
+Respuesta esperada:
+```commandline
+DatasetDict({
+    train: Dataset({
+        features: ['sentence1', 'sentence2', 'label', 'idx'],
+        num_rows: 3668
+    })
+    validation: Dataset({
+        features: ['sentence1', 'sentence2', 'label', 'idx'],
+        num_rows: 408
+    })
+    test: Dataset({
+        features: ['sentence1', 'sentence2', 'label', 'idx'],
+        num_rows: 1725
+    })
+})
+```
+
+Nuestro dataset contiene `3668` ejemplos de entrenamiento, `408`ejemplos de validación y `1725` ejemplos de prueba.
+Cada uno de ellos contiene 2 oraciones una etiqueta y un índice.
+
+Mostremos un ejemplo del subset de `train`
+
+```python
+# Mostremos un ejemplo:
+ejemplo = ds["train"][400]
+print(ejemplo)
+```
+Respuesta esperada:
+```commandline
+{'sentence1': 'U.S. Agriculture Secretary Ann Veneman , who announced Tuesdays ban , also said Washington would send a technical team to Canada to help .', 
+'sentence2': "U.S. Agriculture Secretary Ann Veneman , who announced yesterday 's ban , also said Washington would send a technical team to Canada to assist in the Canadian situation .", 
+'label': 1, 
+'idx': 446}
+```
+
+Recordemos que a nosotros como humanos nos gusta leer etiquetas con un nombre y no con un numero, entonces conozcamos cuáles son los nombres de las `labels`:
+
+```python
+labels = ds["train"].features["label"]
+print(labels)
+```
+Respuesta esperada:
+```commandline
+ClassLabel(names=['not_equivalent', 'equivalent'], id=None)
+```
+Excelente, ya sabemos que los datos pueden ser `not_equivalent` o `equivalent`, afortunadamente, el objeto `labels` cuenta con un
+simple método `int2str` que convierte un número a su representación de texto, entonces nuestro ejemplo que tiene un label `1` podemos acceder
+al nombre de la etiqueta de la siguiente manera:
+
+```python
+# Nombre de la etiqueta
+label_name = labels.int2str(ejemplo["label"])
+print(label_name)
+```
+Respuesta esperada:
+```commandline
+equivalent
+```
+
+Perfecto, hasta este momento ya estamos familiarizados con el dataset que estaremos utilizando y vemos como hasta este punto
+el proyecto es sumamente parecido al proyecto pasado, continuemos en la siguiente clase.
 
 ## 4.2 Procesamiento de dataset para NLP
 
