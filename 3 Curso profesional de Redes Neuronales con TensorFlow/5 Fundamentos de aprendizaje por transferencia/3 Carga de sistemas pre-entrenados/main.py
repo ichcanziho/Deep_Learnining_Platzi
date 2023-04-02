@@ -65,7 +65,7 @@ def get_data(target_size, color_mode):
         target_size=target_size,
         batch_size=_bs,
         class_mode="categorical",
-        color_mode= color_mode
+        color_mode=color_mode
     )
 
     _classes = [char for char in string.ascii_uppercase if char not in ("J", "Z")]

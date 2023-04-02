@@ -1608,3 +1608,18 @@ de machine learning y compartir con el público en general como han sido nuestro
 El HUB nos permite observar la cantidad de descargas de nuestras contribuciones.
 
 ## 5.2 Compartir tu modelo en el HUB de Hugging Face
+
+En realidad en los puntos anteriores se subía automáticamente al HUB, sin embargo esto es otra opción para agregar más información 
+al momento de hacer PUSH al HUB.
+
+```python
+kwargs = {
+    "finetuned_from": model.config._name_or_path,
+    "tasks": "text-classification",
+    "dataset": "datasetX",
+    "tags": ["text-classification"]
+}
+
+trainer.push_to_hub(commit_message="Lo logramos de nuevo equipo Platzi! 🤗", **kwargs)
+```
+
