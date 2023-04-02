@@ -48,6 +48,24 @@ Descubre cómo crear aplicaciones donde tus modelos de machine learning demuestr
 # 1 Introducción al Hub de Hugging Face
 ## 1.1 Explorando los Spaces
 
+Los Spaces de Hugging Face son una plataforma en línea que permite a los usuarios crear y compartir experiencias interactivas basadas en modelos de lenguaje de Hugging Face. Los Spaces ofrecen una interfaz visual y amigable que permite a los usuarios crear fácilmente experiencias interactivas basadas en texto, como chatbots, juegos de texto, sistemas de recomendación de productos y más.
+
+Los usuarios pueden comenzar a crear un Space de Hugging Face simplemente proporcionando un nombre y una descripción, y luego seleccionando un modelo de lenguaje de Hugging Face para alimentar la experiencia interactiva. Luego, pueden diseñar la experiencia interactiva utilizando una variedad de herramientas de construcción de flujo de trabajo basadas en texto, como la creación de preguntas y respuestas, la definición de reglas de conversación, la selección de respuestas de una lista predefinida, la creación de ramas de conversación y más.
+
+Una vez que se ha creado un Space de Hugging Face, los usuarios pueden compartirlo fácilmente con otros para que lo experimenten y proporcionar retroalimentación. Además, los Spaces de Hugging Face se integran con la plataforma Hugging Face Hub, lo que significa que los modelos de lenguaje entrenados por la comunidad pueden ser utilizados en la creación de Spaces.
+
+
+![1.png](imgs%2F1%20Intro%2F1.png)
+
+
+Un demo de Hugging Face se refiere a una herramienta que permite interactuar con los modelos de lenguaje de Hugging Face de manera interactiva y visual. Hugging Face es una biblioteca de código abierto para el aprendizaje automático basado en PyTorch y TensorFlow que se centra en el procesamiento del lenguaje natural (NLP, por sus siglas en inglés).
+
+Los demos de Hugging Face son interfaces web donde los usuarios pueden probar modelos de lenguaje de Hugging Face, como modelos de generación de lenguaje natural o modelos de clasificación de texto, sin necesidad de escribir código o entrenar los modelos ellos mismos. En lugar de eso, los usuarios pueden proporcionar una entrada en forma de texto y el modelo generará una respuesta.
+
+Los demos de Hugging Face son una excelente herramienta para los desarrolladores y los no expertos en programación que desean probar y entender cómo funcionan los modelos de lenguaje de Hugging Face antes de integrarlos en sus propias aplicaciones o proyectos.
+
+
+
 # 2 Gradio
 ## 2.1 Introducción a Gradio
 ## 2.2 Tus primeros demos con Gradio
