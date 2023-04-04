@@ -563,6 +563,33 @@ Y subimos los resultados a `Hugging Face`
 
 # 3 Streamlit
 ## 3.1 Introducción a Streamlit
+
+Streamlit es una biblioteca de Python de código abierto diseñada para crear aplicaciones web interactivas y personalizadas con rapidez y facilidad. Permite a los desarrolladores crear aplicaciones de datos dinámicas y visualizaciones interactivas de una manera simple y eficiente, sin tener que preocuparse por la implementación de la lógica de back-end o el diseño de la interfaz de usuario.
+
+Con Streamlit, puedes escribir código Python y generar automáticamente una aplicación web interactiva. Incluye un conjunto de herramientas y widgets preconstruidos que pueden utilizarse para crear aplicaciones de manera más rápida.
+
+![1.png](imgs%2F3%20Streamlit%2F1.png)
+
+Además, Streamlit también ofrece una serie de características, como la actualización en vivo de los datos y las visualizaciones, lo que significa que los usuarios pueden ver cambios en tiempo real en sus aplicaciones a medida que interactúan con ellas. También es fácil de instalar y configurar, lo que lo convierte en una herramienta popular para aquellos que desean crear aplicaciones web de datos personalizadas y visualizaciones interactivas.
+
+https://streamlit.io/
+
+```bash
+pip install streamlit
+```
+
+Ejemplo básico de uso:
+
+```python
+import streamlit as st
+
+x = st.slider("Selecciona un valor")
+st.write(x, "al cuadrado es:", x*x)
+
+```
+
+
+
 ## 3.2 Primeros pasos con Streamlit
 ## 3.3 Demo de generación de imágenes con Streamlit
 ## 3.4 Creando interfaz de demo de GAN
