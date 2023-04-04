@@ -65,3 +65,4 @@ transformers~=4.27.3
 datasets~=2.11.0
 torch~=2.0.0
 evaluate~=0.4.0
+gradio~=3.24.1
