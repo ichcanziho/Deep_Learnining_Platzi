@@ -559,6 +559,8 @@ Y subimos los resultados a `Hugging Face`
 
 ## 2.8 Quizz Gradio
 
+![21.png](imgs%2F2%20Gradio%2F21.png)
+
 # 3 Streamlit
 ## 3.1 Introducción a Streamlit
 ## 3.2 Primeros pasos con Streamlit
