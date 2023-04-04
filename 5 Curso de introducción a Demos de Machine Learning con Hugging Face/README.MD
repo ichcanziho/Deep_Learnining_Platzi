@@ -191,6 +191,7 @@ To create a public link, set `share=True` in `launch()`.
 **Ejemplo 1:** demo con modelo cargado de las aplicaciones de TensorFlow.
 
 [2 Clasificación Imágenes E1.py](2%20Gradio%2F2%20Clasificaci%C3%B3n%20Im%C3%A1genes%20E1.py)
+
 Importamos las bibliotecas necesarias:
 ```python
 import tensorflow as tf
@@ -246,7 +247,9 @@ Ejemplo 2: demo cargando un modelo del Hub de Hugging Face.
 
 > Nota: este método es sumamente superficial, sin embargo, es bueno conocer la forma en la que podemos crear demos directamente
 > desde los modelos pre-entrenados de `Hugging Face`, este me permite simplificar el proceso que de por sí es simple.
+
 [2 Clasificación Imágenes E2.py](2%20Gradio%2F2%20Clasificaci%C3%B3n%20Im%C3%A1genes%20E2.py)
+
 ```python
 import gradio as gr
 
