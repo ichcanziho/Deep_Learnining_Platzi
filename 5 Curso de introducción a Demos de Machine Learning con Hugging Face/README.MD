@@ -243,7 +243,7 @@ To create a public link, set `share=True` in `launch()`.
 [2.3379953e-05 6.3485393e-05 1.9028716e-05 7.3523290e-05 9.2093105e-05]
 ```
 
-Ejemplo 2: demo cargando un modelo del Hub de Hugging Face.
+**Ejemplo 2:** demo cargando un modelo del Hub de Hugging Face.
 
 > Nota: este método es sumamente superficial, sin embargo, es bueno conocer la forma en la que podemos crear demos directamente
 > desde los modelos pre-entrenados de `Hugging Face`, este me permite simplificar el proceso que de por sí es simple.
@@ -276,9 +276,78 @@ To create a public link, set `share=True` in `launch()`.
 
 
 ## 2.4 Compartir demos en Spaces de Hugging Face
+
+Primero debemos crear un `space` en Hugging Face
+
+![10.png](imgs%2F2%20Gradio%2F10.png)
+
+https://huggingface.co/new-space
+
+![11.png](imgs%2F2%20Gradio%2F11.png)
+
+Existen otros `Hardware` disponibles para nuestros spaces, pero son de cobro y por eso vamos a obviarlos por este momento.
+
+Hugging Face funciona básicamente igual que un repositorio de GitHub
+
+![12.png](imgs%2F2%20Gradio%2F12.png)
+
+Podemos ver que tenemos nuestro url para hacer un `git clone` y de igual forma nos dan el código para empezar a hacer nuestros
+commits y push:
+
+```commandline
+git clone https://huggingface.co/spaces/Ichcanziho/Demo_mi_primer_space
+```
+
+```commandline
+git add app.py
+git commit -m "Add application file"
+git push
+```
+
+Sin embargo, para esta primera clase vamos a usar la Interfaz de Hugging Face para crear nuestra `App.py` donde estará nuestra primera demo.
+
+![13.png](imgs%2F2%20Gradio%2F13.png)
+
+Ahora vamos a `files/add file/create new file`
+
+Vamos a utilizar el código de la clase pasada:
+
+```python
+import gradio as gr
+
+titulo = "Mi primer demo con Hugging Face | Clasificación de imágenes"
+desc = "Este es un demo creado en la clase de Platzi."
+
+gr.Interface.load(
+    "huggingface/microsoft/swin-tiny-patch4-window7-224",
+    inputs=gr.Image(label="Carga una imagen aquí"),
+    title=titulo,
+    description=desc
+).launch()
+
+```
+
+![14.png](imgs%2F2%20Gradio%2F14.png)
+
+Ahora vamos a ver como quedo nuestro primer space:
+
+![15.png](imgs%2F2%20Gradio%2F15.png)
+
+Puedes acceder a él desde la siguiente liga:
+
+https://huggingface.co/spaces/Ichcanziho/Demo_mi_primer_space
+
+Ahora mi perfil tiene mi primer demo:
+
+![16.png](imgs%2F2%20Gradio%2F16.png)
+
+
 ## 2.5 Demo de transcripción de audio a texto con Gradio
+
 ## 2.6 El futuro de los demos: Blocks
+
 ## 2.7 Blocks con Tabs y TabItem
+
 ## 2.8 Quizz Gradio
 
 # 3 Streamlit
