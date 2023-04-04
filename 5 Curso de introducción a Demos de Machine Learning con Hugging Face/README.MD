@@ -344,7 +344,137 @@ Ahora mi perfil tiene mi primer demo:
 
 ## 2.5 Demo de transcripción de audio a texto con Gradio
 
+En esta clase veremos como de forma sencilla podemos crear una demo de Audio2Text
+
+Para ubuntu necesite instalar la siguiente dependencia:
+```bash
+sudo apt-get install ffmpeg
+```
+
+[3 Audio2Text.py](2%20Gradio%2F3%20Audio2Text.py)
+
+```python
+from transformers import pipeline
+import gradio as gr
+
+
+def transcribe(audio):
+    text = modelo(audio)["text"]
+    return text
+
+
+if __name__ == '__main__':
+    modelo = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-large-xlsr-53-spanish")
+
+    gr.Interface(
+        fn=transcribe,
+        inputs=[gr.Audio(source="microphone", type="filepath")],
+        outputs=["textbox"]
+    ).launch()
+
+```
+
+> Para más información sobre el input `Audio` podemos ir a su documentación: https://gradio.app/docs/#audio
+>
+
+Respuesta esperada:
+```commandline
+Downloading (…)lve/main/config.json: 100%|██████████| 1.29k/1.29k [00:00<00:00, 1.05MB/s]
+Downloading pytorch_model.bin: 100%|██████████| 1.26G/1.26G [04:05<00:00, 5.14MB/s]
+Downloading (…)okenizer_config.json: 100%|██████████| 380/380 [00:00<00:00, 365kB/s]
+Downloading (…)olve/main/vocab.json: 100%|██████████| 370/370 [00:00<00:00, 339kB/s]
+Downloading (…)cial_tokens_map.json: 100%|██████████| 85.0/85.0 [00:00<00:00, 79.9kB/s]
+Downloading (…)rocessor_config.json: 100%|██████████| 158/158 [00:00<00:00, 208kB/s]
+Running on local URL:  http://127.0.0.1:7860
+```
+
+![17.png](imgs%2F2%20Gradio%2F17.png)
+
+Puedes probar el demo en el siguiente space: https://huggingface.co/spaces/Ichcanziho/Voice2Text
+
+![18.png](imgs%2F2%20Gradio%2F18.png)
+
+> ## Nota importante:
+> Para este space fue necesario crear un archivo requirements.txt para añadir las siguientes dependencias de código:
+>   > transformers
+>   > 
+>   > torch
+
 ## 2.6 El futuro de los demos: Blocks
+
+En este ejercicio vamos a ver como podemos enlazar de forma secuencial la salida de un modelo como entrada para otro modelo.
+Para este trabajo vamos a utilizar `blocks` de `gradio` para cumplir con la función:
+
+[4 Blocks E1.py](2%20Gradio%2F4%20Blocks%20E1.py)
+
+Importamos las bibliotecas habituales:
+
+```python
+import gradio as gr
+from transformers import pipeline
+```
+
+Utilizamos `pipeline` para descargar los modelos que vamos a utilizar:
+
+```python
+trans = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-large-xlsr-53-spanish")
+clasificador = pipeline("text-classification", model="pysentimiento/robertuito-sentiment-analysis")
+```
+
+Creamos las funciones que utilizan a los modelos de `pipeline`:
+
+```python
+def audio_a_text(audio):
+    text = trans(audio)["text"]
+    return text
+
+
+def texto_a_sentimiento(text):
+    sentiment = clasificador(text)[0]["label"]
+    return sentiment
+```
+
+Y Ahora viene la parte más interesante, creamos un bloque secuencial en donde estaremos poniendo diferentes `widgets` para
+interactuar con el flujo de información:
+
+```python
+def make_block(dem):
+    with dem:
+        # Este bloque nos permite incertar código en MarkDown
+        gr.Markdown("# Demo para la clase de Platzi")
+        # Creamos un widget de Audio para grabar la voz con el micrófono
+        audio = gr.Audio(source="microphone", type="filepath")
+        # Creamos un widget de Textbox para poner el texto transcrito por el modelo o para escribir directamente en él
+        texto = gr.Textbox()
+        # Creamos un widget de Botón para que al presionarlo empiece la clasificación
+        b1 = gr.Button("Transcribe porfa")
+        # AL momento de hacer click en el botón va a llamar a la función Audio a Text, usando como entrada el "audio" grabado por el widget Audio
+        # y la salida será un texto que se mostrará en el widget texto.
+        b1.click(audio_a_text, inputs=audio, outputs=texto)
+        
+        # Podemos usar un label vacío para usarlo como placeholder y poner aquí la clasificación del sentimiento del texto
+        label = gr.Label()
+        # Asignamos un segundo botón para clasificar el texto y obtener su sentimiento
+        b2 = gr.Button("Clasifica porfa el sentimiento")
+        # Al momento de hacer click vamos a llamar a la función texto_a_sentimiento, que tiene como entrada el texto presente en el TextBox texto
+        # y Como salida devuelve el sentimiento en el Widget Label.
+        b2.click(texto_a_sentimiento, inputs=texto, outputs=label)
+```
+
+Finalmente, creamos un demo, llamamos a nuestra función `make_block()` y lanzamos el demo:
+```python
+demo = gr.Blocks()
+make_block(demo)
+demo.launch()
+```
+
+Respuesta esperada:
+
+![19.png](imgs%2F2%20Gradio%2F19.png)
+
+¡Excelente! Hemos creado una aplicación completa compuesta de 2 modelos de DeepLearning y usando un flujo de información
+compuesta de widgets contenidos en un block.
+
 
 ## 2.7 Blocks con Tabs y TabItem
 
