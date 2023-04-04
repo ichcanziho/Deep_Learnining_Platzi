@@ -478,6 +478,85 @@ compuesta de widgets contenidos en un block.
 
 ## 2.7 Blocks con Tabs y TabItem
 
+En este proyecto vamos a utilizar 3 clasificadores y a cada uno de ellos lo vamos a asignar a una `pestaña` diferente:
+
+[5 Blocks con Tabs.py](2%20Gradio%2F5%20Blocks%20con%20Tabs.py)
+
+Importamos bibliotecas necesarias:
+```python
+from transformers import pipeline
+import gradio as gr
+from PIL import Image
+```
+Descargamos los modelos que vamos a utilizar:
+```python
+image_cla = pipeline("image-classification", model="microsoft/swin-tiny-patch4-window7-224")
+voice_cla = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-large-xlsr-53-spanish")
+text_cla = pipeline("text-classification", model="pysentimiento/robertuito-sentiment-analysis")
+```
+Creamos la función de clasificación de cada modelo de acuerdo a sus necesidades:
+```python
+def classify_img(im):
+    im = Image.fromarray(im.astype('uint8'), 'RGB')
+    ans = image_cla(im)
+    labels = {v["label"]: v["score"] for v in ans}
+    return labels
+
+
+def voice2text(audio):
+    text = voice_cla(audio)["text"]
+    return text
+
+
+def text2sentiment(text):
+    sentiment = text_cla(text)[0]["label"]
+    return sentiment
+```
+
+Creamos nuestra función que va a construir nuestro `bloque` a partir del `demo`:
+
+```python
+def make_block(dem):
+    with dem:
+        # Empezamos por decir que vamos a utilizar una estructura de pestañas
+        with gr.Tabs():
+            # Definimos que esta pestaña va a tener el siguiente título
+            with gr.TabItem("Transcribe audio en español"):
+                # La pestaña va a estar compuesta de un único ROW
+                with gr.Row():
+                    # Dentro del cuál tendra un widget de Audio como input y un widget de TextBox como output
+                    audio = gr.Audio(source="microphone", type="filepath")
+                    transcripcion = gr.Textbox()
+                b1 = gr.Button("Voz a Texto")
+            # El proceso se repite con las demás pestañas
+            with gr.TabItem("Análisis de sentimiento en español"):
+                with gr.Row():
+                    texto = gr.Textbox()
+                    label = gr.Label()
+                b2 = gr.Button("Texto a Sentimiento")
+            # Cada pestaña tiene sus propias necesidades en cuanto a Widgets de input y Output
+            with gr.TabItem("Clasificación de Imágenes"):
+                with gr.Row():
+                    image = gr.Image(label="Carga una imagen aquí")
+                    label_image = gr.Label(num_top_classes=5)
+                b3 = gr.Button("Clasifica")
+            
+            # Al finalizar cada pestaña agregamos un boton al fondo para accionar el proceso de clasificación de cada modelo.
+            b1.click(voice2text, inputs=audio, outputs=transcripcion)
+            b2.click(text2sentiment, inputs=texto, outputs=label)
+            b3.click(classify_img, inputs=image, outputs=label_image)
+
+```
+Corremos nuestro código:
+```python
+demo = gr.Blocks()
+make_block(demo)
+demo.launch()
+```
+Y subimos los resultados a `Hugging Face`
+
+![20.png](imgs%2F2%20Gradio%2F20.png)
+
 ## 2.8 Quizz Gradio
 
 # 3 Streamlit
