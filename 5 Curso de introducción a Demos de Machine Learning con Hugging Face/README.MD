@@ -588,9 +588,84 @@ st.write(x, "al cuadrado es:", x*x)
 
 ```
 
-
-
 ## 3.2 Primeros pasos con Streamlit
+
+Primero vamos a crear un nuevo `space` de hugging face
+
+![2.png](imgs%2F3%20Streamlit%2F2.png)
+
+Nos dirigimos a la carpeta de `streamlit` de este curso:
+
+[3 streamlit](3%20streamlit)
+
+```commandline
+(venv) ichcanziho@ichcanziho:~/Documentos/programacion/Deep Learnining/5 Curso de introducción a Demos de Machine Learning con Hugging Face/3 streamlit$ 
+```
+
+Clonamos el repositorio de hugging face
+```bash
+git clone https://huggingface.co/spaces/Ichcanziho/stremlit_space_test
+cd stremlit_space_test
+```
+Ahora vamos a crear un nuevo código python:
+
+[app.py](3%20streamlit%2Fstremlit_space_test%2Fapp.py)
+
+```python
+import streamlit as st
+
+st.title("Este es mi demo")
+st.markdown("También puedo usar `markdown`")
+
+x = st.slider('Select a value')
+st.write(x, 'squared is', x * x)
+```
+Vamos a terminal y ejecutamos el siguiente comando para correr el código:
+```bash
+streamlit run app.py
+```
+Respuesta esperada:
+```commandline
+Summary:
+  - This open source library collects usage statistics.
+  - We cannot see and do not store information contained inside Streamlit apps,
+    such as text, charts, images, etc.
+  - Telemetry data is stored in servers in the United States.
+  - If you'd like to opt out, add the following to ~/.streamlit/config.toml,
+    creating that file if necessary:
+
+    [browser]
+    gatherUsageStats = false
+
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.100.14:8501
+
+```
+
+![3.png](imgs%2F3%20Streamlit%2F3.png)
+
+Ahora como estamos usando `git` debemos hacer los siguientes pasos convencionales de git:
+
+```bash
+git add.py
+git commit -m "cambio en app"
+git push
+```
+Podemos ir a nuestro `space` de hugging face y observar los resultados:
+
+![5.png](imgs%2F3%20Streamlit%2F5.png)
+
+https://huggingface.co/spaces/Ichcanziho/stremlit_space_test
+
+Para tener más información sobre todas las posibilidadades que nos ofrece `streamlit` es siempre buena idea tener a la mano
+su `api reference`: https://docs.streamlit.io/library/api-reference
+
+![4.png](imgs%2F3%20Streamlit%2F4.png)
+
+
 ## 3.3 Demo de generación de imágenes con Streamlit
 ## 3.4 Creando interfaz de demo de GAN
 ## 3.5 Probando demo de generación de imágenes
