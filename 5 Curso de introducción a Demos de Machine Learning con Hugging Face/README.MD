@@ -42,8 +42,6 @@ Descubre cómo crear aplicaciones donde tus modelos de machine learning demuestr
   - [3.5 Probando demo de generación de imágenes](#35-probando-demo-de-generación-de-imágenes)
   - [3.6 Configurar un demo clonado desde Hugging Face](#36-configurar-un-demo-clonado-desde-hugging-face)
   - [3.7 Quizz Streamlit](#37-quizz-streamlit)
-- [4 Tu historia en machine learning](#4-tu-historia-en-machine-learning)
-  - [4.1 Sube tus propios demos](#41-sube-tus-propios-demos)
 
 # 1 Introducción al Hub de Hugging Face
 ## 1.1 Explorando los Spaces
@@ -667,10 +665,225 @@ su `api reference`: https://docs.streamlit.io/library/api-reference
 
 
 ## 3.3 Demo de generación de imágenes con Streamlit
+
+Para este proyecto crearemos un demo capaz de generar imágenes de mariposas de forma artificial utilizando Gans.
+
+El modelo base que estaremos utilizando es el siguiente: https://huggingface.co/ceyda/butterfly_cropped_uniq1K_512
+
+Es indispensable entender el `how to use` del modelo:
+
+```python
+
+import torch
+from huggan.pytorch.lightweight_gan.lightweight_gan import LightweightGAN # install the community-events repo above
+
+gan = LightweightGAN.from_pretrained("ceyda/butterfly_cropped_uniq1K_512")
+gan.eval()
+batch_size = 1
+with torch.no_grad():
+        ims = gan.G(torch.randn(batch_size, gan.latent_dim)).clamp_(0., 1.)*255
+        ims = ims.permute(0,2,3,1).detach().cpu().numpy().astype(np.uint8)
+        # ims is [BxWxHxC] call Image.fromarray(ims[0])
+```
+
+Este ejemplo lo usaremos más adelante, pero este código NO lo vamos a correr de forma local, por ello no será necesario instalar
+`huggan` por el contrario vamos a hacerlo un requisito de instalación cuando hagamos el deploy a hugging face. Esto lo conseguimos
+de forma sencilla utilizando un archivo de `requirements.txt` y añadiendo el siguiente requisito:
+
+```commandline
+git+https://github.com/huggingface/community-events.git@3fea10c5d5a50c69f509e34cd580fe9139905d04#egg=huggan
+```
+
+Con todo esto definido, empecemos por el `backend` del proyecto, la parte de código que será encargada de generar las mariposas:
+
+[utils.py](3%20streamlit%2Fmariposas_test%2Futils.py)
+
+Empezamos por importar las bibliotecas necesarias:
+```python
+import numpy as np
+import torch
+from huggan.pytorch.lightweight_gan.lightweight_gan import LightweightGAN
+```
+
+Podemos crear una función aislada encargada de cargar el modelo de `LightweightGAN` desde un `model_name`y `version`
+```python
+# Cargamos el modelo desde el Hub de Hugging Face
+def carga_modelo(model_name="ceyda/butterfly_cropped_uniq1K_512", model_version=None):
+    gan = LightweightGAN.from_pretrained(model_name, version=model_version)
+    gan.eval()
+    return gan
+```
+
+Definimos la función objetivo `genera` que será la que utilice el modelo para generar las imágenes de mariposas:
+```python
+# Usamos el modelo GAN para generar imágenes
+def genera(gan, batch_size=1):
+    with torch.no_grad():
+        ims = gan.G(torch.randn(batch_size, gan.latent_dim)).clamp_(0.0, 1.0) * 255
+        ims = ims.permute(0, 2, 3, 1).detach().cpu().numpy().astype(np.uint8)
+    return ims
+```
+Perfecto, a este punto ya hemos creado todos los servicios necesarios que utilizará nuestra aplicación, en la siguiente clase
+vamos a ver como usar `streamlit` para crear el `front` de nuestro `space`
+
+
 ## 3.4 Creando interfaz de demo de GAN
+
+Nuestro proyecto busca tener la siguiente interfaz gráfica:
+
+![6.png](imgs%2F3%20Streamlit%2F6.png)
+
+La interfaz se compone principalmente de dos secciones, la barra lateral con información `adicional` y la zona principal
+a la derecha. Cada uno de los widgets estarán en forma de `stack` esto quiere decir que se van a acomodar uno debajo del otro
+de forma vertical.
+
+Con esto en mente podemos empezar a crear el siguiente código:
+
+[app.py](3%20streamlit%2Fmariposas_test%2Fapp.py)
+
+Primero, importamos las bibliotecas necesarias:
+```python
+import streamlit as st
+from utils import carga_modelo, genera
+```
+
+Lo primero que podemos observar con streamlit importado como `st` es que NO será necesario instanciar un objeto de esta clase, entonces podemos
+usar sus métodos de clase directamente. Empezamos construyendo la página principal:
+
+```python
+# Página principal
+st.title("Butterfly GAN (GAN de mariposas)")
+st.write(
+    "Modelo Light-GAN entrenado con 1000 imágenes de mariposas tomadas de la colección del Museo Smithsonian."
+)
+```
+
+Antes de continuar debemos crear en nuestro proyecto una carpeta llamada `assets` (por convención) y poner ahí la imagen que vamos a usar
+como logotipo del proyecto (esto es solo con fines estéticos) ![logo.png](3%20streamlit%2Fmariposas_test%2Fassets%2Flogo.png) con los requisitos anteriores
+cumplidos vamos a crear la barra lateral de información adicional.
+
+```python
+# Barra lateral
+st.sidebar.subheader("¡Estas mariposas no existen! 🤯.")
+st.sidebar.image("assets/logo.png", width=200)
+st.sidebar.caption(
+    f"[Modelo](https://huggingface.co/ceyda/butterfly_cropped_uniq1K_512) y [Dataset]("
+    f"https://huggingface.co/datasets/huggan/smithsonian_butterflies_subset) usados."
+)
+st.sidebar.caption(f"*Disclaimers:*")
+st.sidebar.caption(
+    "* Este demo creada a partir del curso de Platzi: Curso de Experimentación en Machine Learning con Hugging Face."
+)
+```
+
+Podemos observar que en general todo tiene un formato de `markdown` es importante tener conocimientos de este tipo de escritura.
+
+Ahora podemos seguir definiendo un par de parámetros del modelo que vamos a utilizar:
+
+```python
+# Cargamos modelo
+repo_id = "ceyda/butterfly_cropped_uniq1K_512"
+version_modelo = "57d36a15546909557d9f967f47713236c8288838"
+modelo_gan = carga_modelo(repo_id, version_modelo)
+
+# Generamos 4 mariposas
+n_mariposas = 4
+```
+
+Para generar información `imagenes`, `texto` etc, es necesario que estos datos estén almacenados en algún lugar, para ello vamos a utilizar
+`streamlit.session_state` algo simbólicamente similar a las `cookies` de un navegador. Cuando se utiliza `session_state`, 
+los datos se almacenan en una instancia de SessionState que se crea la primera vez que se accede a ella. 
+Esta instancia se mantiene en memoria mientras la aplicación se esté ejecutando, lo que permite que los datos almacenados 
+en ella persistan a través de distintas ejecuciones de las funciones.
+
+La forma de utilizarlas es igual al uso de `diccionarios` en python, podemos crear `keys` usando `session_state["mi_variable"]` 
+o `session_state.mi_variable` y asignarles un valor para usarlo más adelante. Es importante tener en cuenta que session_state 
+no se puede utilizar fuera de una función de Streamlit, ya que requiere acceso al contexto de la aplicación.
+
+Con todo esto en mente, vamos a definir el siguiente código para la generación de mariposas y lo explicaremos con más detalle.
+
+```python
+# Función que genera mariposas y lo guarda como un estado de la sesión
+def corre():
+    with st.spinner("Generando, espera un poco..."):
+        ims = genera(modelo_gan, n_mariposas)
+        st.session_state["ims"] = ims
+
+
+# Si no hay una imagen generada entonces generala
+if "ims" not in st.session_state:
+    st.session_state["ims"] = None
+    corre()
+
+# ims contiene las imágenes generadas
+ims = st.session_state["ims"]
+```
+Empezamos con una función `corre` encargada de generar las imágenes, pero en lugar de simplemente regresar las imágenes con un `return` vamos a guardar
+esta información en una `cookie` de `streamlit` con `st.session_state`. La primera vez que carguemos él `space` `streamlit`
+se va a preguntar: 
+> Acaso dentro de mis cookies actuales tengo alguna llamada `ims`
+
+Dado que es la primera vez que se carga el `space` la respuesta va a ser `NO` entonces debo crear esa `cookie` asignándole un
+valor `None` este valor no importa porque justo después vamos a mandar a la función `corre` la cual ya sabemos que asigna
+el valor de las mariposas a la `cookie` de `ims.
+
+Entonces a este punto ya sabemos que ya sea que es la primera vez que cargamos él `space` o que se empezó una petición para generar
+nuevas mariposas sí o sí existe una `cookie` llamada `ims` que contiene nuestras 4 mariposas, así que podemos acceder al valor
+de esta variable: `ims = st.session_state["ims"]`
+
+Ahora tenemos que crear un espacio para poder poner las imágenes de nuestras mariposas:
+
+```python
+if ims is not None:
+    cols = st.columns(n_mariposas)
+    for j, im in enumerate(ims):
+        i = j % n_mariposas
+        cols[i].image(im, use_column_width=True)
+```
+De forma muy sencilla el código de arriba es encargado de generar una columna para cada imagen de mariposa generada y a cada una de esas 
+imágenes la pone en su lugar con: `cols[i].image(im, use_column_width=True)` el parámetro `use_column_width=True` es por cuestiónes de estética
+para que las imágenes tengan el mismo ancho que la columna calculada.
+
+Para terminar con nuestra interfaz gráfica podemos agregar un boton `triger` que corra de nuevo la función `corre` y de esta manera
+se creen nuevas imágenes de mariposas:
+
+```python
+# Si la usuaria da click en el botón entonces corremos la función genera()
+corre_boton = st.button(
+    "Crea nuevas mariposas :D",
+    on_click=corre,
+    help="Estamos en pleno vuelo, puede tardar.",
+)
+
+```
+
 ## 3.5 Probando demo de generación de imágenes
+
+Genial, ahora solo nos falta crear nuestro archivo `requirements.txt`
+
+```commandline
+git+https://github.com/huggingface/community-events.git@3fea10c5d5a50c69f509e34cd580fe9139905d04#egg=huggan
+transformers
+```
+
+y hacemos los pasos que ya conocemos de git:
+
+```bash
+git add .
+git commit -m "commit de mariposas"
+git push
+```
+
+Excelente, ahora nuestro proyecto se encuentra en el hub de hugging face, puedes acceder a él en el siguiente link:
+
+https://huggingface.co/spaces/Ichcanziho/mariposas_test
+
+
 ## 3.6 Configurar un demo clonado desde Hugging Face
+
+Esta clase se puede resumir en que puedes tomar código de otros repositorios y utilizarlo libremente para partir de ahì
+y crear tus nuevos proyectos. No agrega mucha información en realidad. 
+
 ## 3.7 Quizz Streamlit
 
-# 4 Tu historia en machine learning
-## 4.1 Sube tus propios demos
+![7.png](imgs%2F3%20Streamlit%2F7.png)
