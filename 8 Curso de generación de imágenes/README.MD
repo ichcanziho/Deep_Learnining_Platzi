@@ -17,8 +17,8 @@ Lleva el poder del deep learning a otro nivel con Carlos Alarcón como tu profes
 > - [3: Curso profesional de Redes Neuronales con TensorFlow](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow)
 > - [4: Curso de Transfer Learning con Hugging Face](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/4%20Curso%20de%20Transfer%20Learning%20con%20Hugging%20Face)
 > - [5: Curso de Experimentación en Machine Learning con Hugging Face](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/5%20Curso%20de%20introducci%C3%B3n%20a%20Demos%20de%20Machine%20Learning%20con%20Hugging%20Face)
-> - [6: Curso de detección y segmentación de objetos con TensorFlow]()
-> - [7: Curso profesional de Computer Vision con TensorFlow]()
+> - [6: Curso de detección y segmentación de objetos con TensorFlow](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/6%20Curso%20de%20detecci%C3%B3n%20y%20segmentaci%C3%B3n%20de%20objetos%20con%20Tensorflow)
+> - [7: Curso profesional de Computer Vision con TensorFlow](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/7%20Curso%20profesional%20de%20Computer%20Vision%20con%20TensorFlow)
 > 
 > Este Curso es el Número 8 de una ruta de Deep Learning, quizá algunos conceptos no vuelvan a ser definidos en este repositorio,
 > por eso es indispensable que antes de empezar a leer esta guía hayas comprendido los temas vistos anteriormente.
