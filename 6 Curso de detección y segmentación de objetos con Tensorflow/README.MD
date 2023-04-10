@@ -73,7 +73,7 @@ La `visión computarizada` es una rama de la inteligencia artificial y la inform
 y técnicas para la interpretación de imágenes y videos digitales. El objetivo de la `visión computarizada` es automatizar 
 la tarea de análisis y reconocimiento visual que normalmente realizaría un ser humano.
 
-![1.png](1%2F1.png)
+![1.png](ims%2F1%2F1.png)
 
 Existen varios tipos de visión computarizada, entre ellos:
 
@@ -95,9 +95,176 @@ Existen varios tipos de visión computarizada, entre ellos:
 
 ## 2.1 Introducción a object detection: sliding window y bounding box
 
+A lo largo de cursos anteriores hemos visto la tarea de clasificación de imágenes, la cual consistía en entrenar una red
+neuronal con ejemplos conocidos de diferentes imágenes. Cada imagen perteneciente a una clase en específico, con la finalidad de
+que la red pudiera diferenciar entre estas clases de acuerdo a los patrones de cada imagen. El siguiente paso lógico en nuestra 
+aventura por computer vision es que la red NO solo sea capaz de decirte a que clase pertenece una imagen, sino también decirte
+en qué parte de la imagen se encuentra esta clase. A esta tarea se le conoce como `localization`.
 
+![1.png](ims%2F2a%2F1.png)
+
+Pero, ¿qué pasaría si en una misma imagen tuviéramos varios objetos pertenecientes a clases diferentes? Entonces nos estaríamos
+enfrentando a un problema de `Object Detection` un problema de `classification + localization`de multiples objetos. Para ello
+podría utilizar una `bounding box` un rectángulo auxiliar que englobe la posición del objeto de interés. Y finalmente
+si quisiera poder saber exactamente cuáles son los límites del objeto entonces el problema ya no sería de `Object Detection`
+sino de `Instance Segmentation` y él `bounding box` ya no sería suficiente preciso.
+
+### Conceptos: `Sliding Window`
+
+Hay diferentes enfoques para la detección de objetos, pero uno de los más comunes es el uso de una técnica conocida como 
+ventana deslizante o `sliding window` en inglés.
+
+![sliding_window_example.gif](ims%2F2a%2Fsliding_window_example.gif)
+
+La ventana deslizante es una técnica en la que una pequeña ventana rectangular se mueve a través de la imagen en pasos 
+fijos y se aplica un clasificador para determinar si la ventana contiene o no un objeto de interés. La ventana se desliza 
+por toda la imagen y cada vez que el clasificador detecta un objeto, se marca la ubicación de la ventana. Una de las 
+desventajas de esta técnica es que puede ser computacionalmente costosa, ya que se debe aplicar el clasificador a múltiples 
+ventanas de diferentes tamaños y posiciones en la imagen.
+
+### Conceptos: `Bounding Box`
+
+Una bounding box o cuadro delimitador en español es un rectángulo que se dibuja alrededor de un objeto específico en una imagen o video, con el fin de identificar y localizar la posición del objeto en la imagen. La bounding box se define mediante cuatro valores numéricos que representan las coordenadas x e y del borde superior izquierdo del rectángulo, y el ancho y la altura del rectángulo.
+
+![2.png](ims%2F2a%2F2.png)
+
+En la detección de objetos, la tarea principal es identificar los objetos de interés en una imagen o video y localizar su posición exacta en la imagen. La utilización de bounding boxes permite a los algoritmos de visión computarizada identificar y ubicar objetos de forma más eficiente y precisa. Una vez que se detecta el objeto de interés, se puede dibujar un bounding box alrededor del objeto para resaltar su posición en la imagen.
+
+### Ejemplo en código: Creando nuestro `Sliding Window`
+
+> ## Nota:
+> El código lo puedes encontrar en: [sliding_window.py](Detecci%C3%B3n%20de%20Objetos%2F1%20Sliding%20Window%20Example%2Fsliding_window.py)
+
+Vamos a partir de la siguiente imagen de una mujer corriendo:
+
+![mujer.jpg](Detecci%C3%B3n%20de%20Objetos%2F1%20Sliding%20Window%20Example%2Fmujer.jpg)
+
+Nuestro trabajo en esta clase será crear un código que nos permita explicar mediante una animación el funcionamiento de `sliding window`
+
+Empecemos por importar las bibliotecas necesarias:
+
+```python
+import imageio  # biblioteca para creación de gifs
+import cv2
+import matplotlib.pyplot as plt  
+import matplotlib.patches as patches  # Lo usaremos para crear un recuadro de color
+import numpy as np
+```
+
+Vamos a empezar por leer la imagen de referencia:
+
+```python
+img = cv2.imread("mujer.jpg")
+# Nota, por defecto cv lee las imágenes en formato BGR por eso es necesario pasarlas a RGB
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+# Es importante tener la imagen en dimenciones conocidas, y para este ejemplo es perfecto que sea cuadrada.
+img = cv2.resize(img, dsize=(1000, 1000))
+```
+
+Definimos nuestra función de `sliding window` como un generador de python:
+
+> Nota si no conoces `yield` y qué son los generadores de python puedes leer esta entrada que pertenece a este mismo repositorio:
+> [Generadores](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow#26-datasets-generators)
+
+```python
+def sliding_window(image, step, ws):
+    for y in range(0, image.shape[0] - ws[1] + 1, step):
+        for x in range(0, image.shape[1] - ws[0] + 1, step):
+            yield x, y, image[y:y + ws[1], x:x + ws[0]]
+```
+
+El código es bastante explicativo, devuelve dos coordenadas, `x, y` y la imagen recortada en esas coordenadas tomando como
+alto `ws[1]` y como ancho `ws[0]` mientras que `step` es una vez que recorto la imagen, cuanto debo moverme para recortar la próxima imagen.
+
+Ahora vamos a generar una función que nos permita mostrar una imagen con la imagen original a la izquierda y la imagen recortada a la derecha:
+
+```python
+def get_window(window):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 12))
+    ax1.imshow(img)
+    rect = patches.Rectangle((window[0], window[1]), 200, 200, linewidth=2, edgecolor='g', facecolor='none')
+    ax1.add_patch(rect)
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    ax2.imshow(window[2])
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+```
+Hasta este punto ya hemos creado una figura de `matplotlib` y bien podríamos guardar cada imagen en disco con un nombre diferente,
+pero para esta implementación y por variar lo visto en la clase vamos a utilizar un método que NO requiere guardar la imagen
+para posteriormente leerla.
+
+Lo único que necesitamos hacer es obtener el `numpy array` de la figura de `matplotlib` para ello usamos su `canvas` y creamos
+el `numpy array` usando `np.frombuffer` y llevamos el contenido del `canvas` a `tostring_rgb`:
+
+```python
+    canvas = fig.canvas
+    canvas.draw()
+    width, height = canvas.get_width_height()
+    img_array = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((height, width, 3))
+    img_array = img_array[380:840, 140:1090]
+    plt.close()
+    return img_array
+```
+
+Excelente, ahora solamente necesitamos llamar a esta función por cada sliding window generada. Pero eso lo veremos en la siguiente clase.
 
 ## 2.2 Generando video de sliding window
+
+De forma sencilla ya tenemos todo lo necesario para crear nuestra `animación` de `sliding window`
+
+Hasta la clase pasada teníamos el siguiente código:
+
+```python
+import imageio
+import cv2
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+
+def sliding_window(image, step, ws):
+    for y in range(0, image.shape[0] - ws[1] + 1, step):
+        for x in range(0, image.shape[1] - ws[0] + 1, step):
+            yield x, y, image[y:y + ws[1], x:x + ws[0]]
+
+def get_window(window):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 12))
+    ax1.imshow(img)
+    rect = patches.Rectangle((window[0], window[1]), 200, 200, linewidth=2, edgecolor='g', facecolor='none')
+    ax1.add_patch(rect)
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    ax2.imshow(window[2])
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    canvas = fig.canvas
+    canvas.draw()
+    width, height = canvas.get_width_height()
+    img_array = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape((height, width, 3))
+    img_array = img_array[380:840, 140:1090]
+    plt.close()
+    return img_array
+
+if __name__ == '__main__':
+    img = cv2.imread("mujer.jpg")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, dsize=(1000, 1000))
+
+```
+
+Ahora lo único que necesitamos es utilizar la función `get_window` para cada `w` generada por `sliding_window` y almacenar
+estos valores en una lista para finalmente guardarlos como un `.gif`
+
+```python
+    img_gif = []
+    for w in sliding_window(img, 200, (200, 200)):
+        img_gif.append(get_window(w))
+        
+    imageio.mimwrite('animación.gif', img_gif, 'GIF', duration=0.2)
+```
+Resultado Final:
+
+![animación.gif](Detecci%C3%B3n%20de%20Objetos%2F1%20Sliding%20Window%20Example%2Fanimaci%C3%B3n.gif)
 
 ## 2.3 Introducción a object detection: backbone, non-max suppression y métricas
 
