@@ -268,7 +268,216 @@ Resultado Final:
 
 ## 2.3 Introducción a object detection: backbone, non-max suppression y métricas
 
+### BackBone
+
+Empecemos definiendo en concepto de `BackBone` o columna vertebral:
+
+![3.png](ims%2F2a%2F3.png)
+
+El concepto es muy sencillo y hace referencia a que la "columna vertebral" de nuestros sistemas de `object detection`
+no es más que tomar algún modelo pre-entrenado para la clasificación de imágenes por ejemplo `AlexNet` entonces mediante
+`transfer learning` podemos aprovechar todo este conocimiento. Removemos las últimas capas de clasificador pre-entrenado y añadimos
+nuestra funcionalidad con nuevas capas, en este caso una `head` de clasificación de `gatos` y otra `head` de regresión para
+obtenerlos `bounding boxes`.
+
+### Intersection Over Union IoU
+
+En clasificación de objetos era bastante sencillo saber si un modelo había predicho bien si la imagen de un gato era clasificada
+como un gato. Nuestras etiquetas mostraban el nombre de la clase a la que perteneció la imagen original. Sin embargo, en el mundo
+de `object detection` no solo tenemos etiquetas con el nombre de una clase, sino que también tenemos coordenadas expresando 
+la locación de donde se encuentra el objeto de interés. Entonces la pregunta es ¿Cómo saber que tan bien ha identificado 
+las coordenadas el modelo respecto a la etiqueta real? Para eso ocupamos la Intersección entre Uniones:
+
+Este termino es bastante simple de entender con la siguiente imagen.
+
+![4.png](ims%2F2a%2F4.png)
+
+Supongamos que nuestro objeto de interés está delimitado por el cuadrado de color `Verde` que supongamos tiene un área de 100 unidades.
+Ahora la predicción de nuestro modelo es el cuadrado de color `Rojo`. La pregunta es ¿qué tan buena fue la predicción? Pues muy fácil
+vamos a usar IoU para definir este nivel de precisión. Supongamos que el cuadrado rojo también tiene un área de 100 unidades.
+
+En el mejor de los casos el cuadrado rojo y el verde estarán justo uno encima de otro entonces su área de intersección será de 100 unidades,
+puesto que comparten el 100% del espacio y el área de Union también será de 100 porque al sumar las 2 áreas que están en las mismas coordenadas
+su suma sigue siendo 100. Entonces su IoU sería de `100/100 = 1` un resultado perfecto.
+
+Por otro lado, si las cajas están completamente separadas entre sí, lo que tendríamos sería un área de intersección de 0 y un 
+área de Union de 200 dando un IoU de `0/200 = 0` el peor resultado posible.
+
+Sin embargo, en el ejemplo de la imagen supongamos los siguientes valores: área de intersección 90, área de unión 110
+entonces IoU `90/110 = 0.81` en general un IoU superior a `0.6` se considera buena. Sin embargo, este límite se puede cambiar
+el cualquier momento, por ejemplo `0.8` si es superior lo damos por bueno y si es inferior por malo. En el ejemplo anterior
+sería un buen ejemplo.
+
+
+### Non-max suppression
+
+Es bastante habitual que usando la técnica de `sliding window` varias zonas de la imagen nos aparezca con una zona de clasificación
+de objeto y tenga su propia `bounding box` con su correspondiente `IoU` un método de limpieza para este escenario es: `Non-max suppression`.
+
+La siguiente imagen explica perfectamente este proceso.
+![5.png](ims%2F2a%2F5.png)
+Como tal solamente nos estamos quedando con el `bounding box` que tenga el mayor grado de `confidence` para su predicción.
+
+### Otras métricas
+
+Como hemos definido anteriormente, el problema de `object detection` puede ser usado para clasificar entre multiples instancias
+estas pueden pertenecer a la misma o a diferentes clases. Pero cada objeto tendrá su correspondiente `ground truth` y su propia
+predicción.
+
+![6.png](ims%2F2a%2F6.png)
+
+Una forma muy sencilla de ver que tan bueno fue el modelo sobre todas estas predicciones es utilizando en `mean average precision`
+básicamente el promedio de todas las `IoU` individuales. Finalmente en entornos reales es sumamente importante monitorear
+la cantidad de `Frames per Second FPS` que ofrece el modelo para la detección de video. Normalmente, buscamos modelos los 
+más rápidos y eficientes posibles en terminus de FPS puede haber modelos más precisos, pero si son lentos quizá no sean la 
+solución que buscamos para nuestro problema. 
+
+
+### Ejemplo en código: Trabajando con IoU
+
+> ## Nota:
+> El código completo está [IOU.py](Detecci%C3%B3n%20de%20Objetos%2F2%20IOU%2FIOU.py)
+
+Vamos a suponer que tenemos un detector de rostros, entonces volvamos a usar la imagen de la mujer corriendo anteriormente.
+
+Empecemos importando bibliotecas necesarias:
+
+```python
+import cv2
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+```
+Leemos la imagen de la mujer
+```python
+image = cv2.imread('mujer.jpg')
+image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+```
+Definimos nuestros `bounding boxes:`
+
+```python
+bb_truth = [680, 380, 830, 580]
+bb_predicted = [700, 400, 840, 600]
+```
+
+Vamos a crear la función de obtención de `IoU`:
+
+```python
+def bb_intersection_over_union(ground_truth_bbox, predicted_bbox):
+    xA = max(ground_truth_bbox[0], predicted_bbox[0])
+    yA = max(ground_truth_bbox[1], predicted_bbox[1])
+    xB = min(ground_truth_bbox[2], predicted_bbox[2])
+    yB = min(ground_truth_bbox[3], predicted_bbox[3])
+
+    intersection_area = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+    ground_truth_bbox_area = (ground_truth_bbox[2] - ground_truth_bbox[0] + 1) * (
+                ground_truth_bbox[3] - ground_truth_bbox[1] + 1)
+    predicted_bbox_area = (predicted_bbox[2] - predicted_bbox[0] + 1) * (predicted_bbox[3] - predicted_bbox[1] + 1)
+
+    iou_ = intersection_area / float(ground_truth_bbox_area + predicted_bbox_area - intersection_area)
+
+    return iou_
+```
+
+El código utiliza las siguientes variables y operaciones:
+
+- `ground_truth_bbox:` Una lista que contiene las coordenadas del cuadro delimitador de la verdad fundamental (ground truth) en el formato `[xA, yA, xB, yB]`, donde xA e yA son las coordenadas del punto superior izquierdo del cuadro delimitador, y xB e yB son las coordenadas del punto inferior derecho del cuadro delimitador.
+
+- `predicted_bbox:` Una lista que contiene las coordenadas del cuadro delimitador predicho por el algoritmo en el formato `[xA, yA, xB, yB]`, con la misma estructura que ground_truth_bbox.
+
+- `xA, yA, xB, yB:` Variables que representan las coordenadas del cuadro delimitador de la intersección entre ground_truth_bbox y predicted_bbox. xA y yA se calculan como el máximo valor entre las coordenadas xA y yA de ambos cuadros delimitadores, mientras que xB y yB se calculan como el mínimo valor entre las coordenadas xB y yB de ambos cuadros delimitadores. Estos valores se utilizan para determinar el área de intersección entre los cuadros delimitadores.
+
+- `intersection_area:` Variable que almacena el área de intersección entre los cuadros delimitadores, calculada como el producto de las longitudes de los lados del cuadro delimitador de la intersección. Si no hay intersección entre los cuadros delimitadores, se establece en 0.
+
+- `ground_truth_bbox_area:` Variable que almacena el área del cuadro delimitador de la verdad fundamental, calculada como el producto de las longitudes de los lados del cuadro delimitador de la verdad fundamental.
+
+- `predicted_bbox_area:` Variable que almacena el área del cuadro delimitador predicho, calculada como el producto de las longitudes de los lados del cuadro delimitador predicho.
+
+- `iou:` Variable que almacena el valor del Índice de Intersección sobre Unión, calculado como la división del área de intersección entre el área de unión de los cuadros delimitadores.
+
+La función retorna el valor del Índice de Intersección sobre Unión (IoU) como resultado. Un valor alto de IoU (cerca de 1) indica una mayor superposición y, por lo tanto, una mayor similitud entre los cuadros delimitadores, mientras que un valor bajo de IoU (cerca de 0) indica poca superposición y, por lo tanto, poca similitud entre los cuadros delimitadores.
+
+Llamamos a la función para conocer cuál es el `IoU` de nuestras boxes.
+```python
+iou = bb_intersection_over_union(bb_truth, bb_predicted)
+print(iou)
+```
+Respuesta esperada:
+```commandline
+0.677825105057031
+```
+En la siguiente clase veremos el código para crear la imagen con los boxes adecuados.
+
 ## 2.4 Visualización de IoU en object detection
+
+Hasta este momento nuestro código de la clase anterior era el siguiente:
+
+```python
+import cv2
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+
+def bb_intersection_over_union(ground_truth_bbox, predicted_bbox):
+    xA = max(ground_truth_bbox[0], predicted_bbox[0])
+    yA = max(ground_truth_bbox[1], predicted_bbox[1])
+    xB = min(ground_truth_bbox[2], predicted_bbox[2])
+    yB = min(ground_truth_bbox[3], predicted_bbox[3])
+
+    intersection_area = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+    ground_truth_bbox_area = (ground_truth_bbox[2] - ground_truth_bbox[0] + 1) * (
+                ground_truth_bbox[3] - ground_truth_bbox[1] + 1)
+    predicted_bbox_area = (predicted_bbox[2] - predicted_bbox[0] + 1) * (predicted_bbox[3] - predicted_bbox[1] + 1)
+
+    iou_ = intersection_area / float(ground_truth_bbox_area + predicted_bbox_area - intersection_area)
+
+    return iou_
+
+if __name__ == '__main__':
+    image = cv2.imread('mujer.jpg')
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    bb_truth = [680, 380, 830, 580]
+    bb_predicted = [700, 400, 840, 600]
+
+    iou = bb_intersection_over_union(bb_truth, bb_predicted)
+    print(iou)
+```
+
+Vamos a añadirle la porción de código para graficar los `bounding boxes` tanto el `ground truth` como el `predicted`
+
+```python
+def show_bounding_boxes(truth, predicted):
+    fig, ax = plt.subplots(figsize=(15, 15))
+
+    ax.imshow(image)
+    rect = patches.Rectangle(tuple(truth[:2]), truth[2] - truth[0], truth[3] - truth[1],
+                             linewidth=3, edgecolor='g', facecolor='none')
+    ax.add_patch(rect)
+
+    rect = patches.Rectangle(tuple(predicted[:2]), predicted[2] - predicted[0], predicted[3] - predicted[1],
+                             linewidth=3, edgecolor='r', facecolor='none')
+    ax.add_patch(rect)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    fig.tight_layout()
+    plt.savefig("iou.png")
+    plt.close()
+```
+Como podemos observar la función se apoya de `patches.Rectangle` el cual ya habíamos usado en la clase anterior para el ejemplo
+del `sliding window`.
+
+Ahora solo resta llamar a la función:
+
+```python
+show_bounding_boxes(bb_truth, bb_predicted)
+```
+Respuesta esperada:
+
+![iou.png](Detecci%C3%B3n%20de%20Objetos%2F2%20IOU%2Fiou.png)
+
+Excelente podemos ver como aparece un recuadro verde con la `bounding box` real y en rojo la predicha.
 
 ## 2.5 Tipos de arquitecturas en detección de objetos
 
