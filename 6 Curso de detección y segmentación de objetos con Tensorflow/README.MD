@@ -65,9 +65,37 @@ Entrena modelos pre-entrenados de computer vision de acuerdo a las necesidades d
 
 ## 1.1 ¿Qué es la visión computarizada y cuáles son sus tipos?
 
+Te recomiendo ampliamente dirigirte a la siguiente lectura de este mismo curso: [Principales usos de la visión por computadora](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#11-la-importancia-del-computer-vision)
+
+A modo de repaso puedes leer el siguiente resumen:
+
+La `visión computarizada` es una rama de la inteligencia artificial y la informática que se enfoca en el desarrollo de sistemas 
+y técnicas para la interpretación de imágenes y videos digitales. El objetivo de la `visión computarizada` es automatizar 
+la tarea de análisis y reconocimiento visual que normalmente realizaría un ser humano.
+
+![1.png](1%2F1.png)
+
+Existen varios tipos de visión computarizada, entre ellos:
+
+- `Reconocimiento de objetos:` se enfoca en la identificación y localización de objetos específicos en una imagen o video.
+
+- `Seguimiento de objetos:` se enfoca en el seguimiento del movimiento de objetos en un video.
+
+- `Detección de patrones:` se enfoca en la identificación de patrones en una imagen, como por ejemplo la identificación de formas geométricas.
+
+- `Reconocimiento facial:` se enfoca en la identificación y seguimiento de rasgos faciales en imágenes o videos.
+
+- `Análisis de escenas:` se enfoca en la interpretación de una escena completa en una imagen o video, incluyendo la identificación de objetos y su relación espacial.
+
+- `Reconocimiento de texto:` se enfoca en la identificación y extracción de texto en imágenes.
+
+- `Detección de movimiento:` se enfoca en la identificación de cambios en el movimiento de objetos en un video.
+
 # 2 Detección de objetos
 
 ## 2.1 Introducción a object detection: sliding window y bounding box
+
+
 
 ## 2.2 Generando video de sliding window
 
