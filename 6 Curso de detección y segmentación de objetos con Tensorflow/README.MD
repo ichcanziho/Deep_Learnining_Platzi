@@ -545,6 +545,71 @@ una segunda red neuronal para clasificar y refinar estas regiones propuestas en 
 
 ## 2.6 Arquitecturas relevantes en object detection
 
+### Arquitecturas multietapa:
+
+**R-CNN (Region-based Convolutional Neural Networks):**
+
+R-CNN fue la primera arquitectura que introdujo el enfoque de dos etapas en la detección de objetos. En la primera etapa, R-CNN utiliza el algoritmo Selective Search para generar regiones propuestas en la imagen de entrada, que son áreas de la imagen que podrían contener objetos. Luego, en la segunda etapa, R-CNN utiliza una red neuronal convolucional (CNN) para extraer características de cada región propuesta y clasificarlas en diferentes clases de objetos, así como para refinar las coordenadas de las cajas delimitadoras que rodean a los objetos detectados.
+
+![9.png](ims%2F2a%2F9.png)
+
+Sin embargo, R-CNN tiene una desventaja en términos de velocidad, ya que procesa cada región propuesta de manera independiente, lo que resulta en un alto costo computacional. Además, el proceso de entrenamiento de R-CNN es lento debido a que se entrena cada región propuesta de forma individual.
+
+**Fast R-CNN:**
+
+Fast R-CNN es una mejora de R-CNN que aborda algunas de las limitaciones de la arquitectura original. En lugar de aplicar la CNN a cada región propuesta por separado, Fast R-CNN realiza la extracción de características de la imagen de entrada una sola vez y luego utiliza una capa de RoI (Region of Interest) para extraer las características correspondientes a cada región propuesta. Esto permite compartir la extracción de características entre todas las regiones propuestas, lo que resulta en una mayor eficiencia en términos de velocidad durante la inferencia.
+
+![10.png](ims%2F2a%2F10.png)
+
+Además, Fast R-CNN introduce una capa de regresión que se encarga de predecir las coordenadas de las cajas delimitadoras de los objetos directamente en la CNN, en lugar de hacerlo en una etapa separada como en R-CNN. Esto hace que el proceso de refinamiento de las coordenadas sea más eficiente y rápido.
+
+**Faster R-CNN:**
+
+Faster R-CNN es una evolución adicional de la arquitectura de R-CNN y Fast R-CNN que propone el uso de una Red de Propuestas de Regiones (RPN, por sus siglas en inglés) para generar regiones propuestas en lugar de utilizar el algoritmo Selective Search. El RPN es una red neuronal convolucional que se entrena para generar regiones propuestas en función de la probabilidad de que contengan un objeto. El RPN comparte las características de la CNN utilizada para la detección, lo que hace que la generación de regiones propuestas sea más rápida y eficiente.
+
+![11.png](ims%2F2a%2F11.png)
+
+Una vez que se generan las regiones propuestas con el RPN, el proceso de clasificación y regresión de las coordenadas de las cajas delimitadoras se realiza de manera similar a Fast R-CNN, utilizando la capa de RoI y la capa de regresión.
+
+### Arquitecturas de una etapa:
+
+**SSD (Single Shot MultiBox Detector):**
+
+![1.png](ims%2F2b%2F1.png)
+
+SSD es una arquitectura de detección de objetos en imágenes que propone una estrategia basada en "anchors" o anclas para detectar objetos en diferentes escalas y aspectos en una sola pasada. SSD utiliza múltiples capas de detección a diferentes escalas, que están conectadas directamente a la salida de una red neuronal convolucional (CNN). Cada capa de detección está diseñada para detectar objetos de diferentes tamaños y aspectos, lo que permite capturar objetos de diferentes escalas en una sola inferencia. SSD también incorpora la predicción de clases y regresión de coordenadas de cajas delimitadoras en cada capa de detección, lo que le permite ser eficiente en términos de tiempo de procesamiento.
+
+**YOLO (You Only Look Once):**
+
+![2.png](ims%2F2b%2F2.png)
+
+YOLO es una arquitectura de detección de objetos en imágenes que propone una aproximación basada en rejillas (grids) para dividir la imagen de entrada en celdas y realizar la detección y clasificación de objetos en cada celda en una sola pasada. YOLO utiliza una sola red neuronal convolucional (CNN) para predecir las clases y las coordenadas de las cajas delimitadoras de los objetos en cada celda de la rejilla. Esto hace que YOLO sea rápido y eficiente en términos de tiempo de procesamiento, aunque puede tener ciertas limitaciones en la detección de objetos pequeños o en la captura de objetos con aspectos diferentes.
+
+**RetinaNet:**
+
+![3.png](ims%2F2b%2F3.png)
+
+RetinaNet es una arquitectura de detección de objetos en imágenes que aborda el desafío de la detección de objetos en diferentes escalas y la resolución de objetos difíciles (objetos pequeños o con oclusiones) mediante la utilización de una red neuronal convolucional (CNN) con una estructura de dos ramas. Una rama se encarga de la predicción de las clases de objetos y la otra de la regresión de las coordenadas de las cajas delimitadoras. Lo innovador de RetinaNet es el uso de una función de pérdida focal que prioriza el entrenamiento en ejemplos difíciles, lo que mejora la detección de objetos difíciles en comparación con otras arquitecturas.
+
+**EfficientNet:**
+
+![4.png](ims%2F2b%2F4.png)
+
+EfficientNet es una arquitectura de red neuronal convolucional (CNN) que se destaca por su eficiencia en términos de capacidad de representación y rendimiento computacional. EfficientNet utiliza un enfoque de escalado compuesto por la escala de ancho (width), profundidad (depth) y resolución (resolution) de la red para obtener un equilibrio óptimo entre el rendimiento y la eficiencia computacional. EfficientNet ha demostrado ser muy efectivo en tareas de visión por computadora, incluyendo la detección de objetos en imágenes, gracias a su capacidad para capturar características relevantes y su eficiencia en términos de tiempo de procesamiento
+
+**DETR:**
+
+DETR es una arquitectura de detección de objetos en imágenes que utiliza la arquitectura de transformers, originalmente propuesta para tareas de procesamiento del lenguaje natural (NLP), en el contexto de detección de objetos en imágenes. A diferencia de las arquitecturas de detección de objetos tradicionales que utilizan anclas o rejillas, DETR utiliza una aproximación basada en "set prediction" o predicción de conjuntos, lo que significa que no requiere de anclas o propuestas previas.
+
+![5.png](ims%2F2b%2F5.png)
+
+La arquitectura DETR consta de dos componentes principales: el encoder y el decoder. El encoder es una red neuronal convolucional que se encarga de extraer características de la imagen de entrada. El decoder es un transformer que toma las características de la imagen del encoder y genera predicciones de clases y coordenadas de las cajas delimitadoras para los objetos en la imagen.
+
+Una característica distintiva de DETR es que realiza la predicción de objetos como un problema de asignación bipartita. En lugar de predecir las coordenadas de las cajas delimitadoras y clasificar los objetos simultáneamente, DETR asigna un conjunto fijo de cajas delimitadoras a los objetos detectados y predice las coordenadas de las cajas asignadas y las clases correspondientes. Esto se realiza mediante la utilización de un mecanismo de atención en el decoder del transformer, que permite asignar las cajas delimitadoras a los objetos de manera eficiente.
+
+
+
+
 ## 2.7 Utilizando un dataset de object detection
 
 ## 2.8 Carga de dataset de object detection
