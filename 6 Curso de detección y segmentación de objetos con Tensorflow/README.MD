@@ -607,10 +607,53 @@ La arquitectura DETR consta de dos componentes principales: el encoder y el deco
 
 Una característica distintiva de DETR es que realiza la predicción de objetos como un problema de asignación bipartita. En lugar de predecir las coordenadas de las cajas delimitadoras y clasificar los objetos simultáneamente, DETR asigna un conjunto fijo de cajas delimitadoras a los objetos detectados y predice las coordenadas de las cajas asignadas y las clases correspondientes. Esto se realiza mediante la utilización de un mecanismo de atención en el decoder del transformer, que permite asignar las cajas delimitadoras a los objetos de manera eficiente.
 
-
-
-
 ## 2.7 Utilizando un dataset de object detection
+
+En general los dataset pueden ser clasificados de dos maneras: De propósito general y particular o especializado.
+
+Entre los dataset de propósito general podemos mencionar a los siguientes:
+
+![6.png](ims%2F2b%2F6.png)
+
+- `COCO dataset:` COCO (Common Objects in Context) es un conjunto de datos ampliamente utilizado para la detección y segmentación de objetos en imágenes. Contiene más de 200,000 imágenes anotadas en 80 categorías de objetos, lo que lo convierte en uno de los conjuntos de datos más grandes y desafiantes en términos de diversidad de objetos y contextos. COCO dataset es utilizado para evaluar y entrenar modelos en tareas como detección de objetos, segmentación semántica, y clasificación de imágenes.
+
+- `Pascal VOC:` Pascal VOC (Visual Object Classes) es un conjunto de datos popularmente utilizado para la detección y clasificación de objetos en imágenes. Pascal VOC contiene alrededor de 20,000 imágenes anotadas en 20 categorías de objetos, y ha sido utilizado en desafíos de detección de objetos como el Desafío de Clasificación de Objetos PASCAL VOC, que ha impulsado el desarrollo de muchas técnicas de detección de objetos populares.
+
+- `ImageNet:` ImageNet es un conjunto de datos masivo que contiene millones de imágenes anotadas en más de 1,000 categorías de objetos. Ha sido ampliamente utilizado para el entrenamiento de modelos de aprendizaje profundo, incluyendo modelos de clasificación de imágenes, detección de objetos, y segmentación semántica. ImageNet es conocido por su desafío anual, el Desafío de Clasificación de Imágenes ImageNet, que ha impulsado el avance en la precisión de clasificación de imágenes.
+
+Por otro lado, por mencionar algunos de los dataset especializados tenemos:
+
+![7.png](ims%2F2b%2F7.png)
+
+- `KITTI:` El conjunto de datos KITTI (Karlsruhe Institute of Technology and Toyota Technological Institute) es ampliamente utilizado para la detección, seguimiento y predicción de objetos en escenarios de conducción autónoma. Contiene imágenes estéreo, datos LIDAR y datos de sensores de otros vehículos, anotados con información detallada de objetos como automóviles, peatones y ciclistas en situaciones de tráfico real. KITTI se utiliza para evaluar y entrenar modelos en tareas de detección de objetos en el contexto de la conducción autónoma.
+
+- `nuScenes:` El conjunto de datos nuScenes es otro conjunto de datos utilizado para la detección y seguimiento de objetos en el contexto de la conducción autónoma. Contiene más de 1,000 horas de datos de sensores, incluyendo imágenes, datos LIDAR y datos de sensores de otros vehículos, anotados con información detallada de objetos en entornos urbanos y suburbanos. nuScenes es conocido por su desafío anual de detección de objetos, que impulsa el desarrollo de algoritmos y modelos para la conducción autónoma.
+
+- `VisDrone:` El conjunto de datos VisDrone es utilizado para la detección y seguimiento de objetos en el contexto de aplicaciones de vigilancia y monitoreo aéreo. Contiene imágenes y videos de drones anotados con información de objetos como peatones, vehículos, y ciclistas en diversos escenarios urbanos y rurales. VisDrone es utilizado para evaluar y entrenar modelos en tareas de detección de objetos en entornos aéreos, lo que lo hace relevante para aplicaciones de vigilancia y monitoreo.
+
+### ¿Dónde podemos conseguir datasets?
+
+Ya tenemos una entrada en este repositorio sobre este tema puedes consultar la información en: [Aprende a buscar bases de datos para deep learning](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow#27-aprende-a-buscar-bases-de-datos-para-deep-learning).
+Sin embargo, aquí volvemos a mencionar los más populares:
+
+Para cada problema de DL es necesario tener un dataset que se acople a la necesidad del mismo, entre mayor sea la calidad del dataset
+mejores serán los resultados del modelo creado a partir del mismo. Algunas de las plataformas libres que podemos utilizar 
+para obtener dataset son los siguientes:
+
+- [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/overview?hl=es-419)
+- [Kaggle Datasets](https://www.kaggle.com/datasets)
+- [Papers with Code](https://paperswithcode.com/datasets)
+- [Hugging Face Datasets](https://huggingface.co/datasets)
+
+### Dataset de prueba
+
+Para continuar con las siguientes clases, estaremos utilizando el siguiente dataset: [Self-Driving Cars](https://www.kaggle.com/datasets/alincijov/self-driving-cars)
+
+![8.png](ims%2F2b%2F8.png)
+
+El cual consta de las siguientes labels: `classic_id labels: 'car', 'truck', 'pedestrian', 'bicyclist', 'light'`
+
+
 
 ## 2.8 Carga de dataset de object detection
 
