@@ -314,9 +314,31 @@ sería un buen ejemplo.
 Es bastante habitual que usando la técnica de `sliding window` varias zonas de la imagen nos aparezca con una zona de clasificación
 de objeto y tenga su propia `bounding box` con su correspondiente `IoU` un método de limpieza para este escenario es: `Non-max suppression`.
 
-La siguiente imagen explica perfectamente este proceso.
+La siguiente imagen explica perfectamente el proceso de Non-max suppression `NMS`. 
 ![5.png](ims%2F2a%2F5.png)
 Como tal solamente nos estamos quedando con el `bounding box` que tenga el mayor grado de `confidence` para su predicción.
+
+A continuación te explico el proceso general de cómo funciona el NMS:
+
+- `Detección de objetos:` Primero, se obtienen las detecciones de objetos en la imagen utilizando un algoritmo de detección, que puede proporcionar las coordenadas de caja delimitadora (bounding box) alrededor de los objetos detectados, así como sus puntuaciones de confianza que indican la probabilidad de que la detección sea correcta.
+
+- `Ordenamiento:` Las detecciones se ordenan en función de sus puntuaciones de confianza en orden descendente. Esto permite seleccionar primero las detecciones con las puntuaciones más altas, que se consideran más confiables.
+
+- `Supresión de no máxima:` A continuación, se toma la detección con la puntuación más alta (la detección con la mayor confianza) 
+y se la considera como una detección válida. Luego, se comparan las áreas de solapamiento de las detecciones restantes con la detección 
+válida utilizando una medida de solapamiento, como la Intersección sobre Unión `(IoU)`, que es la proporción del área de solapamiento entre dos bounding boxes dividida por el área de su unión.
+
+- `Eliminación de detecciones redundantes:` Si el `IoU` entre una detección restante y la detección válida es mayor que un umbral 
+predefinido, se considera que las detecciones se solapan y se descartan las detecciones restantes. Esto se hace para eliminar 
+detecciones redundantes y seleccionar la detección más confiable. Si el `IoU` es menor que el umbral, la detección se considera como una detección válida adicional.
+
+- `Repetición del proceso:` El proceso se repite iterativamente hasta que todas las detecciones hayan sido procesadas y se hayan seleccionado las detecciones válidas finales.
+
+Al final del proceso de `NMS`, se obtiene un conjunto de detecciones no superpuestas y confiables, lo que ayuda a reducir 
+falsos positivos y obtener una salida más limpia y precisa en aplicaciones de detección de objetos. El umbral de `IoU` es 
+un parámetro ajustable que puede ser configurado según las necesidades específicas de la aplicación.
+
+
 
 ### Otras métricas
 
@@ -480,6 +502,46 @@ Respuesta esperada:
 Excelente podemos ver como aparece un recuadro verde con la `bounding box` real y en rojo la predicha.
 
 ## 2.5 Tipos de arquitecturas en detección de objetos
+
+Cuando hablamos de detección de objetos debemos mencionar que existen básicamente 2 tipos de arquitecturas que permiten resolver
+este problema. La arquitectura de una sola etapa `(one-stage)` y la multietapa `(two-stage)`. Estos enfoques difieren en cómo se 
+lleva a cabo la detección de objetos y cómo se manejan las detecciones múltiples.
+
+![7.png](ims%2F2a%2F7.png)
+
+**Enfoque de una etapa (Single-stage):**
+
+El enfoque de una etapa, como su nombre lo indica, realiza la detección de objetos en una sola etapa, directamente en la 
+imagen de entrada. No hay una etapa previa de generación de regiones de interés (region proposal) como en el enfoque 
+multietapa. Estas arquitecturas suelen ser más rápidas, pero pueden tener una precisión ligeramente menor en comparación 
+con las arquitecturas multietapa.
+
+![8.png](ims%2F2a%2F8.png)
+
+Ejemplos de arquitecturas de detección de una etapa son YOLO (You Only Look Once) y SSD (Single Shot MultiBox Detector). 
+Estas arquitecturas utilizan redes neuronales convolucionales (CNN) para generar predicciones de clases y coordenadas de 
+cajas delimitadoras directamente desde la imagen de entrada en una sola pasada. Luego, aplican supresión de no máxima (NMS) 
+para eliminar detecciones redundantes y seleccionar las detecciones finales.
+
+**Enfoque multietapa (Two-stage):**
+
+El enfoque multietapa, por otro lado, involucra dos etapas distintas en la detección de objetos. En la primera etapa, se 
+generan regiones de interés (region proposals) utilizando métodos como Selective Search o RPN (Region Proposal Network), 
+que son áreas de la imagen que podrían contener objetos. Luego, en la segunda etapa, se realiza la clasificación y la 
+regresión de las coordenadas de las cajas delimitadoras dentro de estas regiones propuestas.
+
+![9.png](ims%2F2a%2F9.png)
+
+Ejemplos de arquitecturas de detección de dos etapas son R-CNN (Region-based Convolutional Neural Networks), Fast R-CNN, 
+y Faster R-CNN. Estas arquitecturas utilizan CNN para generar regiones propuestas en la primera etapa y luego utilizan 
+una segunda red neuronal para clasificar y refinar estas regiones propuestas en la segunda etapa.
+
+> # Resumen:
+> El enfoque de una etapa realiza la detección de objetos directamente en una sola pasada, mientras que el enfoque multietapa 
+> involucra una etapa previa de generación de regiones propuestas y una etapa posterior de clasificación y regresión de las 
+> coordenadas de las cajas delimitadoras. Ambos enfoques tienen ventajas y desventajas en términos de velocidad, precisión 
+> y complejidad, y la elección de la arquitectura adecuada depende de las necesidades específicas de la aplicación y los 
+> recursos computacionales disponibles.
 
 ## 2.6 Arquitecturas relevantes en object detection
 
