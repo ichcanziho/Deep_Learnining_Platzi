@@ -654,12 +654,344 @@ Para continuar con las siguientes clases, estaremos utilizando el siguiente data
 El cual consta de las siguientes labels: `classic_id labels: 'car', 'truck', 'pedestrian', 'bicyclist', 'light'`
 
 
-
 ## 2.8 Carga de dataset de object detection
+
+> ## Nota:
+> El código completo se encuentra: [carga.py](Detecci%C3%B3n%20de%20Objetos%2F3%20Carga%20de%20dataset%2Fcarga.py)
+> El código incluye las secciones 2.8, 2.9 y 2.10 sin embargo, para fines didacticos cada sección tendrá su explicación
+> de código individual
+
+Una vez que hemos descargado el dataset anterior y descomprimido en una ruta que conozcamos podemos empezar este tutorial, 
+yo usare un `config.ini` para guardar la ruta de dónde descargue el dataset, pero esto `NO` es necesario.
+
+Vamos a empezar observando una imagen de referencia, importamos bibliotecas necesarias:
+
+```python
+import cv2
+import matplotlib.pyplot as plt
+```
+
+Vamos a observar una imagen del dataset:
+
+```python
+root = read_ini()["dataset"]  # esto NO es necesario, aquí podrías poner una ruta por ejemplo "proyecto/"
+
+img = cv2.imread(f'{root}/images/1479506176491553178.jpg')
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+plt.imshow(img)
+plt.savefig("ejemplo.png")
+plt.close()
+print("img shape:", img.shape)
+```
+Respuesta esperada:
+```commandline
+img shape: (300, 480, 3)
+```
+![ejemplo.png](Detecci%C3%B3n%20de%20Objetos%2F3%20Carga%20de%20dataset%2Fejemplo.png)
+
+Genial, ya sabemos que cada imagen tiene dimensiones de `480 ancho x 300 largo`
+
 
 ## 2.9 Exploración del dataset de object detection
 
+Ya conocemos las imágenes del dataset, pero necesitamos conocer también las labels correspondientes a la clase de cada objeto
+y las cordenadas asignadas a dicho objeto:
+
+```python
+data = pd.read_csv(f"{root}/labels_train.csv")
+print(data)
+print("train images", len(data["frame"].unique()))
+```
+Respuesta esperada:
+```commandline
+                          frame  xmin  xmax  ymin  ymax  class_id
+0       1478019952686311006.jpg   237   251   143   155         1
+1       1478019952686311006.jpg   437   454   120   186         3
+2       1478019953180167674.jpg   218   231   146   158         1
+3       1478019953689774621.jpg   171   182   141   154         2
+4       1478019953689774621.jpg   179   191   144   155         1
+...                         ...   ...   ...   ...   ...       ...
+132401  1479506176491553178.jpg   166   186   139   156         1
+132402  1479506176491553178.jpg   182   204   142   153         1
+132403  1479506176491553178.jpg   239   261   139   155         1
+132404  1479506176491553178.jpg   259   280   139   157         1
+132405  1479506176491553178.jpg   284   324   137   168         1
+
+[132406 rows x 6 columns]
+train images 18000
+```
+Podemos observar que tenemos `18000` imágenes pero `132406` muestras etiquetadas, esto se debe a que una misma imagen puede contener
+varios objetos etiquetados. Esto lo podemos ver en el ejemplo: `1478019952686311006.jpg ` el cual contiene 2 objetos pertenecientes a las clases `1, 3`
+
+Como humanos que somos es mucho más comodo leer el nombre de la clase en lugar del id de la misma. Es por ello que vamos a crear un `labelmap` que mapee
+el id_label al nombre del label. Esto nos será de utilidad para mostrar el nombre de cada objeto detectado más adelante.
+```python
+labelmap = {1: {'id': 1, 'name': 'car'}, 2: {'id': 2, 'name': 'truck'}, 3: {'id': 3, 'name': 'pedestrian'},
+            4: {'id': 4, 'name': 'bicyclist'}, 5: {'id': 5, 'name': 'light'}}
+```
+
+Ahora vamos a crear una función que nos permita obtener el `bounding box` de cada imagen de referencia. Antes de continuar es
+`INDISPENSABLE` entender que cada imagen tiene un nombre por ejemplo: `1478019952686311006.jpg` dicho nombre corresponde con
+una única imagen, sin embargo, esta imagen puede contener varios bounding boxes: `[[237   251   143   155], [437   454   120   186]]`
+y a su vez cada bounding box puede estar asociado a un `class_id` diferente: `[[1], [3]]` entendiendo esto será mucho más sencillo
+programar el código que nos permita crear un diccionario cuya clave sea el nombre de la imagen y valor sea otro diccionario que contenga
+los bounding boxes y class_id.
+
+Empecemos definiendo nuestra función:
+
+```python
+def get_bounding_boxes(mask: tuple, width: int, height: int) -> dict:
+    """
+    Returns a dictionary with the correspondent bounding boxes
+    :param mask: tuple specifying the `class_id` you want to keep. Example: (1, 2, 3, 4, 5)
+    :param width: Image width
+    :param height: Image Height
+    :return: gt_boxes
+    """
+    for index, row in data.iterrows():
+        id_label = row["class_id"]
+        if id_label in mask:
+```
+
+`data` es el dataset que hemos leído con pandas, usamos iterrows para ir de una fila en una. 
+
+Ahora vamos a obtener el bounding box normalizado (dividiendo entre las dimensiones de la imagen)
+
+```python
+            bbox = np.array([[row['ymin'] / height, row['xmin'] / width, row['ymax'] / height, row['xmax'] / width]],
+                            dtype=np.float32)
+
+            im_name = row['frame']
+```
+Ahora viene la parte más interesante de la lógica de este código:
+Sí es la primera vez que vemos el nombre de la imagen, entonces vamos a añadirla como una `key` de nuestro diccionario `get_boxes`
+y como valor va a tener un diccionario que contenga dos nuevas `keys`: `boxes & ids` cuyo valor inicial será un numpy array que contenga
+el valor de las coordenadas normalizadas del bounding box y class_id:
+
+```python
+            if im_name not in gt_boxes:
+                gt_boxes[im_name] = {"boxes": np.array(bbox),
+                                     "ids": np.array([id_label])}
+```
+Ahora, pregunta, qué pasa si `im_name` ya existe en `gt_boxes` esto significa que la imagen ya ha sido vista anteriormente y por lo mismo ya
+existe un diccionario con los keys `boxes & ids` entonces para añadir nuevos valores debemos hacer un `numpy.append`
+```python
+            else:
+                gt_boxes[im_name] = {"boxes": np.append(gt_boxes[im_name]["boxes"], np.array(bbox), axis=0),
+                                     "ids": np.append(gt_boxes[im_name]["ids"], np.array([id_label]), axis=0)}
+
+```
+
+Excelente, al final el código completo queda de la siguiente manera:
+
+```python
+def get_bounding_boxes(mask: tuple, width: int, height: int) -> dict:
+    """
+    Returns a dictionary with the correspondent bounding boxes
+    :param mask: tuple specifying the `class_id` you want to keep. Example: (1, 2, 3, 4, 5)
+    :param width: Image width
+    :param height: Image Height
+    :return: gt_boxes
+    """
+    gt_boxes = {}
+    for index, row in data.iterrows():
+        id_label = row["class_id"]
+        if id_label in mask:
+            bbox = np.array([[row['ymin'] / height, row['xmin'] / width, row['ymax'] / height, row['xmax'] / width]],
+                            dtype=np.float32)
+
+            im_name = row['frame']
+            if im_name not in gt_boxes:
+                gt_boxes[im_name] = {"boxes": np.array(bbox),
+                                     "ids": np.array([id_label])}
+            else:
+                gt_boxes[im_name] = {"boxes": np.append(gt_boxes[im_name]["boxes"], np.array(bbox), axis=0),
+                                     "ids": np.append(gt_boxes[im_name]["ids"], np.array([id_label]), axis=0)}
+
+    return gt_boxes
+```
+
+Ahora en nuestro código principal solo hace falta llamar a la función `get_bounding_boxes`:
+
+```python
+im_width, im_height = img.shape[1], img.shape[0]
+get_boxes = get_bounding_boxes(mask=(1, 3), width=im_width, height=im_height)
+```
+Para este ejemplo nos enfocamos únicamente en las clases `1, 3` que corresponden a `coches y caminantes`.
+
+En la siguiente clase vamos a crear una función para plotear esta información.
+
 ## 2.10 Visualización de bounding boxes en el dataset de object detection
+
+Hasta este momento este es nuestro código:
+
+```python
+import cv2
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def get_bounding_boxes(mask: tuple, width: int, height: int) -> dict:
+    """
+    Returns a dictionary with the correspondent bounding boxes
+    :param mask: tuple specifying the `class_id` you want to keep. Example: (1, 2, 3, 4, 5)
+    :param width: Image width
+    :param height: Image Height
+    :return: gt_boxes
+    """
+    gt_boxes = {}
+    for index, row in data.iterrows():
+        id_label = row["class_id"]
+        if id_label in mask:
+            bbox = np.array([[row['ymin'] / height, row['xmin'] / width, row['ymax'] / height, row['xmax'] / width]],
+                            dtype=np.float32)
+
+            im_name = row['frame']
+            if im_name not in gt_boxes:
+                gt_boxes[im_name] = {"boxes": np.array(bbox),
+                                     "ids": np.array([id_label])}
+            else:
+                gt_boxes[im_name] = {"boxes": np.append(gt_boxes[im_name]["boxes"], np.array(bbox), axis=0),
+                                     "ids": np.append(gt_boxes[im_name]["ids"], np.array([id_label]), axis=0)}
+
+    return gt_boxes
+
+if __name__ == '__main__':
+    root = read_ini()["dataset"]
+
+    img = cv2.imread(f'{root}/images/1479506176491553178.jpg')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    plt.imshow(img)
+    plt.savefig("ejemplo.png")
+    plt.close()
+    print("img shape:", img.shape)
+
+    data = pd.read_csv(f"{root}/labels_train.csv")
+    print(data)
+    print("train images", len(data["frame"].unique()))
+    labelmap = {1: {'id': 1, 'name': 'car'}, 2: {'id': 2, 'name': 'truck'}, 3: {'id': 3, 'name': 'pedestrian'},
+                4: {'id': 4, 'name': 'bicyclist'}, 5: {'id': 5, 'name': 'light'}}
+
+    im_width, im_height = img.shape[1], img.shape[0]
+    get_boxes = get_bounding_boxes(mask=(1, 3), width=im_width, height=im_height)
+```
+
+Vamos a terminar este código incluyendo una funcionalidad de mostrar los bounding boxes de cada imagen así como su `confidence score` y `label`:
+
+Debemos tener instalado la siguiente biblioteca:
+
+```bash
+pip install object-detection
+```
+
+Importemos otras bibliotecas necesarias para este paso:
+
+```python
+from object_detection.utils import visualization_utils as viz_utils
+import numpy as np
+```
+Creemos nuestra función auxiliar para plotear imágenes de object detection:
+
+```python
+def plot_example(boxes: dict, limit: int, layout: tuple) -> None:
+    """
+    Makes an image with multiple detection object examples
+    :param boxes: Dictionary with the image name as key and bounding boxes and label ids as a value
+    :param limit: Number of examples to include
+    :param layout: Distribution of the examples. Example given a limit of 4 a valid layout could be (1, 4), (2, 2) (4, 1)
+    :return: None
+    """
+    limit_images = limit
+    i_image = 0
+    plt.figure(figsize=(30, 30))
+    for key, value in boxes.items():
+        bboxes = value["boxes"]
+        classes = value["ids"]
+```
+Recordemos que `boxes`es un diccionario `key, value` donde `key` es el nombre de la imagen y `value` es otro diccionario.
+Aquí estamos accediendo a los `bounding boxes` y `labels ids` de cada `imagen` disponible. Vamos ocupar `key`como el nombre de la imagen
+y usamos `cv2` para leer la imagen y llevarla a `RGB`.
+
+```python
+    im = cv2.imread(root + "/images/" + key)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        dummy_scores = np.ones(shape=[bboxes.shape[0]], dtype=np.float32)
+```
+Creamos una mini función auxiliar para dibujar el recuadro de la bounding box:
+```python
+def plot_detections(im_array, boxes, classes, scores, category_index):
+    aux = im_array.copy()
+    viz_utils.visualize_boxes_and_labels_on_image_array(aux, boxes, classes, scores, category_index,
+                                                        use_normalized_coordinates=True)
+    return aux
+```
+Y terminamos nuestra función principal `plot_example` usando nuestra nueva función auxiliar `plot_detections`:
+```python
+        a = plot_detections(im, bboxes, classes, dummy_scores, labelmap)  # Aqui se obtiene una imagen con su respectivo bounding box
+        plt.subplot(layout[0], layout[1], i_image + 1)   # Esto crea el layout de sub imagenes
+        plt.imshow(a)
+        if i_image >= limit_images-1:  # Detenemos la creación de imagenes
+            break
+        i_image += 1
+```
+Nuestro código completo queda de la siguiente manera:
+```python
+def plot_example(boxes: dict, limit: int, layout: tuple) -> None:
+    """
+    Makes an image with multiple detection object examples
+    :param boxes: Dictionary with the image name as key and bounding boxes and label ids as a value
+    :param limit: Number of examples to include
+    :param layout: Distribution of the examples. Example given a limit of 4 a valid layout could be (1, 4), (2, 2) (4, 1)
+    :return: None
+    """
+    limit_images = limit
+    i_image = 0
+    plt.figure(figsize=(30, 30))
+    for key, value in boxes.items():
+        bboxes = value["boxes"]
+        classes = value["ids"]
+        im = cv2.imread(root + "/images/" + key)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        dummy_scores = np.ones(shape=[bboxes.shape[0]], dtype=np.float32)
+        a = plot_detections(im, bboxes, classes, dummy_scores, labelmap)
+        plt.subplot(layout[0], layout[1], i_image + 1)
+        plt.imshow(a)
+        if i_image >= limit_images-1:
+            break
+        i_image += 1
+
+    plt.savefig("object_detection.png")
+    plt.close()
+
+```
+
+Y ya solamente falta en nuestro código principal llamar a la función `plot_example`
+
+```python
+if __name__ == '__main__':
+    root = read_ini()["dataset"]
+
+    img = cv2.imread(f'{root}/images/1479506176491553178.jpg')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    plt.imshow(img)
+    plt.savefig("ejemplo.png")
+    plt.close()
+    print("img shape:", img.shape)
+
+    data = pd.read_csv(f"{root}/labels_train.csv")
+    print(data)
+    print("train images", len(data["frame"].unique()))
+    labelmap = {1: {'id': 1, 'name': 'car'}, 2: {'id': 2, 'name': 'truck'}, 3: {'id': 3, 'name': 'pedestrian'},
+                4: {'id': 4, 'name': 'bicyclist'}, 5: {'id': 5, 'name': 'light'}}
+
+    im_width, im_height = img.shape[1], img.shape[0]
+    get_boxes = get_bounding_boxes(mask=(1, 3), width=im_width, height=im_height)
+    plot_example(boxes=get_boxes, limit=20, layout=(5, 4))
+```
+Respuesta esperada:
+
+![object_detection.png](Detecci%C3%B3n%20de%20Objetos%2F3%20Carga%20de%20dataset%2Fobject_detection.png)
+
+Excelente hemos terminado esta sección exitosamente.
 
 ## 2.11 Aumentando de datos con Albumentation
 
