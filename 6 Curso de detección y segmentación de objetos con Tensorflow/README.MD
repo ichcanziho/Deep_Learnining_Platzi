@@ -995,6 +995,43 @@ Excelente hemos terminado esta sección exitosamente.
 
 ## 2.11 Aumentando de datos con Albumentation
 
+A lo largo de este repositorio hemos tocado el tema de la importancia de `data augmentation` como una técnica para reducir
+el `overfitting` de un modelo. Hemos hablado de las ventajas que tiene y de porque es una técnica muy importante cuando contamos
+con un dataset que contiene pocas muestras etiquetadas. Entradas anteriores a este tema:
+
+- [Basic Data Augmentation](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/1%20Curso%20de%20fundamentos%20de%20redes%20neuronales#data-augmentation)
+- [Data Agumentation](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/2%20Curso%20de%20Redes%20Neuronales%20Convolucionales#6optimizaci%C3%B3n-de-una-red-neuronal-convolucional)
+- [Métodos de Regularizacion](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow#31-m%C3%A9todos-de-regularizaci%C3%B3n-overfitting-y-underfitting)
+
+
+![9.png](ims%2F2b%2F9.png)
+
+En el enfoque de `object detection` podemos hablar sobre `data augmentation` de la siguiente manera:
+
+> Data augmentation, es una técnica comúnmente utilizada en la detección de objetos para aumentar la cantidad y diversidad de datos de entrenamiento. Esto ayuda a mejorar la capacidad del modelo para generalizar a datos de prueba no vistos previamente. 
+
+Aquí hay un resumen general de cómo se usa la ampliación de datos en la detección de objetos:
+
+![10.png](ims%2F2b%2F10.png)
+
+- `Carga de datos:` Primero, carga tus datos de entrenamiento, que generalmente incluyen imágenes y anotaciones de caja delimitadora que indican la ubicación de los objetos de interés en las imágenes.
+
+- `Definición de transformaciones:` A continuación, define las transformaciones que deseas aplicar a tus imágenes y anotaciones. Estas transformaciones pueden incluir rotación, cambio de escala, recorte, volteo horizontal, cambio de brillo/contraste, entre otros.
+
+- `Aplicación de transformaciones:` Aplica las transformaciones definidas a tus imágenes y anotaciones para generar imágenes y anotaciones aumentadas. Esto se puede hacer utilizando bibliotecas de procesamiento de imágenes en Python, como OpenCV, o bibliotecas específicas de ampliación de datos, como Albumentations.
+
+- `Actualización de anotaciones:` Asegúrate de actualizar las anotaciones de caja delimitadora después de aplicar las transformaciones, ya que las ubicaciones de los objetos pueden haber cambiado debido a las transformaciones aplicadas. Esto implica ajustar las coordenadas de las cajas delimitadoras para que coincidan con las nuevas ubicaciones de los objetos en las imágenes aumentadas.
+
+![11.png](ims%2F2b%2F11.png)
+
+Para este curso vamos a utilizar la biblioteca de `Albumentation` la cuál es compatible con los Frameworks de `TensorFlow`y `PyTorch`
+
+```python
+pip install albumentations
+```
+
+
+
 ## 2.12 Implementando Albumentation en object detection
 
 ## 2.13 Visualizando imágenes con aumentado de datos
