@@ -1030,11 +1030,388 @@ Para este curso vamos a utilizar la biblioteca de `Albumentation` la cuál es co
 pip install albumentations
 ```
 
-
-
 ## 2.12 Implementando Albumentation en object detection
 
+> ## Nota:
+> El código completo lo puedes encontrar [DataAugmentation.py](Detecci%C3%B3n%20de%20Objetos%2F4%20Albumentation%2FDataAugmentation.py)
+> Para efectos prácticos se explicará el código por bloques.
+
+Vamos a empezar con una base de código similar a la del código anterior:
+
+```python
+import cv2
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from object_detection.utils import visualization_utils as viz_utils
+
+def get_bounding_boxes(mask: tuple, width: int, height: int) -> dict:
+    """
+    Returns a dictionary with the correspondent bounding boxes
+    :param mask: tuple specifying the `class_id` you want to keep. Example: (1, 2, 3, 4, 5)
+    :param width: Image width
+    :param height: Image Height
+    :return: gt_boxes
+    """
+    gt_boxes = {}
+    for index, row in data.iterrows():
+        id_label = row["class_id"]
+        if id_label in mask:
+            bbox = np.array([[row['ymin'] / height, row['xmin'] / width, row['ymax'] / height, row['xmax'] / width]],
+                            dtype=np.float32)
+
+            im_name = row['frame']
+            if im_name not in gt_boxes:
+                gt_boxes[im_name] = {"boxes": np.array(bbox),
+                                     "ids": np.array([id_label])}
+            else:
+                gt_boxes[im_name] = {"boxes": np.append(gt_boxes[im_name]["boxes"], np.array(bbox), axis=0),
+                                     "ids": np.append(gt_boxes[im_name]["ids"], np.array([id_label]), axis=0)}
+
+    return gt_boxes
+
+def plot_detections(im_array, boxes, classes, scores, category_index):
+    aux = im_array.copy()
+    viz_utils.visualize_boxes_and_labels_on_image_array(aux, boxes, classes, scores, category_index,
+                                                        use_normalized_coordinates=True)
+    return aux
+
+if __name__ == '__main__':
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/dataset"
+
+    data = pd.read_csv(f"{root}/labels_train.csv", nrows=2)
+    get_boxes = get_bounding_boxes(mask=(1, 3), width=480, height=300)
+    labelmap = {1: {'id': 1, 'name': 'car'}, 2: {'id': 2, 'name': 'truck'}, 3: {'id': 3, 'name': 'pedestrian'},
+                4: {'id': 4, 'name': 'bicyclist'}, 5: {'id': 5, 'name': 'light'}}
+
+    print(data)
+    print(get_boxes)
+```
+Partiendo de este código base que es de la clase anterior vamos a agregar el código de `Albumentation`. Primero para efectos prácticos
+vamos a notar que en `data` solo incluimos los primeros 2 `rows` que corresponden a la siguiente información:
+
+```commandline
+                     frame  xmin  xmax  ymin  ymax  class_id
+0  1478019952686311006.jpg   237   251   143   155         1
+1  1478019952686311006.jpg   437   454   120   186         3
+```
+
+Observamos que es una única imagen que contiene 2 objetos pertenecientes a 2 clases diferentes. Al mismo tiempo observamos que
+su correspondiente `get_boxes` es el siguiente:
+
+```commandline
+{'1478019952686311006.jpg': {'boxes': array([[0.47666666, 0.49375   , 0.51666665, 0.5229167 ],
+       [0.4       , 0.91041666, 0.62      , 0.9458333 ]], dtype=float32), 'ids': array([1, 3])}}
+```
+De nuevo un único `key` con el nombre de la imagen, 2 boxes con las coordenadas normalizadas y 2 ids.
+
+Antes de continuar vamos a leer la documentación de `Albumentation`: [Albumentations](https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/#albumentations)
+Que tiene la siguiente información:
+
+```commandline
+albumentations is similar to pascal_voc, because it also uses four values [x_min, y_min, x_max, y_max] to represent a bounding box. But unlike pascal_voc, albumentations uses normalized values. To normalize values, we divide coordinates in pixels for the x- and y-axis by the width and the height of the image.
+
+Coordinates of the example bounding box in this format are [98 / 640, 345 / 480, 420 / 640, 462 / 480] which are [0.153125, 0.71875, 0.65625, 0.9625].
+
+Albumentations uses this format internally to work with bounding boxes and augment them.
+```
+
+Podemos observar que claramente el formato que necesita `albumentation` para los `bounding box`es: `[x_min, y_min, x_max, y_max]` pero esto es un inconveniente porque nuestro dataset
+y función de `plot_detections` usan el formato: `[xmin,  xmax,  ymin,  ymax]`. Esto es importante tenerlo en cuenta para una
+limpia implementación de `albumentation`. 
+
+Finalmente, debes leer la documentación de `albumentation` para entender mejor su composición y no solo copies y pegues el siguiente
+código sin entenderlo. Lo sé, es lento, pero te permitirá crear tus propias implementaciones sin solo copiar y pegar los siguientes ejemplos. [Bounding boxes augmentation for object detection](https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/).
+
+Lo más interesante es lo siguiente: `Albumentation` soporta 4 tipos de `bboxes`
+
+- pascal_voc
+- albumentations
+- coco
+- yolo
+
+Cada uno con sus respectivas características, con esa información podemos deducir que el formato `albumentations` es el formato
+más similar al que estamos usando nosotros y nos servirá de base. La forma más simple de usar `albumentations` es la siguiente:
+
+```python
+transform = A.Compose([
+    A.RandomCrop(width=450, height=450),
+    A.HorizontalFlip(p=0.5),
+    A.RandomBrightnessContrast(p=0.2),
+], bbox_params=A.BboxParams(format='coco'))
+```
+
+`Compose` nos permite hacer un `pipeline` de transformaciones, la pregunta es ¿Qué transformaciones puedo hacer? Te toca leer 
+el siguiente documento para saber más información [Transforms (augmentations.transforms)](https://albumentations.ai/docs/api_reference/augmentations/transforms/)
+
+Ahora tenemos todo el conocimiento necesario para implementar nuestro código:
+
+Empezamos importando nuestrta biblioteca extra:
+
+```python
+import albumentations as A
+```
+
+Creamos nuestro `transform` como en el ejemplo anterior:
+
+```python
+transform = A.Compose([A.HorizontalFlip(p=0.5),
+                           A.RandomBrightnessContrast(p=0.8),
+                           A.ShiftScaleRotate(scale_limit=0.9, rotate_limit=10, p=0.7)],
+                          bbox_params=A.BboxParams(format='albumentations'))
+```
+
+Ahora vamos a crear una función que nos permita crear datos aumentados a partir de una imagen fuente, pero antes debemos convertir
+las coordenadas de nuestro `bbox` - `[xmin, xmax, ymin, ymax]` al formato `[x_min, y_min, x_max, y_max]`:
+
+```python
+def transform_boxes(bboxes):
+    return np.array([[b[1], b[0], b[3], b[2]] for b in bboxes])
+```
+
+Excelente ahora podemos pasar nuestro formato de `bbox` al de `albumentations` y viceversa. Ya podemos empezar a aplicar
+la `data augmentation`.
+
+```python
+def apply_augmentation(img: np.array, bboxes: dict, q: int) -> dict:
+    """
+    Make q new images using a transform object
+    :param img: original image to be transformed
+    :param bboxes: original bounding boxes including classes id
+    :param q: number of image to create from the original one
+    :return: dict
+    """
+
+    ab_box = transform_boxes(bboxes["boxes"])
+    label = bboxes["ids"]
+    ab_box = [list(row) + [label[i]] for i, row in enumerate(ab_box)]
+    print(ab_box)
+```
+
+El objetivo de esta función es transformar nuestro formato:
+```commandline
+{'boxes': array([[0.47666666, 0.49375   , 0.51666665, 0.5229167 ],
+       [0.4       , 0.91041666, 0.62      , 0.9458333 ]], dtype=float32), 'ids': array([1, 3])}
+```
+Al formato que acepta `albumentation` el cual es el siguiente:
+```commandline
+[[0.49375   , 0.47666666, 0.5229167, 0.51666665, 1], 
+ [0.91041666,        0.4, 0.9458333,       0.62, 3]]
+```
+Podemos observar que los primeros 4 valores de cada row corresponden a las coordenadas del `bounding box` y el 5 valor es
+el `class id`. Vamos a generar las imágenes alteradas con nuestro objeto `transform`:
+
+```python
+    images_, boxes_, labels_ = [], [], []
+    for _ in range(q):
+        transformed = transform(image=img, bboxes=ab_box)
+        transformed_image = transformed['image']
+        transformed_bboxes = transform_boxes(transformed['bboxes'])
+        images_.append(transformed_image)
+        boxes_.append(transformed_bboxes)
+        labels_.append(label)
+```
+Excelente con esta porción de código podemos crear `q` imágenes nuevas con sus respectivos `bboxes` solo que debemos regresar
+estos valores a nuestro formato normal, por eso guardamos los `transformed_bboxes` con la función `transform_boxes`.
+
+Nuestra función Global es la siguiente:
+
+```python
+def apply_augmentation(img: np.array, bboxes: dict, q: int) -> dict:
+    """
+    Make q new images using a transform object
+    :param img: original image to be transformed
+    :param bboxes: original bounding boxes including classes id
+    :param q: number of image to create from the original one
+    :return: dict
+    """
+
+    ab_box = transform_boxes(bboxes["boxes"])
+    label = bboxes["ids"]
+    ab_box = [list(row) + [label[i]] for i, row in enumerate(ab_box)]
+    print(ab_box)
+    images_, boxes_, labels_ = [], [], []
+    for _ in range(q):
+        transformed = transform(image=img, bboxes=ab_box)
+        transformed_image = transformed['image']
+        transformed_bboxes = transform_boxes(transformed['bboxes'])
+        images_.append(transformed_image)
+        boxes_.append(transformed_bboxes)
+        labels_.append(label)
+    return {"images": images_, "bboxes": boxes_, "labels": labels_}
+```
+
+Volvemos a nuestro `main` y vamos a usar nuestra nueva radiante función `apply_augmentation`:
+
+```python
+if __name__ == '__main__':
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/dataset"
+
+    data = pd.read_csv(f"{root}/labels_train.csv", nrows=2)
+    get_boxes = get_bounding_boxes(mask=(1, 3), width=480, height=300)
+    labelmap = {1: {'id': 1, 'name': 'car'}, 2: {'id': 2, 'name': 'truck'}, 3: {'id': 3, 'name': 'pedestrian'},
+                4: {'id': 4, 'name': 'bicyclist'}, 5: {'id': 5, 'name': 'light'}}
+
+    print(data)
+    print(get_boxes)
+    transform = A.Compose([A.HorizontalFlip(p=0.5),
+                           A.RandomBrightnessContrast(p=0.8),
+                           A.ShiftScaleRotate(scale_limit=0.9, rotate_limit=10, p=0.7)],
+                          bbox_params=A.BboxParams(format='albumentations'))
+
+    for key, value in get_boxes.items():
+        image = cv2.imread(root + "/images/" + key)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        ans = apply_augmentation(image, value, 3)
+```
+Ahora solamente necesitamos crear una función que nos permita visualizar nuestros datos. Esto lo veremos en la siguiente clase.
+
+
 ## 2.13 Visualizando imágenes con aumentado de datos
+
+Para este momento tenemos el siguiente código completo:
+
+```python
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import cv2
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from object_detection.utils import visualization_utils as viz_utils
+import albumentations as A
+
+
+def get_bounding_boxes(mask: tuple, width: int, height: int) -> dict:
+    """
+    Returns a dictionary with the correspondent bounding boxes
+    :param mask: tuple specifying the `class_id` you want to keep. Example: (1, 2, 3, 4, 5)
+    :param width: Image width
+    :param height: Image Height
+    :return: gt_boxes
+    """
+    gt_boxes = {}
+    for index, row in data.iterrows():
+        id_label = row["class_id"]
+        if id_label in mask:
+            bbox = np.array([[row['ymin'] / height, row['xmin'] / width, row['ymax'] / height, row['xmax'] / width]],
+                            dtype=np.float32)
+
+            im_name = row['frame']
+            if im_name not in gt_boxes:
+                gt_boxes[im_name] = {"boxes": np.array(bbox),
+                                     "ids": np.array([id_label])}
+            else:
+                gt_boxes[im_name] = {"boxes": np.append(gt_boxes[im_name]["boxes"], np.array(bbox), axis=0),
+                                     "ids": np.append(gt_boxes[im_name]["ids"], np.array([id_label]), axis=0)}
+
+    return gt_boxes
+
+
+def transform_boxes(bboxes):
+    return np.array([[b[1], b[0], b[3], b[2]] for b in bboxes])
+
+
+def apply_augmentation(img: np.array, bboxes: dict, q: int) -> dict:
+    """
+    Make q new images using a transform object
+    :param img: original image to be transformed
+    :param bboxes: original bounding boxes including classes id
+    :param q: number of image to create from the original one
+    :return: dict
+    """
+
+    ab_box = transform_boxes(bboxes["boxes"])
+    label = bboxes["ids"]
+    ab_box = [list(row) + [label[i]] for i, row in enumerate(ab_box)]
+    print(ab_box)
+    images_, boxes_, labels_ = [], [], []
+    for _ in range(q):
+        transformed = transform(image=img, bboxes=ab_box)
+        transformed_image = transformed['image']
+        transformed_bboxes = transform_boxes(transformed['bboxes'])
+        images_.append(transformed_image)
+        boxes_.append(transformed_bboxes)
+        labels_.append(label)
+    return {"images": images_, "bboxes": boxes_, "labels": labels_}
+
+
+def plot_detections(im_array, boxes, classes, scores, category_index):
+    aux = im_array.copy()
+    viz_utils.visualize_boxes_and_labels_on_image_array(aux, boxes, classes, scores, category_index,
+                                                        use_normalized_coordinates=True)
+    return aux
+
+
+if __name__ == '__main__':
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/dataset"
+
+    data = pd.read_csv(f"{root}/labels_train.csv", nrows=2)
+    get_boxes = get_bounding_boxes(mask=(1, 3), width=480, height=300)
+    labelmap = {1: {'id': 1, 'name': 'car'}, 2: {'id': 2, 'name': 'truck'}, 3: {'id': 3, 'name': 'pedestrian'},
+                4: {'id': 4, 'name': 'bicyclist'}, 5: {'id': 5, 'name': 'light'}}
+
+    print(data)
+    print(get_boxes)
+    transform = A.Compose([A.HorizontalFlip(p=0.5),
+                           A.RandomBrightnessContrast(p=0.8),
+                           A.ShiftScaleRotate(scale_limit=0.9, rotate_limit=10, p=0.7)],
+                          bbox_params=A.BboxParams(format='albumentations', min_visibility=0.3))
+
+    for key, value in get_boxes.items():
+        image = cv2.imread(root + "/images/" + key)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        ans = apply_augmentation(image, value, 3)
+
+```
+
+Vamos a crear nuestra última función auxiliar para mostrar nuestro ejemplo de `data augmentation`:
+
+Este código debería ser bastante sencillo de leer para ti si has puesto suficiente atención al proceso de este código. Es una variación
+del código de `plotting` de la clase anterior. 
+
+```python
+def plot_example(im_to_plot: dict, layout: tuple) -> None:
+    """
+    Makes an image with multiple detection object examples
+    :param im_to_plot: dictionary containing images, bboxes and labels.
+    :param layout: Distribution of the examples. Example given a limit of 4 a valid layout could be (1, 4), (2, 2) (4, 1)
+    :return: None
+    """
+    plt.figure(figsize=(30, 30))
+    images = im_to_plot["images"]
+    bboxes = im_to_plot["bboxes"]
+    labels = im_to_plot["labels"]
+
+    for index in range(len(images)):
+        img = images[index]
+        bbox = bboxes[index]
+        label = labels[index]
+        dummy_scores = np.ones(shape=[bbox.shape[0]], dtype=np.float32)
+        a = plot_detections(img, bbox, label, dummy_scores, labelmap)
+        plt.subplot(layout[0], layout[1], index + 1)
+        plt.imshow(a)
+
+    plt.tight_layout()
+    plt.savefig("object_detection.png")
+    plt.close()
+```
+
+Ahora para terminar podemos llamar a nuestra función `plot_example`:
+
+```python
+plot_example(ans, layout=(3, 1))
+```
+
+![object_detection.png](Detecci%C3%B3n%20de%20Objetos%2F4%20Albumentation%2Fobject_detection.png)
+
+Felicidades ya hemos creado 3 nuevas imágenes con diferentes alteraciones de la imagen original y con sus propias y nuevas
+`bounding boxes`.
+
+
 
 ## 2.14 Utilizando un modelo de object detection pre-entrenado
 
