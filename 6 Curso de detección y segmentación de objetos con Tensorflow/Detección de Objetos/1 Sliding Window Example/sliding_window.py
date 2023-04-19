@@ -21,6 +21,7 @@ def get_window(window):
     ax2.imshow(window[2])
     ax2.set_xticks([])
     ax2.set_yticks([])
+    # fig.tight_layout()
     canvas = fig.canvas
     canvas.draw()
     width, height = canvas.get_width_height()

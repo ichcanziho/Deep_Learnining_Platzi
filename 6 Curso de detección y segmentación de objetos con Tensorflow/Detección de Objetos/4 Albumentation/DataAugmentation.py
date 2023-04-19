@@ -91,7 +91,7 @@ def plot_example(im_to_plot: dict, layout: tuple) -> None:
         plt.imshow(a)
 
     plt.tight_layout()
-    plt.savefig("object_detection.png")
+    plt.savefig("object_detection2.png")
     plt.close()
 
 

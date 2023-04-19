@@ -60,6 +60,73 @@ Entrena modelos pre-entrenados de computer vision de acuerdo a las necesidades d
 - [4 Un paso más allá](#4-un-paso-más-allá)
   - [4.1 El estado de la cuestión en computer vision](#41-el-estado-de-la-cuestión-en-computer-vision)
 
+# Cómo correr estos códigos:
+
+Hola, vengo del futuro. Este específico curso requiere de descargar varias cosas, entre las que se encuentran: Modelos, Datasets, repositorios de GitHub
+entre varias otras cosas. Es por ello que para utilizar de forma más eficiente el entorno de python vamos a crear un entorno virtual extra para este curso.
+
+A lo largo del curso voy a estar ocupando 2 paths generales uno será el siguiente:
+
+```commandline
+/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow
+```
+
+A este path lo llamaré `root` y será el path dónde almacene TODO lo que NO es código directamente, puesto que se encuentra en un disco duro externo.
+
+Por otro lado, todo el código de este repositorio se hará referencia desde la raíz de este curso:
+
+```commandline
+6 Curso de detección y segmentación de objetos con Tensorflow
+```
+
+Con la información anteriormente dicha vamos a empezar por crear nuestro entorno virtual:
+
+```bash
+cd /media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow
+python3.10 -m venv C6venv
+soruce C6venv/bin/activate
+```
+
+Verificamos que todo este bien:
+
+```bash
+which pip
+```
+Respuesta esperada:
+```commandline
+/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/C6venv/bin/pip
+```
+Vemos nuestras bibliotecas instaladas:
+```bash
+pip freeze
+```
+Respuesta esperada:
+```commandline
+
+```
+
+Como buena práctica debemos actualizar `pip` antes que anda
+
+```bash
+pip install --upgrade pip
+```
+Respuesta esperada:
+
+```commandline
+Collecting pip
+  Using cached https://files.pythonhosted.org/packages/ae/db/a8821cdac455a1740580c92de3ed7b7f257cfdbad8b1ba8864e6abe58a08/pip-23.1-py3-none-any.whl
+Installing collected packages: pip
+  Found existing installation: pip 10.0.1
+    Uninstalling pip-10.0.1:
+      Successfully uninstalled pip-10.0.1
+Successfully installed pip-23.1
+```
+
+Excelente ya podemos continuar con la instalación de los `requirements.txt`
+
+A lo largo del curso estaré poniendo individualmente los requisitos de bibliotecas que hay que ir instalando para que no
+parezca que mágicamente ya tienes todo el ambiente listo para usarse, sino que a medida que fuiste avanzando con el curso 
+fuiste instalando lo que ibas necesitando a medida que lo ibas utilizando.
 
 # 1 Introducción a Computer Vision
 
@@ -131,6 +198,15 @@ Una bounding box o cuadro delimitador en español es un rectángulo que se dibuj
 En la detección de objetos, la tarea principal es identificar los objetos de interés en una imagen o video y localizar su posición exacta en la imagen. La utilización de bounding boxes permite a los algoritmos de visión computarizada identificar y ubicar objetos de forma más eficiente y precisa. Una vez que se detecta el objeto de interés, se puede dibujar un bounding box alrededor del objeto para resaltar su posición en la imagen.
 
 ### Ejemplo en código: Creando nuestro `Sliding Window`
+
+Este es el primer ejemplo en código que veremos en este curso, es necesario que tengas activado tu entorno virtual que en este ejemplo
+llamamos `C6venv` y procedas con instalar las siguientes dependencias:
+
+```bash
+pip install imageio==2.27.0
+pip install opencv-python==4.5.5.62
+pip install matplotlib==3.5.3
+```
 
 > ## Nota:
 > El código lo puedes encontrar en: [sliding_window.py](Detecci%C3%B3n%20de%20Objetos%2F1%20Sliding%20Window%20Example%2Fsliding_window.py)
@@ -356,6 +432,8 @@ solución que buscamos para nuestro problema.
 
 
 ### Ejemplo en código: Trabajando con IoU
+
+Para este ejercicio NO es necesario que instales más dependencias de las que ya instalamos la clase pasada.
 
 > ## Nota:
 > El código completo está [IOU.py](Detecci%C3%B3n%20de%20Objetos%2F2%20IOU%2FIOU.py)
@@ -655,6 +733,13 @@ El cual consta de las siguientes labels: `classic_id labels: 'car', 'truck', 'pe
 
 
 ## 2.8 Carga de dataset de object detection
+
+Para correr el siguiente código debes instalar las siguientes bibliotecas:
+
+```bash
+pip install pandas==1.1.5
+pip install object-detection==0.0.3
+```
 
 > ## Nota:
 > El código completo se encuentra: [carga.py](Detecci%C3%B3n%20de%20Objetos%2F3%20Carga%20de%20dataset%2Fcarga.py)
@@ -1024,10 +1109,10 @@ Aquí hay un resumen general de cómo se usa la ampliación de datos en la detec
 
 ![11.png](ims%2F2b%2F11.png)
 
-Para este curso vamos a utilizar la biblioteca de `Albumentation` la cuál es compatible con los Frameworks de `TensorFlow`y `PyTorch`
+Para este curso vamos a utilizar la biblioteca de `Albumentation` la cual es compatible con los Frameworks de `TensorFlow`y `PyTorch`
 
 ```python
-pip install albumentations
+pip install albumentations==1.3.0
 ```
 
 ## 2.12 Implementando Albumentation en object detection
@@ -1414,6 +1499,370 @@ Felicidades ya hemos creado 3 nuevas imágenes con diferentes alteraciones de la
 
 
 ## 2.14 Utilizando un modelo de object detection pre-entrenado
+
+Antes de poder correr con este código será necesario hacer una configuración un poco más grande de lo habitual.
+Vamos a empezar por instalar una versión de `tensorflow` compatible:
+
+```bash
+pip install tensorflow==2.8.0
+```
+
+Vamos a dirigirnos a la raiz de mi carpeta `axiliar` en dónde cree mi entorno virtual y descargue el `dataset`
+
+```bash
+cd /media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow 
+```
+Creamos una nueva carpeta donde tendremos los datos necesarios para esta clase:
+
+```bash
+mkdir modelos
+cd modelos
+```
+Ahora vamos a clonar el repositorio de `models` de `TensorFlow`:
+```bash
+git clone https://github.com/tensorflow/models
+```
+Una vez se ha descargado el repositorio éxitosamente debemos compilar un paquete de `protoc`
+
+Primero será necesario instalar `Protobuf` en linux: (el sistema operativo que he usado para todo el repo)
+
+```bash
+sudo apt update
+sudo apt install protobuf-compiler
+```
+
+Ahora ejecutamos el siguiente código:
+
+```bash
+cd models/research/
+protoc object_detection/protos/*.proto --python_out=.
+cp object_detection/packages/tf2/setup.py .
+python -m pip install .
+```
+
+Excelente, vamos muy bien, pero debemos continuar, ahora nos toca descargar un modelo te tensorflow pre-entrenado para hacer
+object detection. Para este ejemplo vamos a usar un modelo `pre-entrenado` de tensorflow: [ResNet50](https://www.tensorflow.org/api_docs/python/tf/keras/applications/resnet50/ResNet50)
+
+Vamos a atrás un par de carpetas:
+```bash
+cd ../..
+```
+Y ahora descargamos el modelo:
+```commandline
+wget  http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz
+tar -xf ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz
+rm ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz
+```
+
+Esto nos dará la siguiente distribución de carpetas:
+
+```commandline
+>models            |
+>ssd_resnet50v1_fpn|
+-------------------|>checkpoint  |
+-------------------|-------------|>checkpoint
+-------------------|>saved_model |
+-------------------|-------------|>assets         |
+-------------------|-------------|>variables      |
+-------------------|-------------|saved_model.pb
+-------------------|pipeline.config
+```
+ Por comodidad para más adelante, vamos a copiar un archivo del repositorio de github de tensorflow `models` a nuestro modelo
+`ssd_resnet50v1_fpn`. Vamos a copiar `mscoco_label_map.pbtxt`:
+
+```bash
+cd /media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/modelo/models/research/object_detection/data
+cp ./mscoco_label_map.pbtxt ../../../../ssd_resnet50_v1_fpn_640x640_coco17_tpu-8/
+```
+
+> ## Nota:
+> Todo el código de esta sección lo puedes encontrar en: [resnet.py](Detecci%C3%B3n%20de%20Objetos%2FResNet%2Fresnet.py)
+
+Vamos a describir el código mediante su flujo lógico de funcionamiento:
+
+### Ejemplo en código
+
+**Primer paso: Crear la función `load_model()`**
+
+El objetivo de esta función será cargar el modelo y devolver una función que sea capaz de predecir una nueva
+clasificación de imagen a través de una función `detect_fn` y también devuelva las etiquetas de las clases para después
+poder poner el bounding box de la predicción del modelo con su respectivo nombre de clase.
+
+Partamos de lo más sencillo, dónde está la raíz de todos los demás datos que estaremos utilizando y cuál es el nombre del modelo que
+vamos a usar:
+
+```python
+def load_model():
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/" \
+           "modelo"
+    model_name = 'ssd_resnet50_v1_fpn_640x640_coco17_tpu-8'
+```
+
+Ahora debemos tener 3 `paths` muy importantes: 
+- `pipeline_config:` donde se encuentra la arquitectura del modelo
+- `model_dir:` donde están los pesos pre-entrenados del modelo
+- `label_map_path:` donde está el archivo que contiene información de las clases que puede detectar el modelo
+
+```python
+import os
+
+
+def load_model():
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/" \
+           "modelo"
+    model_name = 'ssd_resnet50_v1_fpn_640x640_coco17_tpu-8'
+
+    pipeline_config = os.path.join(root + '/models/research/object_detection/configs/tf2/' + model_name + '.config')
+    model_dir = f"{root}/{model_name}/checkpoint/"
+    label_map_path = f'{root}/{model_name}/mscoco_label_map.pbtxt'
+```
+Ahora podemos cargar la arquitectura del modelo desde su archivo de configuración:
+
+```python
+import os
+from object_detection.utils import config_util
+from object_detection.builders import model_builder
+
+
+def load_model():
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/" \
+           "modelo"
+    model_name = 'ssd_resnet50_v1_fpn_640x640_coco17_tpu-8'
+
+    pipeline_config = os.path.join(root + '/models/research/object_detection/configs/tf2/' + model_name + '.config')
+    model_dir = f"{root}/{model_name}/checkpoint/"
+    label_map_path = f'{root}/{model_name}/mscoco_label_map.pbtxt'
+
+    configs = config_util.get_configs_from_pipeline_file(pipeline_config)
+    model_config = configs['model']
+    detection_model = model_builder.build(model_config=model_config, is_training=False)
+```
+Notamos como para cargar el modelo fue necesaria utilizar `config_util` y `model_builder` métodos provenientes de `object_detection`.
+
+Ahora vamos a crear una función que nos permita a través del un `model` regresar una función que permita al modelo `detectar`:
+
+```python
+import tensorflow as tf
+
+
+def get_model_detection_function(model):
+    @tf.function
+    def detect_fn_(image):
+        image, shape = model.preprocess(image)
+        prediction_dict = model.predict(image, shape)
+        detections_ = model.postprocess(prediction_dict, shape)
+
+        return detections_
+
+    return detect_fn_
+```
+
+Nosotros definimos una función llamada `get_model_detection_function` que toma un `modelo` de TensorFlow como entrada y devuelve otra función llamada `detect_fn_`.
+
+La función `detect_fn_` es una función decoradora `@tf.function`, lo que significa que se compila para el grafo de TensorFlow. En otras palabras, se optimiza para ejecutarse más rápido cuando se llama con datos.
+
+Dentro de la función `detect_fn_`, se llama al método `preprocess` del modelo con la imagen de entrada para prepararla para su procesamiento. Luego, se llama al método `predict` del modelo para realizar la detección de objetos en la imagen. El resultado de la detección de objetos se procesa aún más mediante el método `postprocess` del modelo para obtener los resultados finales.
+
+Finalmente, se devuelve el resultado de la detección de objetos desde la función `detect_fn_`.
+
+Muy bien por el momento nuestro código sigue la siguiente estructura:
+
+```python
+import os
+from object_detection.utils import config_util
+from object_detection.builders import model_builder
+import tensorflow as tf
+
+def get_model_detection_function(model):
+    @tf.function
+    def detect_fn_(image):
+        image, shape = model.preprocess(image)
+        prediction_dict = model.predict(image, shape)
+        detections_ = model.postprocess(prediction_dict, shape)
+
+        return detections_
+
+    return detect_fn_
+
+
+def load_model():
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/" \
+           "modelo"
+    model_name = 'ssd_resnet50_v1_fpn_640x640_coco17_tpu-8'
+
+    pipeline_config = os.path.join(root + '/models/research/object_detection/configs/tf2/' + model_name + '.config')
+    model_dir = f"{root}/{model_name}/checkpoint/"
+    label_map_path = f'{root}/{model_name}/mscoco_label_map.pbtxt'
+
+    configs = config_util.get_configs_from_pipeline_file(pipeline_config)
+    model_config = configs['model']
+    detection_model = model_builder.build(model_config=model_config, is_training=False)
+
+    detect_fn = get_model_detection_function(detection_model)
+```
+
+Pero no es suficiente con tener la arquitectura del modelo o la capacidad de hacer nuevas inferencias si no hemos cargado
+los pesos `pre-entrenados` del modelo, para eso tenemos la variable `model_dir` que apunta a su `checkpoint`:
+
+```python
+import os
+from object_detection.utils import config_util
+from object_detection.builders import model_builder
+import tensorflow as tf
+
+def get_model_detection_function(model):
+    @tf.function
+    def detect_fn_(image):
+        image, shape = model.preprocess(image)
+        prediction_dict = model.predict(image, shape)
+        detections_ = model.postprocess(prediction_dict, shape)
+
+        return detections_
+
+    return detect_fn_
+
+
+def load_model():
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/" \
+           "modelo"
+    model_name = 'ssd_resnet50_v1_fpn_640x640_coco17_tpu-8'
+
+    pipeline_config = os.path.join(root + '/models/research/object_detection/configs/tf2/' + model_name + '.config')
+    model_dir = f"{root}/{model_name}/checkpoint/"
+    label_map_path = f'{root}/{model_name}/mscoco_label_map.pbtxt'
+
+    configs = config_util.get_configs_from_pipeline_file(pipeline_config)
+    model_config = configs['model']
+    detection_model = model_builder.build(model_config=model_config, is_training=False)
+
+    detect_fn = get_model_detection_function(detection_model)
+
+    ckpt = tf.compat.v2.train.Checkpoint(model=detection_model)
+    ckpt.restore(os.path.join(model_dir, 'ckpt-0')).expect_partial()
+```
+
+Excelente, ya hemos cargado al modelo y ya podría predecir nuevas imágenes, pero a nosotros como humanos nos gusta más leer
+el nombre de las clases que el id de las mismas, entonces vamos a convertir el archivo de `label_map_path` en básicamente un diccionario
+que contenga el id de la clase y su nombre.
+
+```python
+import os
+from object_detection.utils import config_util
+from object_detection.builders import model_builder
+from object_detection.utils import label_map_util
+import tensorflow as tf
+
+def get_model_detection_function(model):
+    @tf.function
+    def detect_fn_(image):
+        image, shape = model.preprocess(image)
+        prediction_dict = model.predict(image, shape)
+        detections_ = model.postprocess(prediction_dict, shape)
+
+        return detections_
+
+    return detect_fn_
+
+
+def load_model():
+
+    root = "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/" \
+           "modelo"
+    model_name = 'ssd_resnet50_v1_fpn_640x640_coco17_tpu-8'
+
+    pipeline_config = os.path.join(root + '/models/research/object_detection/configs/tf2/' + model_name + '.config')
+    model_dir = f"{root}/{model_name}/checkpoint/"
+    label_map_path = f'{root}/{model_name}/mscoco_label_map.pbtxt'
+
+    configs = config_util.get_configs_from_pipeline_file(pipeline_config)
+    model_config = configs['model']
+    detection_model = model_builder.build(model_config=model_config, is_training=False)
+
+    detect_fn = get_model_detection_function(detection_model)
+
+    ckpt = tf.compat.v2.train.Checkpoint(model=detection_model)
+    ckpt.restore(os.path.join(model_dir, 'ckpt-0')).expect_partial()
+    label_map = label_map_util.load_labelmap(label_map_path)
+    categories = label_map_util.convert_label_map_to_categories(
+        label_map,
+        max_num_classes=label_map_util.get_max_label_map_index(label_map),
+        use_display_name=True)
+    category_index_ = label_map_util.create_category_index(categories)
+
+    return detect_fn, category_index_
+```
+
+Genial, ya hemos terminado de definir nuestra función que carga el modelo y regresa una función que es capaz de predecir nuevos
+datos y también su category_index.
+
+Ahora creamos una pequeña función auxiliar que nos permita convertir una imagen a tensor y nos devuelva ambos datos:
+```python
+import tensorflow as tf
+import numpy as np
+import cv2
+
+def image_to_tensor(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return image, tf.convert_to_tensor(np.expand_dims(image, 0), dtype=tf.float32)
+```
+
+Finalmente, podemos hacer una función que nos permita gráficar los bounding boxes de las imágenes clasificadas de la siguiente manera:
+
+```python
+from object_detection.utils import visualization_utils as viz_utils
+import matplotlib.pyplot as plt
+
+
+def show_image_classified(image, bboxes, c_index):
+    detections = bboxes
+    label_id_offset = 1
+    image_np_with_detections = image.copy()
+
+    viz_utils.visualize_boxes_and_labels_on_image_array(
+        image_np_with_detections,
+        detections['detection_boxes'][0].numpy(),
+        (detections['detection_classes'][0].numpy() + label_id_offset).astype(int),
+        detections['detection_scores'][0].numpy(),
+        c_index,
+        use_normalized_coordinates=True,
+        min_score_thresh=0.7
+    )
+
+    plt.figure(figsize=(12, 16))
+    plt.imshow(image_np_with_detections)
+    plt.tight_layout()
+    plt.savefig("anotacion.png")
+    plt.close()
+```
+
+Y ahora ya tenemos todos los ingredientes necesarios para clasificar una nueva imagen y visualizar los resultados de la clasificación:
+
+```python
+img = cv2.imread("1479506176491553178.jpg")
+image_np, input_tensor = image_to_tensor(img)
+print("Loaded image")
+predict, category_index = load_model()
+print("Loaded Model")
+boxes = predict(input_tensor)
+print("BBoxes generated")
+show_image_classified(image_np, boxes, category_index)
+print("Image saved")
+```
+Imagen de entrada:
+
+![1479506176491553178.jpg](Detecci%C3%B3n%20de%20Objetos%2FResNet%2F1479506176491553178.jpg)
+
+Resultado de modelo `pre-entrenado`:
+
+![anotacion.png](Detecci%C3%B3n%20de%20Objetos%2FResNet%2Fanotacion.png)
+
+Felicidades, has llegado hasta este punto :D
+
 
 ## 2.15 Fine-tuning en detección de objetos
 
