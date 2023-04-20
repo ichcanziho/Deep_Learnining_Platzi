@@ -1,0 +1,24 @@
+
+<annotation>
+    <folder>images</folder>
+    <filename>Cars0.png</filename>
+    <size>
+        <width>500</width>
+        <height>268</height>
+        <depth>3</depth>
+    </size>
+    <segmented>0</segmented>
+    <object>
+        <name>licence</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <occluded>0</occluded>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>226</xmin>
+            <ymin>125</ymin>
+            <xmax>419</xmax>
+            <ymax>173</ymax>
+        </bndbox>
+    </object>
+</annotation>

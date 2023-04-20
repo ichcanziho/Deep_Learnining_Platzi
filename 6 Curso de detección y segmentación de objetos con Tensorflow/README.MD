@@ -1863,6 +1863,219 @@ Resultado de modelo `pre-entrenado`:
 
 Felicidades, has llegado hasta este punto :D
 
+## Proyecto: Detección de placas de coche
+
+Para este proyecto vamos a hacer un uso de los conocimientos adquiridos a lo largo de este curso e intentar crear un modelo
+de object detection pre-entrenado y hacerle `fine tuning` para que sea capaz de detectar la ubicación de la placa de un coche.
+
+Para eso vamos a empezar con el siguiente dataset: [Car License Plate Detection](https://www.kaggle.com/datasets/andrewmvd/car-plate-detection).
+
+![1.png](ims%2F3%2F1.png)
+
+
+Vamos a empezar por crear un archivo [config.ini](Detecci%C3%B3n%20de%20Objetos%2F5%20Proyecto%2Fconfig.ini)
+```commandline
+[APP]
+MODEL = /media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/modelo/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8/checkpoint
+CONFIG = /media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/modelo/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8/pipeline.config
+LABELMAP = /media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/modelo/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8/mscoco_label_map.pbtxt
+DATASET = /media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/modelo/raw
+```
+El cual apunte a todos los archivos y rutas que vamos a necesitar para la realización de este proyecto.
+
+Adicionalmente, implementamos [utils.py](Detecci%C3%B3n%20de%20Objetos%2F5%20Proyecto%2Futils.py) para poder hacer una lectura de este documento:
+```python
+import configparser
+
+
+def read_ini():
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    out = {}
+    for section in config.sections():
+        for key in config[section]:
+            out[key] = config[section][key]
+
+    return out["model"], out["config"], out["labelmap"], out["dataset"]
+```
+
+Y finalmente en nuestro archivo [main.py](Detecci%C3%B3n%20de%20Objetos%2F5%20Proyecto%2Fmain.py)
+
+```python
+from utils import read_ini
+
+model_dir, config_dir, labelmap_dir, dataset_dir = read_ini()
+
+print(dataset_dir)
+```
+Podemos comprobar que todo funcione correctamente.
+Respuesta esperada:
+```commandline
+/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/modelo/raw
+```
+Nuestro primer trabajo será convertir la información del dataset en formato `xml` en algo más conocido y fácil de trabajar para nostros
+en este caso un `DataFrame` de pandas. Cada etiqueta del dataset tiene la siguiente estructura:
+
+```commandline
+
+<annotation>
+    <folder>images</folder>
+    <filename>Cars0.png</filename>
+    <size>
+        <width>500</width>
+        <height>268</height>
+        <depth>3</depth>
+    </size>
+    <segmented>0</segmented>
+    <object>
+        <name>licence</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <occluded>0</occluded>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>226</xmin>
+            <ymin>125</ymin>
+            <xmax>419</xmax>
+            <ymax>173</ymax>
+        </bndbox>
+    </object>
+</annotation>
+```
+
+Creamos nuestra función que nos permita crear nuestro pandas dataframe:
+
+```python
+import xml.etree.ElementTree as ET
+import pandas as pd
+import glob
+import os
+
+def generate_dataframe():
+    _, _, _, dataset_dir = read_ini()
+
+    dataset = {"file": [], "width": [], "height": [], "xmin": [], "xmax": [], "ymin": [], "ymax": []}
+
+    for item in glob.glob(os.path.join(dataset_dir+"/annotations", "*.xml")):
+        tree = ET.parse(item)
+        for elem in tree.iter():
+            if 'filename' in elem.tag:
+                filename = elem.text
+            elif 'width' in elem.tag:
+                width = int(elem.text)
+            elif 'height' in elem.tag:
+                height = int(elem.text)
+            elif 'xmin' in elem.tag:
+                xmin = int(elem.text)
+            elif 'ymin' in elem.tag:
+                ymin = int(elem.text)
+            elif 'xmax' in elem.tag:
+                xmax = int(elem.text)
+            elif 'ymax' in elem.tag:
+                ymax = int(elem.text)
+
+                dataset['file'].append(filename)
+                dataset['width'].append(width)
+                dataset['height'].append(height)
+                dataset['xmin'].append(xmin/width)
+                dataset['ymin'].append(ymin/height)
+                dataset['xmax'].append(xmax/width)
+                dataset['ymax'].append(ymax/height)
+
+    df = pd.DataFrame(dataset)
+    df["label_id"] = 1
+    df.to_csv("data/dataset.csv", index=False)
+    print(df)
+
+```
+Respuesta esperada:
+```commandline
+            file  width  height  ...      ymin      ymax  label_id
+0      Cars0.png    500     268  ...  0.466418  0.645522         1
+1      Cars1.png    400     248  ...  0.516129  0.645161         1
+2     Cars10.png    400     225  ...  0.022222  0.657778         1
+3    Cars100.png    400     267  ...  0.426966  0.490637         1
+4    Cars101.png    400     300  ...  0.673333  0.733333         1
+..           ...    ...     ...  ...       ...       ...       ...
+466   Cars95.png    600     400  ...  0.455000  0.657500         1
+467   Cars96.png    400     248  ...  0.508065  0.645161         1
+468   Cars97.png    400     300  ...  0.340000  0.636667         1
+469   Cars98.png    370     400  ...  0.490000  0.647500         1
+470   Cars99.png    375     500  ...  0.396000  0.542000         1
+
+[471 rows x 8 columns]
+```
+
+Aprovechando que estamos en [utils.py](Detecci%C3%B3n%20de%20Objetos%2F5%20Proyecto%2Futils.py) vamos a crear nuestras funciones auxiliares: `get_bounding_boxes` y `plot_example`:
+
+```python
+from object_detection.utils import visualization_utils as viz_utils
+import numpy as np
+import cv2
+
+
+def plot_detections(im_array, boxes, classes, scores, category_index):
+    aux = im_array.copy()
+    viz_utils.visualize_boxes_and_labels_on_image_array(aux, boxes, classes, scores, category_index,
+                                                        use_normalized_coordinates=True)
+    return aux
+
+
+def plot_example(boxes: dict, limit: int, layout: tuple, dataset_dir: str) -> None:
+    labelmap = {1: {'id': 1, 'name': 'plate'}}
+    limit_images = limit
+    i_image = 0
+    plt.figure(figsize=(30, 30))
+    for key, value in boxes.items():
+        bboxes = value["boxes"]
+        classes = value["ids"]
+        im = cv2.imread(dataset_dir + "/images/" + key)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        dummy_scores = np.ones(shape=[bboxes.shape[0]], dtype=np.float32)
+        a = plot_detections(im, bboxes, classes, dummy_scores, labelmap)
+        plt.subplot(layout[0], layout[1], i_image + 1)
+        plt.imshow(a)
+        if i_image >= limit_images-1:
+            break
+        i_image += 1
+
+    plt.savefig("object_detection.png")
+    plt.close()
+
+
+def get_bounding_boxes(data):
+    gt_boxes = {}
+    for index, row in data.iterrows():
+        id_label = row["label_id"]
+        bbox = np.array([[row['ymin'], row['xmin'], row['ymax'], row['xmax']]], dtype=np.float32)
+        im_name = row['file']
+        if im_name not in gt_boxes:
+            gt_boxes[im_name] = {"boxes": np.array(bbox),
+                                 "ids": np.array([id_label])}
+        else:
+            gt_boxes[im_name] = {"boxes": np.append(gt_boxes[im_name]["boxes"], np.array(bbox), axis=0),
+                                 "ids": np.append(gt_boxes[im_name]["ids"], np.array([id_label]), axis=0)}
+
+    return gt_boxes
+
+```
+
+Finalmente, en nuestro [main.py](Detecci%C3%B3n%20de%20Objetos%2F5%20Proyecto%2Fmain.py) ya podemos observar a detalle el `bounding box` de nuestros ejemplos:
+```python
+from utils import read_ini, get_bounding_boxes, plot_example
+import pandas as pd
+
+
+if __name__ == '__main__':
+    model_dir, config_dir, labelmap_dir, dataset_dir = read_ini()
+    data = pd.read_csv("data/dataset.csv")
+    bboxes = get_bounding_boxes(data)
+    plot_example(bboxes, 6, (2, 3), dataset_dir)
+
+```
+Respuesta esperada:
+![object_detection.png](Detecci%C3%B3n%20de%20Objetos%2F5%20Proyecto%2Fobject_detection.png)
+
 
 ## 2.15 Fine-tuning en detección de objetos
 
