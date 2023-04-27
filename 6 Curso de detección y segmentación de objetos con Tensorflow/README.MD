@@ -2093,23 +2093,143 @@ Respuesta esperada:
 
 ## 3.1 Introduciendo la segmentación de objetos
 
-## 3.2 Tipos de segmentación de objetos
+En términos coloquiales, la segmentación de objetos es utilizar diferentes técnicas de `computer vision` para poder clasificar cada uno de los pixeles
+de una imagen en una categoría diferente. La segmentación de objetos implica dividir una imagen en regiones que corresponden 
+a los diferentes objetos presentes en ella. Existen varios enfoques para la segmentación de objetos, que van desde los 
+métodos basados en umbrales simples hasta los algoritmos más complejos basados en `deep learning`. Algunos métodos comunes 
+incluyen la segmentación basada en bordes, la segmentación basada en regiones y la segmentación semántica.
 
-## 3.3 Tipos de segmentación y sus arquitecturas relevantes
+![osegmentation.gif](ims%2F3%2Fosegmentation.gif)
 
-## 3.4 ¿Cómo es un dataset de segmentación?
+### Aplicaciones de Object Detection
 
-## 3.5 Utilizando un dataset de segmentación de objetos
+Entre los principales casos de usos de `object segmentation` podemos encontrar:
 
-## 3.6 Visualización de nuestro dataset de segmentación
+- `Detección y seguimiento de objetos:` La segmentación de objetos se utiliza para identificar y separar los objetos de interés en una imagen o video para su posterior seguimiento. Esto se utiliza comúnmente en aplicaciones como la vigilancia y la seguridad, el seguimiento de vehículos y la navegación autónoma.
 
-## 3.7 Creando red neuronal U-Net para segmentación
+- `Reconocimiento facial:` La segmentación de objetos se utiliza para separar las caras de las imágenes de fondo en aplicaciones de reconocimiento facial. Esto puede ser útil en aplicaciones de seguridad y vigilancia, así como en sistemas de autenticación biométrica.
 
-## 3.8 Entrenando y estudiando una red de segmentación
+- `Realidad aumentada:` La segmentación de objetos se utiliza para separar objetos específicos de una escena para que puedan ser manipulados y mejorados en una experiencia de realidad aumentada. Esto se utiliza comúnmente en aplicaciones de entretenimiento, publicidad y juegos.
 
-## 3.9 Generando predicciones con modelo de object segmentation
+- `Edición de imágenes:` La segmentación de objetos se utiliza en herramientas de edición de imágenes para separar objetos específicos de una imagen para su posterior manipulación. Esto puede incluir la eliminación de objetos no deseados, la selección de objetos específicos para aplicar efectos y la combinación de objetos de diferentes imágenes.
 
-## 3.10 Quiz módulo segmentación
+- `Robótica:` La segmentación de objetos se utiliza en aplicaciones de robótica para permitir que los robots detecten y manipulen objetos específicos en su entorno. Esto es útil en aplicaciones como la clasificación y el ensamblaje de piezas en la línea de producción.
+
+
+### Métricas de Object Detection
+
+Hay varias métricas utilizadas comúnmente en la evaluación de los resultados de la segmentación de objetos. Estas métricas se utilizan para medir la calidad de la segmentación y comparar diferentes modelos y algoritmos. 
+A continuación, te presento algunas de las métricas más comunes utilizadas en la segmentación de objetos:
+
+- `Precision:` se refiere a la proporción de píxeles correctamente identificados como objeto en la segmentación. Es una medida de la capacidad del modelo para identificar correctamente los objetos de interés en la imagen.
+
+- `Recall:` se refiere a la proporción de píxeles pertenecientes al objeto que se han identificado correctamente en la segmentación. Es una medida de la capacidad del modelo para identificar todos los píxeles que pertenecen al objeto de interés.
+
+- `F1-score:` es una métrica que combina la precisión y la recuperación en una sola medida. Se calcula como la media armónica de la precisión y la recuperación y se utiliza para evaluar el equilibrio entre la precisión y la recuperación en la segmentación.
+
+- `Intersection Over Union (IoU):` se refiere a la proporción de píxeles de la segmentación que coinciden con los píxeles del objeto real. Es una medida de la superposición entre la segmentación y el objeto real.
+
+- `Mean Surface Difference (MSD):` La MSD es una métrica que mide la diferencia promedio de superficie entre la segmentación y el objeto real. Es una medida de la precisión de la segmentación en términos de la forma y tamaño del objeto.
+
+### Arquitectura Encoder - Decoder
+
+La arquitectura Encoder-Decoder es una de las arquitecturas más utilizadas en la segmentación de objetos mediante el uso de redes neuronales convolucionales profundas. Esta arquitectura se compone de dos partes principales: el Encoder y el Decoder.
+
+![2.png](ims%2F3%2F2.png)
+
+El Encoder es una red neuronal convolucional que se utiliza para extraer características de la imagen de entrada. Generalmente, esta red convolucional es una variante de la popular arquitectura ResNet que tiene una profundidad variable. El Encoder toma como entrada la imagen de entrada y la procesa a través de varias capas convolucionales y de pooling. Cada capa de la red convolucional reduce gradualmente el tamaño espacial de la imagen de entrada mientras aumenta la profundidad de las características extraídas.
+
+Una vez que las características han sido extraídas por el Encoder, se utiliza el Decoder para realizar la segmentación de objetos. El Decoder es una red neuronal convolucional que se utiliza para generar una máscara de segmentación para cada objeto en la imagen de entrada. El Decoder consta de varias capas convolucionales y de upsampling que aumentan gradualmente el tamaño espacial de las características extraídas por el Encoder. La última capa del Decoder produce una máscara de segmentación que se utiliza para identificar los píxeles correspondientes a cada objeto.
+
+## 3.2 Tipos de segmentación y sus arquitecturas relevantes
+
+Si bien existen varias formas de segmentar imágenes que no necesariamente hacen uso de técnicas de deep learning para el enfoque 
+de este curso vamos a hablar únicamente de las técnicas principales que sí hacen uso de deep learning. De forma sencilla podemos
+decir que existen 2 clases de segmentación la `semantic segmentation` y la `instance segmentation` adicionalmente podemos hablar sobre
+`panoptic segmentation` que es una combinación de ambas.
+
+![4.png](ims%2F3%2F4.png)
+
+**Segmentación Semántica:**
+
+- Se utiliza para clasificar y separar diferentes objetos en una imagen en función de su significado semántico.
+- Cada píxel de la imagen se clasifica en una clase específica.
+- Se basa en el uso de modelos de aprendizaje profundo, como redes neuronales convolucionales.
+- Se utiliza en aplicaciones como detección de objetos en imágenes de tráfico o identificación de objetos en imágenes de satélite.
+
+**Segmentación de Instancias:**
+- Se utiliza para detectar y separar cada objeto individual en una imagen.
+- Cada objeto se separa mediante una máscara binaria única.
+- También se basa en el uso de modelos de aprendizaje profundo, como Mask R-CNN.
+- Se utiliza en aplicaciones como seguimiento de objetos y detección de objetos en tiempo real.
+
+**Segmentación Panóptica:**
+- Combina la segmentación semántica y la segmentación de instancias para detectar y separar objetos en una imagen en función de su significado semántico y su instancia individual.
+- Cada objeto se separa mediante una máscara binaria única y se clasifica en una clase semántica específica.
+- Se utiliza en aplicaciones como la detección y seguimiento de objetos en videos y la interpretación de escenas en robótica y sistemas autónomos.
+
+### Arquitecturas relevantes
+
+**Fully Convolutional Network (FCN):**
+
+![6.png](ims%2F3%2F6.png)
+
+La primera arquitectura de red neuronal completamente convolucional para la segmentación de objetos.
+Convierte una red neuronal convolucional estándar (como VGG16) en una red neuronal convolucional completamente convolucional mediante la eliminación de las capas totalmente conectadas y la adición de capas de convolución transpuestas.
+Utiliza la técnica de interpolación bilineal para aumentar el tamaño de la máscara segmentada a la resolución de la imagen original.
+Ha sido superado en precisión por otras arquitecturas más avanzadas, como U-Net y DeepLab.
+
+**U-Net:**
+
+![5.png](ims%2F3%2F5.png)
+
+Una arquitectura de red neuronal convolucional que se enfoca en la segmentación de instancias y la detección de bordes.
+Se compone de una estructura en forma de U con capas de convolución, deconvolución y unión.
+Utiliza una técnica llamada "skip connection" para preservar la información de la imagen original y mejorar la precisión de la segmentación.
+Es especialmente efectiva en la segmentación de imágenes biomédicas.
+
+**DeepLab**
+
+![3.png](ims%2F3%2F3.png)
+
+Una arquitectura de red neuronal convolucional profunda que se enfoca en la segmentación semántica.
+Utiliza una técnica llamada "atrous convolution" para aumentar el campo receptivo de la red neuronal y mejorar la precisión de la segmentación.
+Utiliza una técnica de reducción de dimensionalidad llamada "global pooling" para reducir el número de parámetros y mejorar la eficiencia de la red neuronal.
+Existen varias variantes de DeepLab, incluyendo DeepLabv3 y DeepLabv3+.
+
+## 3.3 ¿Cómo es un dataset de segmentación?
+
+A continuación compartimos una serie de ejemplos de datasets de segmentación:
+
+![7.png](ims%2F3%2F7.png)
+
+- [ADE20K](https://groups.csail.mit.edu/vision/datasets/ADE20K/)
+- [City Scapes](https://www.cityscapes-dataset.com/)
+- [Human Segmentation Dataset](https://github.com/VikramShenoy97/Human-Segmentation-Dataset)
+- [CamSeq 2007](https://www.kaggle.com/datasets/carlolepelaars/camseq-semantic-segmentation)
+- [COCO](https://cocodataset.org/#home)
+- [Pascal](http://host.robots.ox.ac.uk/pascal/VOC/)
+- [Kitti](https://www.cvlibs.net/datasets/kitti/)
+
+
+Para efectos prácticos, en esta sección del curso vamos a utilizar - [CamSeq 2007](https://www.kaggle.com/datasets/carlolepelaars/camseq-semantic-segmentation)
+
+> 101 image pairs for semantic segmentation from the University of Cambridge
+
+![8.png](ims%2F3%2F8.png)
+
+
+## 3.4 Utilizando un dataset de segmentación de objetos
+
+## 3.5 Visualización de nuestro dataset de segmentación
+
+## 3.6 Creando red neuronal U-Net para segmentación
+
+## 3.7 Entrenando y estudiando una red de segmentación
+
+## 3.8 Generando predicciones con modelo de object segmentation
+
+## 3.9 Quiz módulo segmentación
 
 # 4 Un paso más allá
 
