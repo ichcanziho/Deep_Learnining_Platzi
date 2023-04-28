@@ -2221,16 +2221,449 @@ Para efectos prácticos, en esta sección del curso vamos a utilizar - [CamSeq 2
 
 ## 3.4 Utilizando un dataset de segmentación de objetos
 
+Ya tenemos conocimiento que el dataset que estaremos utilizando consta de 101 imágenes con sus respectivas etiquetas, que por
+el tipo de etiqueta llamaremos `ground truth` puesto que representan una etiqueta pixel a pixel de la imagen original. 
+
+Preparemos nuestro código en python para poder leer de forma correcta estás etiquetas.
+
+Empecemos con el siguiente archivo muy simple: [config.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Fconfig.py)
+
+```python
+paths = {"dataset": "/media/ichcanziho/Data/datos/Deep Learning/6 Curso de detección y segmentación de objetos con TensorFlow/Segmentation/dataset"}
+```
+
+Lo único que contiene es la ruta a la carpeta donde estaremos guardando todas las imágenes del Dataset `CamSeq 2007`
+
+Ahora vamos a crear un archivo [utils.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Futils.py) donde pondremos
+todas las funciones `auxiliares` que vamos a usar para cargar el dataset, generar las particiones y visualizar los datos.
+
+Importamos las bibliotecas necesarias:
+
+```python
+from sklearn.model_selection import train_test_split
+from config import paths  # aquí guardamos la ruta del dataset
+import matplotlib.pyplot as plt
+import numpy as np
+import cv2
+import glob
+import os
+```
+
+La primera función que vamos a crear servirá para dividir las imágenes que son de entrada respecto a las que son las `labels`:
+
+```python
+def read_dataset():
+    dataset_path = paths["dataset"]
+    filenames = glob.glob(os.path.join(dataset_path, "*.png"))
+    filenames.sort()
+    image_list = []
+    masks_list = []
+    for filename in filenames:
+        if filename.endswith("L.png"):
+            masks_list.append(filename)
+        else:
+            image_list.append(filename)
+    print(len(image_list), len(masks_list))
+    return image_list, masks_list
+```
+
+Esta función lee la ruta `dataset` del diccionario `paths` e itera sobre cada elemento y devuelve todos los que terminen en `.png`
+el formato de las imágenes de este dataset. Después tenemos dos listas `image_list` y `mask_list` para cada `filename` de 
+`filenames` vamos a preguntar si dicho elemento termina en `L.png` indicando que la imagen es una `label` y será agregada a la lista
+de `mask_list` de otra forma irá a `image_list`.
+
+Cómo tal el paso anterior solo devuelve listas que contienen las direcciones de las imágenes, pero no son las imágenes en sí, 
+aún necesitamos abrirlas y guardar su contenido como un numpy array, para ello vamos a crear la función `load_data`:
+
+```python
+def load_data(images_path, masks_path):
+    samples = {'images': [], 'masks': []}
+
+    for i in range(len(images_path)):
+        img = plt.imread(images_path[i])
+        mask = plt.imread(masks_path[i])
+        img = cv2.resize(img, (256, 256))
+        masks = cv2.resize(mask, (256, 256))
+
+        samples['images'].append(img)
+        samples['masks'].append(masks)
+
+    samples = {
+        'images': np.array(samples['images']),
+        'masks': np.array(samples['masks']),
+    }
+    return samples
+```
+
+El código es muy simple de leer, vemos como el mismo regresa un diccionario que contiene tanto las imágenes reales como las
+máscaras de las mismas ya en formato numpy array.
+
+Adicionalmente, vamos a crear 2 funciones que vamos a utilizar más adelante:
+
+```python
+def get_partitions(image_list, masks_list, ts=0.2):
+    return train_test_split(image_list, masks_list, test_size=ts, random_state=42)
+```
+
+```python
+def plot_results(history_, metric, fname):
+    history_dict = history_.history
+    loss_values = history_dict['loss']
+    val_loss_values = history_dict['val_loss']
+    metric_values = history_dict[metric]
+    val_metric_values = history_dict[f"val_{metric}"]
+    epoch = range(1, len(loss_values) + 1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 5))
+    fig.suptitle("Neural Network's Result")
+    ax1.set_title("Loss function over epoch")
+    ax2.set_title(f"{metric} over epoch")
+    ax1.set(ylabel="loss", xlabel="epochs")
+    ax2.set(ylabel=metric, xlabel="epochs")
+    ax1.plot(epoch, loss_values, 'go-', label='training')
+    ax1.plot(epoch, val_loss_values, 'ro-', label='validation')
+    ax2.plot(epoch, metric_values, 'go-', label='training')
+    ax2.plot(epoch, val_metric_values, 'ro-', label='validation')
+    ax1.legend()
+    ax2.legend()
+    plt.savefig(f"{fname}")
+    plt.close()
+```
+
 ## 3.5 Visualización de nuestro dataset de segmentación
+
+Antes de continuar con la creación de la arquitectura podemos observar un ejemplo de nuestro dataset ya cargado.
+Esto es bastante sencillo gracias a las funciones que ya hemos creado anteriormente. Volvemos al código [utils.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Futils.py) y creamos
+un punto de entrada para observar un ejemplo de imagen y su etiqueta correspondiente.
+
+```python
+if __name__ == '__main__':
+    images, masks = read_dataset()
+    train_samples = load_data(images, masks)
+    plt.rcParams["figure.figsize"] = [8, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+    plt.subplot(1, 2, 1)
+    plt.imshow(train_samples['images'][10])
+    plt.subplot(1, 2, 2)
+    plt.imshow(train_samples['masks'][10])
+    plt.savefig("example.png")
+```
+
+Respuesta esperada:
+
+![example.png](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Fexample.png)
+
 
 ## 3.6 Creando red neuronal U-Net para segmentación
 
+> U-Net es un tipo de red neuronal convolucional (CNN) utilizada para la segmentación de objetos en imágenes médicas, aunque también puede ser aplicada a otros tipos de imágenes.
+
+![9.png](ims%2F3%2F9.png)
+
+La arquitectura de U-Net consiste en una serie de capas convolucionales, seguidas de capas de pooling, que se encargan de reducir la dimensión de las características aprendidas. Luego, la red se "expande" hacia arriba utilizando capas de convolución transpuestas y concatenación con características de la misma escala aprendidas durante la "contracción". En este proceso de "expansión", la red utiliza la información de las capas de la "contracción" para generar una segmentación detallada del objeto en la imagen.
+
+> Más adelante en la implementación de código vamos a ver que será necesario utiliza `skip connrections` lo cuál implica que 
+> no vamos a poder utilizar directamente una estructura `sequential` para definir la arquitectura de la red. Vamos a utilizar
+> algo un poco más complejo para poder trabajar con este modelo.
+> 
+
+Las `skip-connections` permiten que la información de las capas de "contracción" se transmita directamente a las capas de "expansión". Esto significa que la red tiene acceso a información de diferentes escalas, lo que puede ayudar a la red a segmentar objetos de diferentes tamaños y formas.
+
+Otra característica importante de U-Net es que utiliza una función de pérdida llamada `dice coefficient`, que es una métrica 
+comúnmente utilizada en la segmentación de imágenes médicas. La función de pérdida mide la similitud entre la segmentación predicha 
+por la red y la segmentación verdadera. Esta función de pérdida ayuda a la red a ajustar sus parámetros de manera que se maximice la similitud entre la segmentación predicha y la verdadera.
+
+Vamos al código: [architecture.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Farchitecture.py) donde plasmaremos todo el código
+de la arquitectura de U-NET.
+
+Algo interesante de U-Net es que está compuesta de varios bloques, donde cada bloque tiene una arquitectura similar, entonces podemos
+aprovechar este detalle para crear una función que agrupe a los bloques `convolucionales`:
+
+```python
+def create_conv_block(input_tensor, num_filters):
+    x = tf.keras.layers.Conv2D(filters=num_filters, kernel_size=(3, 3), kernel_initializer='he_normal', padding='same')(
+        input_tensor)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation('relu')(x)
+
+    x = tf.keras.layers.Conv2D(filters=num_filters, kernel_size=(3, 3), kernel_initializer='he_normal', padding='same')(
+        x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation('relu')(x)
+
+    return x
+```
+
+Sus parámetros de entrada serán input_tensor, refiriéndose al tamaño de la capa anterior y num_filters, cuantos filtros aplicar en dicho bloque.
+
+Ahora programemos la arquitectura U_net:
+
+Cómo hemos visto, la misma tiene 3 etapas, la de `encoder` y `decoder` y es en el `decoder` donde usamos las `skip connections` es por esto
+que necesitamos utilizar el API `FUNCIONAL` de tensorflow en lugar de nuestro amado y conocido API `SECUENCIAL`.
+
+
+> El API secuencial es la forma más simple y común de definir un modelo en TensorFlow. En este enfoque, se define el modelo como una secuencia de capas en orden lineal. Las capas se agregan una tras otra utilizando el método add() y luego se compila y entrena el modelo utilizando los métodos compile() y fit(), respectivamente.
+
+> Por otro lado, el API funcional permite una mayor flexibilidad en la definición del modelo. En este enfoque, se pueden crear modelos más complejos y con múltiples entradas y salidas, lo que lo hace especialmente útil para modelos que tienen ramificaciones o múltiples salidas. Además, en el API funcional, las capas se pueden conectar arbitrariamente, lo que permite una mayor personalización del modelo.
+
+> En el API funcional, se define el modelo creando una instancia de la clase tf.keras.Model y especificando las entradas y las capas intermedias utilizando funciones como Input() y layers. Luego, se conectan las capas utilizando operaciones de tensor y se especifican las salidas del modelo utilizando la instancia del modelo y las entradas.
+
+```python
+def create_unet(input_shape, num_filters=16, dropout=0.1):
+    # Encoder
+    c1 = create_conv_block(input_shape, num_filters * 1)
+    p1 = tf.keras.layers.MaxPooling2D((2, 2))(c1)
+    p1 = tf.keras.layers.Dropout(dropout)(p1)
+
+    c2 = create_conv_block(p1, num_filters * 2)
+    p2 = tf.keras.layers.MaxPooling2D((2, 2))(c2)
+    p2 = tf.keras.layers.Dropout(dropout)(p2)
+
+    c3 = create_conv_block(p2, num_filters * 4)
+    p3 = tf.keras.layers.MaxPooling2D((2, 2))(c3)
+    p3 = tf.keras.layers.Dropout(dropout)(p3)
+
+    c4 = create_conv_block(p3, num_filters * 8)
+    p4 = tf.keras.layers.MaxPooling2D((2, 2))(c4)
+    p4 = tf.keras.layers.Dropout(dropout)(p4)
+
+    c5 = create_conv_block(p4, num_filters * 16)
+```
+
+Vemos como estamos almacenando cada capa en el proceso `c1, c2, c3, c4, c5`. Observamos como este `Functional API` necesita
+como parámetro de entrada de qué capa viene precedida la capa actual. Esto hace la magia, porque no infiere directamente que la
+capa anterior forzosamente debe ser la capa de entrada de la capa actual.
+
+Ahora terminemos nuestra arquitectura programando el `decoder`
+
+```python
+    # Decoder
+    u6 = tf.keras.layers.Convolution2DTranspose(num_filters * 8, (3, 3), strides=(2, 2), padding='same')(c5)
+    u6 = tf.keras.layers.concatenate([u6, c4])
+    u6 = tf.keras.layers.Dropout(dropout)(u6)
+    c6 = create_conv_block(u6, num_filters * 8)
+
+    u7 = tf.keras.layers.Convolution2DTranspose(num_filters * 4, (3, 3), strides=(2, 2), padding='same')(c6)
+    u7 = tf.keras.layers.concatenate([u7, c3])
+    u7 = tf.keras.layers.Dropout(dropout)(u7)
+    c7 = create_conv_block(u7, num_filters * 4)
+
+    u8 = tf.keras.layers.Convolution2DTranspose(num_filters * 2, (3, 3), strides=(2, 2), padding='same')(c7)
+    u8 = tf.keras.layers.concatenate([u8, c2])
+    u8 = tf.keras.layers.Dropout(dropout)(u8)
+    c8 = create_conv_block(u8, num_filters * 2)
+
+    u9 = tf.keras.layers.Convolution2DTranspose(num_filters * 1, (3, 3), strides=(2, 2), padding='same')(c8)
+    u9 = tf.keras.layers.concatenate([u9, c1])
+    u9 = tf.keras.layers.Dropout(dropout)(u9)
+    c9 = create_conv_block(u9, num_filters * 1)
+```
+
+Algo sumamente intersante de esta arquitectura es que necesita de `Convolutional2DTranspose` para regresar al tamaño original de la
+imagen y adicionalmente, el uso de las `skip-connections` queda plasmado cuando hacemos el siguiente código:
+
+`tf.keras.layers.concatenate([u6, c4])` aquí literalmente estamos juntando las capas `c4 y u6`.
+
+Finalmente, agreguemos la última capa que será la de clasificación:
+
+```python
+    output = tf.keras.layers.Conv2D(3, (1, 1), activation='sigmoid')(c9)
+    model = tf.keras.Model(inputs=[input_shape], outputs=[output])
+
+    return model
+```
+
+Excelente ya hemos programado manualmente U-NET :D
+
+
 ## 3.7 Entrenando y estudiando una red de segmentación
+
+Creemos el siguiente archivo para entrenar el modelo de U-Net desde 0 [train_model.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Ftrain_model.py)
+
+Empecemos por importar las bibliotecas necesarias:
+
+```python
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
+from architecture import create_unet
+import tensorflow as tf
+from datetime import date
+from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
+from utils import read_dataset, get_partitions, load_data, plot_results
+import matplotlib.pyplot as plt
+import numpy as np
+```
+
+Ahora creamos la función que va a crear, compilar y entrenar el modelo:
+
+```python
+def create_and_compile_model(train_samples, test_samples):
+    inputs = tf.keras.layers.Input((256, 256, 3))
+    print("Generating Architecture")
+    model = create_unet(inputs)
+    model.compile(optimizer='Adam', loss='binary_crossentropy', metrics=['accuracy'])
+    tf.keras.utils.plot_model(model, show_shapes=True)
+    print("Model's plot architecture done")
+    callback = EarlyStopping(monitor="accuracy", patience=20, mode="auto")
+    checkpoint = ModelCheckpoint(filepath="models/best_model.h5", save_best_only=True, save_weights_only=False,
+                                 mode="auto", verbose=1, monitor="val_accuracy")
+    current_day = date.today().strftime("%dd_%mm_%yyyy")
+    tensorboard_cb = TensorBoard(log_dir=f"logs/cnn_model_{current_day}")
+
+    model_history = model.fit(train_samples['images'], train_samples['masks'], epochs=200, verbose=1,
+                              validation_split=0.3, callbacks=[callback, checkpoint, tensorboard_cb])
+
+    plot_results(model_history, "accuracy", "conv_results.png")
+
+    score = model.evaluate(test_samples['images'], test_samples['masks'])
+    print("="*64)
+    print("score", score)
+    print("="*64)
+    return model
+```
+
+Cabe resaltar que estoy usando 3 callbacks para tener un mejor manejo del modelo:
+
+- EarlyStopping
+- ModelCheckpoint
+- TensorBoard
+
+Ahora definimos un `entry-point` y entrenamos al modelo:
+
+```python
+if __name__ == '__main__':
+    print("Reading Data")
+    images, masks = read_dataset()
+    print("Making Partitions")
+    train_input_img, val_input_img, train_target_mask, val_target_mask = get_partitions(images, masks)
+    train_samples_data = load_data(train_input_img, train_target_mask)
+    test_samples_data = load_data(val_input_img, val_target_mask)
+    model = create_and_compile_model(train_samples_data, test_samples_data)
+```
+
+Es necesario entender el flujo de información, primero `leimos los datos` después creamos particiones de entrenamiento y validación
+con la función `get_partitions` y convertimos estas particiones a `samples` que son los diccionarios que ya contienen las 
+imágenes en formato numpy array. Finalmente, llamamos a la función `create_and_compile_model` y las callbacks harán el resto por
+nosotros.
+
+
 
 ## 3.8 Generando predicciones con modelo de object segmentation
 
+Vamos a crear 2 funciones auxiliares para predecir nuevas imágenes y graficar un caso de predicción. Estás funciones van a estar
+disponibles en: [utils.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Futils.py)
+
+Así que debemos importarlas en nuestro [train_model.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Ftrain_model.py)
+
+```python
+from utils import read_dataset, get_partitions, load_data, plot_results, predict_test_samples, plot_images
+```
+
+```python
+def predict_test_samples(val_map, model_):
+    img = val_map['images']
+    mask = val_map['masks']
+
+    test_images_ = np.array(img)
+
+    predictions = model_.predict(test_images_)
+
+    return predictions, test_images_, mask
+
+
+def plot_images(test_image, predicted_maks, ground_truth):
+    plt.rcParams["figure.figsize"] = [10, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    plt.subplot(1, 3, 1)
+    plt.imshow(test_image)
+    plt.title('Image')
+
+    plt.subplot(1, 3, 2)
+    plt.imshow(predicted_maks)
+    plt.title('Predicted mask')
+
+    plt.subplot(1, 3, 3)
+    plt.imshow(ground_truth)
+    plt.title('Ground truth mask')
+    plt.savefig("predictions.png")
+```
+
+Excelente, ahora podemos entrenar el modelo y observar sus predicciones:
+
+```python
+if __name__ == '__main__':
+    print("Reading Data")
+    images, masks = read_dataset()
+    print("Making Partitions")
+    train_input_img, val_input_img, train_target_mask, val_target_mask = get_partitions(images, masks)
+    train_samples_data = load_data(train_input_img, train_target_mask)
+    test_samples_data = load_data(val_input_img, val_target_mask)
+    model = create_and_compile_model(train_samples_data, test_samples_data)
+    print("Predicting")
+    predicted_masks, test_images, ground_truth_masks = predict_test_samples(test_samples_data, model)
+    plot_images(test_images[20], predicted_masks[20], ground_truth_masks[20])
+```
+
+Respuesta esperada:
+
+![predictions.png](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Fpredictions.png)
+
+
+Adicionalmente NO olvidemos que usamos `TensorBoard` entonces podemos ver los resultados de entrenamineto a detalle 
+[Aquí](https://tensorboard.dev/experiment/kp2z9lHXQuKKIXD5D8MNLg/#scalars)
+
+![tensorboard.png](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Ftensorboard.png)
+
+Aunque un resumen en matplotlib es el siguiente:
+
+![conv_results.png](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fcore%2Fconv_results.png)
+
+Finalmente, como hemos gurdado el mejor modelo de acuerdo al `val_accuracy` podemos cargarlo desde memoria y hacer inferencia
+para nuevos archivos. [main.py](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fmain.py)
+
+```python
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
+
+from keras.models import load_model
+from core.utils import predict_test_samples, plot_images, load_data
+
+
+if __name__ == '__main__':
+
+    test_sample = load_data(["test/0016E5_08159.png"], ["test/0016E5_08159_L.png"])
+    model = load_model("core/models/best_model.h5")
+    predicted_masks, test_images, ground_truth_masks = predict_test_samples(test_sample, model)
+    plot_images(test_images[0], predicted_masks[0], ground_truth_masks[0])
+
+```
+
+Respuesta esperada:
+
+![predictions.png](Detecci%C3%B3n%20de%20Objetos%2F6%20Segmentation%2Fpredictions.png)
+
+
+
 ## 3.9 Quiz módulo segmentación
+
+![10.png](ims%2F3%2F10.png)
+
 
 # 4 Un paso más allá
 
 ## 4.1 El estado de la cuestión en computer vision
+
+No podemos dejar de recordar las siguientes herramientas que nos pueden proveer de grandes recursos relacionados a deep learning
+incluyendo object segmentation.
+
+![1.png](ims%2F4%2F1.png)
+
+Otras áreas interesantes dentro de Computer Vision con Deep Learning son Modelos de `High Resolution` 
+
+![2.png](ims%2F4%2F2.png)
+
+Y claro no puede faltar `Image generation` con Dall-E-2 Por ejemplo.
+
+![3.png](ims%2F4%2F3.png)
