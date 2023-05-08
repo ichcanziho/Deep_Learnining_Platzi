@@ -291,11 +291,151 @@ Definamos más formalmente nuestro `Caso de estudio`:
 
 ## 2.1 Cómo definir los tiempos de tu proyecto
 
+En este módulo vamos a aprender acerca de los siguientes temas:
+
+- Cómo definir el alcance de tu proyecto: tiempos y costos
+- Identificar roles para tu proyecto
+- Definir el producto mínimo viable
+
+Empecemos hablando con el alcance del proyecto. Para llevar a cabo satisfactoriamente un proyecto debemos pensar en
+`must have`, `should have`, `nice to have` y `won't have` los cuales son tres categorías que se utilizan comúnmente en la gestión de 
+proyectos para clasificar los requisitos o características de un proyecto. Estas categorías ayudan a priorizar las 
+características del proyecto en función de su importancia y necesidad.
+
+![1.png](imgs%2F2%2F1.png)
+
+1. `Must have:` son los requisitos o características críticas y esenciales del proyecto que deben ser entregados para que el proyecto sea considerado exitoso. En otras palabras, son las funcionalidades o características imprescindibles que el proyecto debe tener. Si alguno de estos requisitos no se cumple, el proyecto no se considera completado o exitoso. Por lo tanto, estos elementos deben ser entregados a cualquier costo.
+
+2. `Should have:` son los requisitos o características importantes del proyecto que deben ser entregados si es posible, pero que no son esenciales para considerar el proyecto exitoso. Si es posible, estos requisitos deben ser entregados, pero si se presentan problemas o limitaciones en el proceso, se pueden posponer o incluso eliminar sin afectar significativamente el éxito del proyecto.
+
+3. `Nice to have:` son requisitos o características deseables, pero no esenciales para el éxito del proyecto. Estos elementos son considerados "extra" y no son críticos para el funcionamiento o cumplimiento del objetivo principal del proyecto. Si el tiempo y los recursos lo permiten, se pueden incluir estas características para mejorar la calidad del proyecto, pero si hay limitaciones de tiempo o recursos, se pueden eliminar sin afectar el éxito del proyecto.
+
+4. `Won't have:` son los requisitos o características que se han identificado como no esenciales o no necesarios para el éxito del proyecto, pero que se han decidido explícitamente no incluir en el proyecto. En otras palabras, son los elementos que se han descartado o rechazado debido a limitaciones de tiempo, recursos, presupuesto, o por otras razones estratégicas o técnicas.
+
+Cuado hablamos del `tiempo` del proyecto nos referimos principalmente a dos tipos de tiempo el `externo` y el `interno`:
+
+- los `tiempos externos` se refieren a los plazos y restricciones que se derivan de factores externos al proyecto en sí mismo, como pueden ser las limitaciones presupuestarias, los plazos de entrega, las regulaciones y leyes aplicables, entre otros.
+
+- los `tiempos internos` se refieren a los plazos y restricciones que se derivan del propio proyecto, como son los tiempos necesarios para llevar a cabo cada tarea, los recursos disponibles, las interdependencias entre las diferentes tareas y los hitos importantes del proyecto.
+
+Te compartimos un [plan de trabajo](recursos%2Fplan_de_trabajo.xlsx) para que veas como se puede organizar
+el proyecto propuesto en este curso.
+
+![2.png](imgs%2F2%2F2.png)
+
+Otro punto indispensable es conocer exactamente cuáles son las tareas y actividades que se deben realizar y conocer los
+tiempos aproximados de cada actividad así como sus KPIS:
+
+![3.png](imgs%2F2%2F3.png)
+
+> KPI son las siglas en inglés de "Key Performance Indicators" o "Indicadores Clave de Desempeño" en español. Son métricas que se utilizan para medir y evaluar el rendimiento de una empresa, un departamento, un proyecto o una persona en relación con los objetivos establecidos.
+>
+> Los KPI se utilizan para medir el éxito en el cumplimiento de los objetivos y metas de una empresa o proyecto. Se basan en datos numéricos y pueden medirse en diferentes áreas de la empresa, como ventas, marketing, finanzas, operaciones, atención al cliente, entre otros.
+>
+> Los KPI deben ser cuidadosamente seleccionados y definidos para que sean relevantes, específicos, medibles, alcanzables y relevantes para los objetivos y metas del negocio. Algunos ejemplos comunes de KPI incluyen la tasa de conversión de ventas, el índice de satisfacción del cliente, el retorno sobre la inversión (ROI), el tiempo promedio de respuesta al cliente, entre otros.
+
+
+
 ## 2.2 Cómo costear tu proyecto
+
+Realmente NO hay una fórmula mágica que permita obtener el costo perfecto de un proyecto, sin embargo, a continuación hablaremos
+de algunos consejos que podemos tomar en cuenta y hablaremos un poco sobre la teoría del tema. Las recomendaciones que podemos tomar
+en cuenta son:
+
+![4.png](imgs%2F2%2F4.png)
+
+- `No existe una única forma de costear el proyecto:` existen varias formas de obtener capital para desarrollar tu proyecto, desde préstamos a bancos, a familiares y conocidos hasta hablar con inversores o patrocinadores. Se debe tener una mente abierta y un amplio criterio para buscar las mejores opciones que se adapten a tus necesidades.
+
+- `Crea tres escenarios:` Para costear tu proyecto, es importante crear tres escenarios diferentes: el escenario optimista, el escenario realista y el escenario pesimista. El escenario optimista debe incluir los mejores resultados posibles, el escenario realista debe incluir una estimación precisa de los costos (puedes pensar en un costo 20% superior al escenario ideal) y los ingresos, y el escenario pesimista debe incluir los peores resultados posibles (puedes pensar en un 20% adicional al escenario realista).
+
+- `Agrega a los tres escenarios un margen de falla:` Para cada escenario, es importante agregar un margen de falla que tenga en cuenta posibles imprevistos o costos adicionales que puedan surgir durante el desarrollo del proyecto. Este margen de falla debe ser lo suficientemente amplio para cubrir los gastos imprevistos y evitar que el proyecto se detenga o tenga dificultades financieras.
+
+- `Agrega costos de servidores o herramientas externas:` Al costear un proyecto, es importante tener en cuenta los costos de los servidores y herramientas externas necesarias para su desarrollo. Estos costos pueden incluir la compra o alquiler de servidores, software y herramientas de análisis, entre otros. Es importante incluir estos costos en los escenarios de costeo para asegurarse de que el presupuesto del proyecto sea preciso y completo.
+
+- `Divide tu proyecto por entregas mensuales:` Una buena forma de costear un proyecto es dividirlo en entregas mensuales y establecer un precio por cada una de ellas. De esta manera, podrás tener un mejor control de los costos y asegurarte de que estás cobrando de manera justa y equitativa por cada etapa del proyecto.
+
+- `Válida y firme el alcance propuesto (cambios representan costos adicionales):` Es importante validar y firmar el alcance propuesto antes de comenzar el proyecto para evitar que los cambios o adiciones no planificadas representen costos adicionales. Al validar y firmar el alcance, se establecen los límites y los requisitos específicos del proyecto, lo que ayuda a asegurar que los costos sean precisos y que no haya sorpresas en el futuro.
+
+- `Analiza la metodología de cobro:` Antes de comenzar un proyecto, es importante analizar la metodología de cobro para asegurarte de que se ajuste a tus necesidades y a las de tu cliente. Algunas opciones incluyen el pago por hora, por proyecto, por hito o por resultados. Es importante elegir una metodología de cobro que sea justa y transparente y que tenga en cuenta los costos y la complejidad del proyecto.
+
+- `Que no te dé miedo cobrar:` Por último, es importante recordar que no debes tener miedo de cobrar por tu trabajo. Cobrar por tu tiempo y esfuerzo es una parte esencial de cualquier negocio y es importante asegurarte de que estás siendo compensado de manera justa por tu trabajo. Asegúrate de establecer precios justos y equitativos y de que estás cobrando de acuerdo con el alcance acordado y las metodologías de cobro establecidas.
 
 ## 2.3 Cómo identificar los roles necesarios en el proyecto
 
+Definir los roles en un proyecto es una de las partes más importantes de la planificación inicial, ya que ayuda a establecer expectativas claras para los miembros del equipo y a garantizar que cada persona entienda sus responsabilidades y tareas dentro del proyecto. Algunas de las razones por las que es importante tener bien definidos los roles al momento de empezar un proyecto son:
+
+- `Claridad en las responsabilidades:` Al definir los roles, cada miembro del equipo sabe exactamente qué se espera de él y cuáles son sus responsabilidades. Esto ayuda a evitar confusiones y a asegurar que cada persona se concentre en su área de especialización.
+
+- `Evita duplicación de tareas:` Cuando los roles están bien definidos, es menos probable que dos o más miembros del equipo estén trabajando en la misma tarea sin saberlo. Esto puede ahorrar tiempo y minimizar los errores.
+
+- `Promueve la colaboración:` Al saber quién es responsable de qué tarea, se fomenta la colaboración y la comunicación entre los miembros del equipo. Cada persona puede apoyar a los demás en su área de especialización y trabajar juntos hacia un objetivo común.
+
+- `Ayuda a establecer plazos y objetivos:` Al saber quién es responsable de cada tarea, es más fácil establecer plazos y objetivos realistas. Cada persona puede trabajar en su tarea con un plazo específico en mente y asegurarse de que se cumpla dentro del tiempo establecido.
+
+Los proyectos de Machine Learning siempre necesitan: Experto en el área + Equipo de ML
+
+
+![5.png](imgs%2F2%2F5.png)
+
+
+- `Experto en el área:` Es la persona con conocimiento específico y avanzado en el tema de interés, no necesariamente tiene conocimiento de programación o conoce el mercado, pero su mayor contribución es tener amplio criterio y conocimiento sobre el tema y el problema a resolver.
+
+- `Líder del proyecto:` Es la persona encargada de dirigir y coordinar el equipo de trabajo en la ejecución del proyecto. Es responsable de establecer objetivos, plazos y recursos, y de supervisar el progreso del proyecto en general. Debe tener habilidades de liderazgo y gestión de proyectos, así como una comprensión general del proceso de desarrollo de software.
+
+- `Legal:` Es la persona encargada de revisar y gestionar todos los aspectos legales relacionados con el proyecto. Esto incluye la revisión de contratos, acuerdos de confidencialidad, licencias de software, propiedad intelectual, entre otros. Debe tener un conocimiento especializado en derecho y experiencia en la gestión de asuntos legales.
+
+- `MKT:` Es la persona encargada de planificar y ejecutar la estrategia de marketing del producto o servicio desarrollado por el equipo de tecnología. Debe tener habilidades de marketing y publicidad, así como una comprensión general del mercado objetivo y la competencia.
+
+- `Arquitecto de software:` Es la persona encargada de diseñar la estructura y arquitectura del software que se está desarrollando. Debe tener un conocimiento profundo de las tecnologías y herramientas que se utilizan en el proyecto, y ser capaz de diseñar soluciones escalables y sostenibles.
+
+- `Científico de datos:` Es la persona encargada de analizar y procesar los datos del proyecto, con el objetivo de extraer información valiosa y tomar decisiones informadas. Debe tener habilidades en estadística, modelado de datos y programación, y ser capaz de trabajar con grandes volúmenes de datos.
+
+- `Diseñador de experiencia de usuario:` Es la persona encargada de diseñar la experiencia del usuario en el producto o servicio que se está desarrollando. Debe tener habilidades en diseño gráfico, diseño de interacción y usabilidad, y ser capaz de diseñar interfaces atractivas y fáciles de usar.
+
+- `Machine learning engineer:` Es la persona encargada de diseñar e implementar soluciones basadas en algoritmos de machine learning. Debe tener un conocimiento profundo en estadística, programación y aprendizaje automático, y ser capaz de diseñar soluciones escalables y sostenibles.
+
+- `Frontend:` Es la persona encargada de desarrollar la interfaz de usuario y la parte visual del producto o servicio que se está desarrollando. Debe tener habilidades en diseño gráfico, programación web y tecnologías de front-end.
+
+- `Backend:` Es la persona encargada de desarrollar la lógica de negocios y la parte de programación que no está visible para el usuario final. Debe tener habilidades en programación web, bases de datos y tecnologías de backend.
+
+- `Bases de datos:` Es la persona encargada de diseñar y gestionar la base de datos del proyecto. Debe tener habilidades en diseño de bases de datos, programación y gestión de datos.
+
+- `Ingeniero de datos:` Es la persona encargada de diseñar e implementar soluciones de gestión y procesamiento de datos a gran escala. Debe tener habilidades en programación, estadística y gestión de datos.
+
+- `Tester:` Es la persona encargada de probar el software que se está desarrollando y asegurarse de que funciona correctamente. Debe
+
 ## 2.4 Producto mínimo viable en computer vision
+
+El Producto Mínimo Viable (PMV o MVP, por sus siglas en inglés) es una estrategia de desarrollo de productos que implica crear y lanzar al mercado un producto con un conjunto mínimo de características que satisfagan las necesidades básicas del cliente.
+
+La idea detrás del PMV es validar la viabilidad de una idea de producto o negocio con la menor cantidad de inversión posible. Esto se logra mediante la creación de un prototipo funcional que pueda ser utilizado por los primeros clientes, y que permita recopilar comentarios y retroalimentación para mejorar el producto de manera iterativa.
+
+> Entre más rápido entregué un PMV más rápido puedo mejorarlo para adaptarme a las necesidades del cliente.
+
+> Tener un PMV ayuda a agilizar el proceso de desarrollo del producto. 
+
+En el contexto del PMV, los siguientes términos se refieren a principios o estrategias que se utilizan para desarrollar y lanzar un producto mínimo viable:
+
+![6.png](imgs%2F2%2F6.png)
+
+
+- `Try small` (probar en pequeña escala): se refiere a la idea de comenzar con una versión reducida de un producto, para evaluar su aceptación por parte del mercado, antes de invertir tiempo y recursos significativos en el desarrollo de una versión más completa.
+
+- `Fail fast` (fracasar rápido): se refiere a la idea de identificar y solucionar problemas rápidamente para evitar un mayor desperdicio de tiempo y recursos. Se trata de realizar iteraciones frecuentes y recibir retroalimentación temprana del mercado para hacer ajustes y mejoras rápidas.
+
+- `Fail cheap` (fracasar a bajo costo): se refiere a la idea de minimizar los costos de desarrollo y lanzamiento del producto, para que, en caso de fracasar, el costo financiero sea mínimo. Esto permite a los emprendedores tomar riesgos y probar nuevas ideas sin el temor de perder grandes sumas de dinero.
+
+- `Fail forward` (fracasar hacia adelante): se refiere a la idea de aprender de los errores y fracasos, para mejorar y avanzar en el desarrollo del producto. Se trata de utilizar el fracaso como una oportunidad para identificar lo que no funciona y encontrar formas de mejorar.
+
+- `Don't aim for perfection (no apuntar a la perfección): se refiere a la idea de no buscar la perfección en la primera versión del producto, sino centrarse en las características básicas que satisfagan las necesidades del cliente. Se trata de aceptar que el producto será imperfecto y buscar mejorarlo iterativamente en futuras versiones a medida que se recibe retroalimentación del mercado.
+
+---------------
+
+En el contexto de nuestro problema a resolver podemos identificar los siguientes objetivos:
+
+
+![7.png](imgs%2F2%2F7.png)
+
 
 # 3 Obtención y procesamiento de los datos
 
