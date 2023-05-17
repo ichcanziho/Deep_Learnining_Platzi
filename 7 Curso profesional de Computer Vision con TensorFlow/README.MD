@@ -441,39 +441,1189 @@ En el contexto de nuestro problema a resolver podemos identificar los siguientes
 
 ## 3.1 Obtención de datos para tu proyecto
 
+Para crear un dataset de object detection es buena idea pensar en la mayor cantidad de escenarios posibles
+en los cuales pueda presentarse nuestro problema a resolver. Tomando como base la problemática de nuestro proyecto podemos
+pensar en las siguientes preguntas:
+
+- ¿Qué pasa si el vehículo va a 100 km/h?
+- ¿Qué pasa si un camión tapa a un vehículo?
+- ¿El algoritmo funcionaría de noche?
+- ¿Qué sucede si llueve?
+- ¿En dónde se integrará nuestra tecnología?
+- ¿Quién tiene acceso a la base de datos?
+
+El objetivo es tener un dataset muy amplio y con diferentes contextos, nuestro problema no siempre será la detección de
+coches un martes a las 5 pm en un día soleado. Se necesita tener una gran diversidad de escenarios para que el modelo 
+de DL que entrenemos pueda reaccionar ante todo tipo de contextos.
+
+![1.png](imgs%2F3%2F1.png)
+
+Como hemos hablado en otros cursos existen varios lugares donde puedes obtener datasets disponibles. Idealmente, es la empresa
+la que debería proporcionarte el dataset con las características que estás buscando para poder trabajar. También podrías 
+hacerla manualmente. Puedes leer sobre otros recursos online en: 
+
+- [Aprende a buscar bases de datos para DL](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/3%20Curso%20profesional%20de%20Redes%20Neuronales%20con%20TensorFlow#27-aprende-a-buscar-bases-de-datos-para-deep-learning)
+- [Dónde podemos conseguir datasets de OD?](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/6%20Curso%20de%20detecci%C3%B3n%20y%20segmentaci%C3%B3n%20de%20objetos%20con%20Tensorflow#d%C3%B3nde-podemos-conseguir-datasets)
+
+
 ## 3.2 Limpieza de la base de datos
+
+El primer paso fue descargar un conjunto de imágenes con coches y motocicletas. El primer conjunto contenía 127 imágenes sin embargo
+varias de estas eran `basura`, con una limpieza manual, cada imagen que no nos aportaba información relevante fue eliminada.
+
+![3.png](imgs%2F3%2F3.png)
+
+Quedando al final una base limpia con un total de 57 imágenes validadas. 
+
+![2.png](imgs%2F3%2F2.png)
+
 
 ## 3.3 Distribución de datos en entrenamiento y testeo
 
+> ## Nota:
+> Puedes encontrar el código de está sección en: [Distribución de datos.py](scripts%2F3%2F3%20Distribuci%C3%B3n%20de%20datos%2FDistribuci%C3%B3n%20de%20datos.py)
+
+En esta sección vamos a crear un código que nos permita dividir nuestro `dataset` en dos conjuntos `train` y `test` con una
+proporción `70-30` respectivamente.
+
+Empecemos por importar las bibliotecas necesarias y definir las rutas que vamos a utilizar:
+
+```python
+import os
+import random
+import shutil
+
+dirs = {"root": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/",
+        "dataset": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/dataset",
+        "clean": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/clean",
+        "train": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/clean/train",
+        "test": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/clean/test"}
+```
+
+Creamos una función que nos permita crear directamente nuestra ditribución de carpetas:
+
+```python
+def make_dirs(paths):
+    for _, path in paths.items():
+        if not os.path.exists(path):
+            os.mkdir(path)
+```
+
+Finalmente, creamos una función para dividir el conjunto original de imágenes en `train` y `test` y poner las imágenes
+en sus respectivas carpetas objetivo:
+
+```python
+def split_data(paths, train_ratio):
+    train = train_ratio
+    # Obtenemos una lista con todas las imágenes de la ruta `dataset`
+    content = os.listdir(paths["dataset"])
+    for nCount in range(int(len(content) * train)):
+        # Seleccionamos una imagen aleatoria
+        random_choice_img = random.choice(content)
+        random_choice_img_abs = "{}/{}".format(paths["dataset"], random_choice_img)
+        target_img = "{}/{}".format(paths["train"], random_choice_img)
+        # Copiamos la imagen de la ruta actual a la ruta objetivo
+        shutil.copyfile(random_choice_img_abs, target_img)
+        # Eliminamos de la lista de posibles opciones, la imagen actual que hemos seleccionado. Esto con el fin de 
+        # evitar imágenes repetidas entre los conjuntos de training y testing. 
+        content.remove(random_choice_img)
+
+    # La lista de imágenes que queda en `content` representan el testing set
+    for img in content:
+        random_choice_img_abs = "{}/{}".format(paths["dataset"], img)
+        target_img = "{}/{}".format(paths["test"], img)
+        # Aquí solo es necesario copiar las imágenes a la nueva ruta
+        shutil.copyfile(random_choice_img_abs, target_img)
+```
+
+Finalmente, el código completo queda de la siguiente manera:
+
+```python
+import os
+import random
+import shutil
+
+def split_data(paths, train_ratio):
+    train = train_ratio # este es el porcentaje de imágenes que quiero utilizar para la carpeta `train`
+    # Obtenemos una lista con todas las imágenes de la ruta `dataset`
+    content = os.listdir(paths["dataset"])
+    for nCount in range(int(len(content) * train)):
+        # Seleccionamos una imagen aleatoria
+        random_choice_img = random.choice(content)
+        random_choice_img_abs = "{}/{}".format(paths["dataset"], random_choice_img)
+        target_img = "{}/{}".format(paths["train"], random_choice_img)
+        # Copiamos la imagen de la ruta actual a la ruta objetivo
+        shutil.copyfile(random_choice_img_abs, target_img)
+        # Eliminamos de la lista de posibles opciones, la imagen actual que hemos seleccionado. Esto con el fin de 
+        # evitar imágenes repetidas entre los conjuntos de training y testing. 
+        content.remove(random_choice_img)
+
+    # La lista de imágenes que queda en `content` representan el testing set
+    for img in content:
+        random_choice_img_abs = "{}/{}".format(paths["dataset"], img)
+        target_img = "{}/{}".format(paths["test"], img)
+        # Aquí solo es necesario copiar las imágenes a la nueva ruta
+        shutil.copyfile(random_choice_img_abs, target_img)
+
+def make_dirs(paths):
+    for _, path in paths.items():
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+if __name__ == '__main__':
+    dirs = {"root": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/",
+            "dataset": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/dataset",
+            "clean": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/clean",
+            "train": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/clean/train",
+            "test": "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/clean/test"}
+
+    make_dirs(dirs)
+
+    split_data(dirs, train_ratio=0.7)
+```
+
 ## 3.4 Etiquetado de los datos de test
+
+En la clase se explora la página: https://www.linkedai.co/ que es un servicio web gratuito que permite el etiquetado de imágenes
+para proyectos de deep learning.
+
+![4.png](imgs%2F3%2F4.png)
+
+Entre las cualidades más interesantes que tiene la página podemos encontrar:
+
+- Te permite trabajar con diferentes tipos de etiquetado:
+  
+![5.png](imgs%2F3%2F5.png)
+
+- A cada clase que se crea se le puede asignar un color y nombre:
+
+![6.png](imgs%2F3%2F6.png)
+
+- Te permite alterar una previsualización de la imagen para ayudar al proceso de etiquetado:
+
+![7.png](imgs%2F3%2F7.png)
+
+- Te da el tiempo invertido en etiquetar cada imagen:
+
+![8.png](imgs%2F3%2F8.png)
+
+- Te comparte el porcentaje de etiquetado, así como la distribución de clases:
+
+![9.png](imgs%2F3%2F9.png)
+
+- Una imagen puede contener muestras de varios objetos de iguales o diferentes clases:
+
+![10.png](imgs%2F3%2F10.png)
+
+- La página regresa las etiquetas en formato `json`
 
 ## 3.5 Etiquetado de los datos de train
 
-## 3.6 Transforma tu base de datos a TFRecord
+En la página de https://www.linkedai.co/ se necesito crear un nuevo proyecto para continuar con el etiquetado de la partición de entrenamiento.
 
-## 3.7 Transformar CSV a TFRecord
+![11.png](imgs%2F3%2F11.png)
+
+Se repitió el proceso de etiquetado para el conjunto de entrenamiento.
+
+## 3.5b Creando Proyecto Final
+
+Ahora para no repetir el proceso idéntico de la clase vamos a seguir en paralelo el proyecto propuesto junto con nuestro 
+propio problema de DL. El problema es la verificación de vida para un sistema de validación de identidad.
+
+La propuesta de solución es: crear un sistema que permita identificar una contraseña numerica mostrada con la mano derecha.
+
+Vamos a empezar creando el dataset que vamos a utilizar para la identificación de `¿qué número representa la mano?`
+
+### Primero configuramos nuestro entorno:
+
+```commandline
+python3.10 -m venv odenv
+source odenv/bin/activate
+pip install --upgrade pip
+pip install opencv-python==4.5.5.62
+pip install pandas
+```
+
+### Obtención del dataset
+
+El objetivo del siguiente pequeño código es tener una forma de utilizar la cámara de nuestra computadora/laptop para tomar
+`n_examples` muestras de imágenes pertenecientes a `n_classes` diferentes. Para este proyecto queremos detectar los números 
+del `1 al 5` con base en la posición de los dedos de la mano. Entonces nuestro `n_classes` será de 5, por otro lado, el 
+número de instancias por clase `n_examples` será de 14 imágenes. 
+
+> ## Nota:
+> El código de esta sección está: [get_images.py](scripts%2Fproject%2Fcore%2Fget_images.py)
+
+
+```python
+import cv2
+
+
+def get_data(n_classes, n_examples):
+
+    video = cv2.VideoCapture(0)
+    current_class = 1
+    current_example = 1
+    print("Collecting data for class", current_class)
+    while video.isOpened():
+
+        ret, frame = video.read()
+
+        if cv2.waitKey(1) & 0xFF == ord('s'):
+            print(f"collecting example: {current_example}/{n_examples}")
+            cv2.imwrite(f"../dataset/c{current_class}_e{current_example}.png", frame)
+            current_example += 1
+
+        if current_example > n_examples:
+            current_example = 1
+            current_class += 1
+            print("Collecting data for class", current_class)
+
+        cv2.putText(frame, f"C{current_class}/{n_classes} E{current_example}/{n_examples}", (20, 40),
+                    color=(255, 0, 0), fontScale=1, thickness=2, fontFace=cv2.FONT_HERSHEY_SIMPLEX)
+
+        cv2.imshow("Recording", frame)
+
+        if not ret or (cv2.waitKey(1) & 0xFF == ord('q')) or current_class > n_classes:
+            video.release()
+            cv2.destroyAllWindows()
+            break
+
+
+if __name__ == '__main__':
+    get_data(n_classes=5, n_examples=14)
+
+```
+
+![0.png](imgs%2Fproject%2F0.png)
+
+Ahora procedemos a crear 2 particiones: `training` y `testing` en `training` vamos a ocupar `10 imágenes` por cada clase para un
+total de `50 imágenes` de entrenamiento y en `testing` las restantes `4 imágenes` para un total de `20 imágenes`.
+
+Carpeta con las imágenes de `training`:
+![1.png](imgs%2Fproject%2F1.png)
+
+Carpeta con las imágenes de `testing`:
+![2.png](imgs%2Fproject%2F2.png)
+
+
+
+### Etiquetado de la base de datos:
+
+Como variante al curso vamos a usar [labelImg](https://github.com/heartexlabs/labelImg) para etiquetar nuestras imágenes:
+Clonamos el repositorio desde github e instalamos lo necesario:
+```commandline
+git clone https://github.com/heartexlabs/labelImg.git
+cd labelImg/
+make qt5py3
+pyrcc5 -o libs/resources.py resources.qrc
+python labelImg.py
+```
+
+![3.png](imgs%2Fproject%2F3.png)
+
+Después de un proceso manual de etiquetado, tenemos ambos conjuntos de datos (training, testing) completamente etiquetados:
+
+![4.png](imgs%2Fproject%2F4.png)
+
+Cada etiqueta de `object detection` dada por `labelImg` luce de la siguiente manera:
+
+```python
+<annotation>
+	<folder>train</folder>
+	<filename>c1e5.png</filename>
+	<path>/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/project/dataset/train/c1e5.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>640</width>
+		<height>480</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>d1</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>145</xmin>
+			<ymin>153</ymin>
+			<xmax>243</xmax>
+			<ymax>278</ymax>
+		</bndbox>
+	</object>
+</annotation>
+```
+
+Ahora continuaremos la clase en paralelo explicando tanto las transformaciones pertinentes al proyecto del curso y al proyecto
+personal.
+
+## 3.6 Unificando tu Base de datos
+
+
+
+### Proyecto de la clase:
+Recordemos que tenemos una base de datos limpia que contiene: 39 elementos para train. Después de haber etiquetado todos 
+los datos manualmente en: https://www.linkedai.co/ hemos descargado las etiquetas en formato `json` quedando de la siguiente manera:
+
+![12.png](imgs%2F3%2F12.png)
+
+Cada etiqueta luce de la siguiente manera:
+
+```json
+{
+  "id":"4e59f0ea-c47d-42c1-a201-b3f158c0a93a7ab94317-b86c-45bd-924b-b2016321f41d",
+  "image":"fc15988c9a.jpg",
+  "width":"1300",
+  "height":"953",
+  "classification":[],
+  "tags":
+       [
+         {
+         "parent":null
+         },
+         "color":"#f10c27",
+         "pos":
+              {
+                "x":63.03030303030303,
+                "y":436.7099567099567,
+                "w":746.2337662337662,
+                "h":427.7056277056277
+              },
+         "classes":[],
+         "name":"motos",
+         "id":"d3de93b5-309a-45d2-b072-542118fe66c5",
+         "type":"bounding_box"
+       ]
+}
+```
+El archivo completo contiene todas las etiquetas de la base de datos. Pero sería mucho más cómodo para nosotros tener un
+único archivo en formato CSV que contenga todas las etiquetas de las imágenes, de esta forma y junto con la base de datos de
+imágenes sería muy fácil convertirlas a formato `TF-RECORD` un formato optimizado para entrenar modelos de `Deep Learning`
+Desarrollado por `Google`. Así que vamos a convertir este archivo en formato `json` a `csv` y prepararlo para convertirlo a
+`tf-record` más adelante.
+
+Ahora tenemos el código de conversión: [json2csv.py](scripts%2F3%2F6%20Unificando%20tu%20Base%20de%20datos%2Fjson2csv.py)
+
+```python
+import pandas as pd
+import json
+
+
+def json2csv(labelmap, json_dir, csv_dir=None):
+    if csv_dir is None:
+        csv_dir = json_dir.replace(".json", ".csv")
+    data = json.load(open(json_dir))
+    csv_list = []
+    for classification in data:
+        width, height = classification['width'], classification['height']
+        image = classification['image']
+        for item in classification['tags']:
+            name = item['name']
+            id_name = labelmap[name]
+            xmin = int(item['pos']['x'])
+            ymin = int(item['pos']['y'])
+            # Hacemos esto porque el formato PASCAL VOC NO utiliza x, w,
+            # por el contrario usa xmin y xmax siendo xmax = xmin+w
+            xmax = int(item['pos']['x'] + item['pos']['w'])
+            # Caso similar con ymax, es y + h
+            ymax = int(item['pos']['y'] + item['pos']['h'])
+            value = (image, width, height, xmin, ymin, xmax, ymax, name, id_name)
+            csv_list.append(value)
+
+    column_name = ['filename', 'width', 'height', 'xmin', 'ymin', 'xmax', 'ymax', 'class', 'class_id']
+    csv_df = pd.DataFrame(csv_list, columns=column_name)
+    print(csv_df)
+    csv_df.to_csv(csv_dir, index=False)
+
+
+if __name__ == '__main__':
+    root = "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/3/3 Distribución de datos/clean"
+    paths = {"train": f"{root}/train.json", "test": f"{root}/test.json"}
+    lb_map = {"carro": 1, "motos": 2}
+    # Converting train.json 2 train.csv
+    json2csv(lb_map, paths["train"])
+    # Converting test.json 2 test.csv
+    json2csv(lb_map, paths["test"])
+```
+
+Puntos relevantes de este código es que para correrlo es necesario tener un mini `labelmap` como diccionario indicando
+cuál id debe tener el nombre de cada clase.
+
+```
+lb_map = {"carro": 1, "motos": 2}
+```
+
+Adicionalmente, el formato de etiquetado de la página web regresaba `x, y, w, h` y nosotros trabajamos con el formato 
+`xmin, ymin, xmax, ymax` por eso tuvimos que hacer una ligera conversión en estos datos.
+
+Resultado esperado:
+
+```commandline
+          filename width height  xmin  ymin  xmax  ymax  class  class_id
+0   fc15988c9a.jpg  1300    953    63   436   809   864  motos         2
+1   0c535fcdfa.jpg  1138    635   578   237   724   440  motos         2
+2   0c535fcdfa.jpg  1138    635   519   257   555   316  motos         2
+3   0c535fcdfa.jpg  1138    635   498   255   515   292  motos         2
+4   2b37a718bc.jpg  1024    768   450   346   933   653  carro         1
+..             ...   ...    ...   ...   ...   ...   ...    ...       ...
+68  ea2cb5917b.jpg   800    599   443   119   798   595  carro         1
+69  ea8ce9da21.jpg   328    418    54   163   266   380  motos         2
+70  f8a2cc7848.jpg   450    363    29   198   395   362  motos         2
+71  f74248c57f.jpg   960    640   361   371   397   444  motos         2
+72  f74248c57f.jpg   960    640   424   355   456   417  motos         2
+```
+
+### Proyecto personal:
+
+El objetivo es el mismo que el de la clase, unir y transformar las etiquetas XML a CSV para que sea más sencillo operar con ellas.
+Puedes acceder al código en [xml_to_csv.py](scripts%2Fproject%2Fcore%2Fxml_to_csv.py). Como vimos en la sección anterior, `labelImg.py` regresa
+las etiquetas en formato `XML` una por una, sin embargo, sería muchísimo más cómodo tener todas las etiquetas juntas, en un sólo
+lugar en formato `CSV` esto nos podría facilitar la tarea de convertir este archivo `CSV` a un formato `TF-RECORD` que está
+completamente optimizado por `Google` para entrenar modelos de `Deep learning`. ASí que en este paso vamos a empezar por convertir nuestras
+etiquetas `XML2CSV`
+
+```python
+import xml.etree.ElementTree as ET
+import pandas as pd
+import glob
+import os
+
+
+def generate_dataframe(dataset_dir, name2id):
+
+    dataset = {"filename": [], "width": [], "height": [], "xmin": [], "ymin": [], "xmax": [], "ymax": [], "class": [],
+               "class_id": []}
+
+    for item in glob.glob(os.path.join(dataset_dir, "*.xml")):
+        tree = ET.parse(item)
+        filename, width, height, xmin, ymin, xmax, ymax, name = None, None, None, None, None, None, None, None
+        for elem in tree.iter():
+            if 'filename' in elem.tag:
+                filename = elem.text
+            elif 'width' in elem.tag:
+                width = int(elem.text)
+            elif 'height' in elem.tag:
+                height = int(elem.text)
+            elif 'name' in elem.tag:
+                name = elem.text
+            elif 'xmin' in elem.tag:
+                xmin = int(elem.text)
+            elif 'ymin' in elem.tag:
+                ymin = int(elem.text)
+            elif 'xmax' in elem.tag:
+                xmax = int(elem.text)
+            elif 'ymax' in elem.tag:
+                ymax = int(elem.text)
+
+                dataset['filename'].append(filename)
+                dataset['width'].append(width)
+                dataset['height'].append(height)
+                dataset['xmin'].append(xmin)
+                dataset['ymin'].append(ymin)
+                dataset['xmax'].append(xmax)
+                dataset['ymax'].append(ymax)
+                dataset["class"].append(name)
+                dataset["class_id"].append(name2id[name])
+    df = pd.DataFrame(dataset)
+    return df
+
+
+if __name__ == '__main__':
+    labelmap = {"d1": 1, "d2": 2, "d3": 3, "d4": 4, "d5": 5}
+    root = "/media/ichcanziho/Data/datos/Deep Learning/7 Object Detection/project/dataset"
+    paths = {"train_labels": f"{root}/train_labels",
+             "test_labels": f"{root}/test_labels",
+             "train": f"{root}/train",
+             "test": f"{root}/test"}
+
+    train = generate_dataframe(paths["train_labels"], labelmap)
+    print(train)
+    train.to_csv(f"{paths['train']}/train_labels.csv", index=False)
+    test = generate_dataframe(paths["test_labels"], labelmap)
+    print(test)
+    test.to_csv(f"{paths['test']}/train_labels.csv", index=False)
+
+```
+
+
+## 3.7 Requisitos Locales para transformar CSV a TF Record
+
+Con nuestro `odenv` activado, debemos instalar las dependencias de `Object Detection` y `TensorFlow` Necesarias:
+
+```commandline
+git clone https://github.com/tensorflow/models.git
+cd models/
+git checkout 58d19c67e1d30d905dd5c6e5092348658fed80af
+pip install -q Cython contextlib2 pillow lxml matplotlib
+pip install pycocotools
+cd research/
+protoc object_detection/protos/*.proto --python_out=.
+cp object_detection/packages/tf2/setup.py .
+python -m pip install .
+pip install tensorflow==2.8.0
+pip uninstall protobuf -y
+pip install protobuf==3.20.3
+```
+
+Este código te va a permitir ejecutar de forma `LOCAL` la creación de `csv2tfrecord` sin embargo, por problemas de compatibilidad
+no he logrado poder entrenar el modelo 100% de forma `LOCAL`.
+
+ESTO ME LLEVA A LA NECESIDAD de que la siguiente sección será una combinación hibrida entre utilizar Archivos Python pensados
+para ejecutarse de forma local y un `NoteBook` [Entrenamiento_Base.ipynb](scripts%2Fproject%2Fcore%2FEntrenamiento_Base.ipynb) 
+que está pensado para ejecutarse desde `Google Colab` esto con la finalidad de que el entrenamiento del modelo se haga en la nube
+y NO de forma `LOCAL`. 
+
+La explicación de esta sección se ha movido a: [4.3 Creación de TF Records](#43-creación-de-tf-records)
 
 # 4 Entrena, testea y optimiza tus modelos
 
-## 4.1 Librerías a importar durante fase de entrenamiento
+Para el entrenamiento de esta sección vamos a utilizar Google Colab, puedes encontrar el notebook 
+[Entrenamiento_Base.ipynb](scripts%2Fproject%2Fcore%2FEntrenamiento_Base.ipynb). El mismo funciona como
+un orquestador de funciones de python. Cada una de las funciones descritas será explicada a detalle 
+en las siguientes clases. Sin embargo, el notebook gestiona el uso de los siguientes archivos de python:
 
-## 4.2 Fase de entrenamiento del modelo
+- [config.py](scripts%2Fproject%2Fcore%2Fconfig.py)
+- [csv_to_tf_record.py](scripts%2Fproject%2Fcore%2Fcsv_to_tf_record.py)
+- [json2pbtxt.py](scripts%2Fproject%2Fcore%2Fjson2pbtxt.py)
+- [update_config_file.py](scripts%2Fproject%2Fcore%2Fupdate_config_file.py)
 
-## 4.3 Balanceo de imágenes y data augmentation
+Cada archivo tiene su propia e individual función y será explicada a continuación.
 
-## 4.4 Entrena, evalúa y optimiza con TensorBoard
+## 4.1 Configuration File
 
-## 4.5 Validación de modelo en un entorno de ejecución
+El primer paso que nos va a ayudar a entrenar nuestro modelo de `Object Detection` es crear un archivo
+de configuración en donde tengamos todas en variables todas las rutas y nombres de directorios que se van a utilizar
+durante el proceso de entrenamiento y exportación del modelo.
 
-## 4.6 Re-entrenamiento del modelo para obtener mejores resultados
+Este es el documento: [config.py](scripts%2Fproject%2Fcore%2Fconfig.py) que contiene los parámetros ajustables para el modelo
 
-## 4.7 Seguimiento de centroides con OpenCV
+Las siguientes variables son `editables` a comodidad del usuario y proyecto:
 
-## 4.8 Configuración de los centroides con OpenCV
+```python
+# cuál es el nombre de la carpeta que se utilizará para crear mi modelo custom
+CUSTOM_MODEL_NAME = 'vehicle_detection'
+# de qué dirección voy a descargar el modelo pre-entrenado
+PRETRAINED_MODEL_URL = 'http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v2_fpnlite_320x320_coco17_tpu-8.tar.gz'
+# ¿Cuántas clases tiene mi problema de detección de objetos?
+N_CLASSES = 2
+# Cuando empiece a entrenar, de cuánto será el batch-size?
+BATCHSIZE = 4
+# De qué clase es el tipo de problema que estoy resolviendo?
+PTYPE = "detection"
+# Una vez que el modelo haya sido entrenado en qué carpeta guardare los resultados para hacer inferencia?
+OUTPUT_DIRECTORY = "vehicle_fine_tuned"
+# Número de pasos para el entrenamiento
+NUM_STEPS = 5000
+# --------------------------------------------------------------
+```
 
-## 4.9 Algoritmo de dirección y conteo con OpenCV
+Los nombres de las variables son bastante autodescriptivas. Lo más importante es definir cuál será el modelo pre-entrenado que usaremos
+como base para aplicar nuestro `fine-tuning process`. Para eso podemos dirigirnos a: [TF2 detection zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) en
+donde encontraremos una amplia gama de modelos pre-entrenados, cada uno con diferente velocidad de inferencia y precisión. En cada uno cabe
+la responsabilidad de ponderar que es más importante la precisión o la velocidad. Así como la resolución con la que desea trabajar las imágenes.
 
-## 4.10 Crea un ciclo de entrenamiento de tu modelo: MLOps
+![1.png](imgs%2F4%2F1.png)
+
+Para este proyecto vamos a utilizar: `ssd_mobilenet_v2_fpnlite_320x320` básicamente porque para un ejemplo demostrativo nos es
+muy importante que el modelo sea perfecto clasificando o detectando el objeto, basta con conocer la metodología y específicamente
+este modelo es bastante ligero y rápido de entrenar.
+
+Adicionalmente, en nuestro archivo de configuración debemos definir un par de rutas más. Pese a que cada ruta está comentada
+y dice el funcionamiento de la misma es `MUY IMPORTANTE` que te detengas a leer cada una con detenimiento para que más
+adelante entiendas profundamente cuando y para qué se utilizan cada una de las siguientes rutas.
+
+```python
+# Automáticamente, obtiene el nombre del modelo pre-entrenado con base en su URL de descarga
+PRETRAINED_MODEL_NAME = PRETRAINED_MODEL_URL.split("/")[-1].split(".")[0]
+# Ruta por defecto en dónde se va a encontrar el archivo de configuración de entrenamiento del modelo
+PIPELINE_CONFIG = CUSTOM_MODEL_NAME+'/pipeline.config'
+# Los modelos pre-entrenados vienen con diferentes puntos de control, nosotros podemos decidir desde que punto de
+# control podemos reentrenar el modelo
+CHECKPOINT = PRETRAINED_MODEL_NAME+"/checkpoint/ckpt-0"
+# Cuál es la dirección del archivo que contiene las clases del modelo (está en formato json porque es bastante fácil
+# de crear a mano)
+JSON_LABEL_MAP_NAME = 'label_map.json'
+# Ruta del `label_map` pero en su formato final listo para ser utilizado por `tensorflow`
+LABEL_MAP_NAME = CUSTOM_MODEL_NAME + "/label_map.pbtxt"
+# Ruta donde se encuentra la carpeta que contiene las imágenes para crear el tf-record de entrenamiento
+TRAIN_IMAGES_FOLDER = "dataset"
+# Archivo que contiene las etiquetas de las imágenes de entrenamiento en formato csv
+TRAIN_IMAGES_DATASET_FILE = "dataset/train.csv"
+# Ruta donde se encuentra la carpeta que contiene las imágenes para crear el tf-record de test
+TEST_IMAGES_FOLDER = "dataset"
+# Archivo que contiene las etiquetas de las imágenes de test en formato csv
+TEST_IMAGES_DATASET_FILE = "dataset/test.csv"
+# Ruta de dónde se guardará el archivo de train en formato tf-record
+TRAIN_RECORD_FILE = f"{CUSTOM_MODEL_NAME}/train.record"
+# Ruta de dónde se guardará el archivo de test en formato tf-record
+TEST_RECORD_FILE = f"{CUSTOM_MODEL_NAME}/test.record"
+```
+
+Con todo lo anterior ya definido en nuestro archivo de configuración entonces podemos seguir adelante con nuestro proyecto.
+
+## 4.2 Creación de LabelMap
+
+El `LabelMap` es un archivo indispensable que necesita nuestro modelo de `Object Detection` para entender ¿Cuántas? Y ¿Cuáles? 
+Son las clases que debe reconocer el mismo. Contiene el nombre propio de la clase y un ID numérico que la distingue. Es
+`INDISPENSABLE` que el `LabelMap` contenga exactamente el mismo nombre que tienen las etiquetas de la base de datos. 
+
+Para este proceso vamos a hacer un simple código que convierta un `LabelMap` en formato `json` a formato `pbtxt` que es 
+el necesario para entrenar al modelo utilizando `tensorflow`. Partamos del siguiente archivo: [label_map.json](scripts%2Fproject%2Fcore%2Flabel_map.json)
+
+```json
+[
+  {"name": "carro", "id": 1},
+  {"name": "motos", "id": 2}
+]
+```
+Podemos observar que es un archivo `json` muy simple de entender, una lista con 2 elementos, cada uno definiendo el nombre
+de una clase y su correspondiente id.
+
+Ahora vamos a crear el archivo que nos permita convertir de formato `json` a `pbtxt` como vamos a utilizar `Google Colab` como
+orquestador de nuestros códigos python, vamos a hacer cada unos de ellos como un `CLI (Command Line Interface)` eso significa
+que estos códigos deben ser ejecutados desde `consola` con ciertos parámetros establecidos.
+
+```python
+import argparse
+import json
+
+parser = argparse.ArgumentParser(description="Json to pbtxt file converter")
+
+parser.add_argument("-j",
+                    "--json_file",
+                    help="json file directory",
+                    type=str)
+parser.add_argument("-p",
+                    "--pbtxt_file",
+                    help="pbtxt file directory. Defaults to the same name and directory as json_file.",
+                    type=str)
+
+args = parser.parse_args()
+
+if args.pbtxt_file is None:
+    args.pbtxt_file = args.json_file.replace(".json", ".pbtxt")
+
+
+def convert_json_to_pbtxt(json_file, pbtxt_file):
+
+    with open(json_file, "r") as data:
+        json_data = json.load(data)
+
+    with open(pbtxt_file, "w") as f:
+        for label in json_data:
+            f.write('item { \n')
+            f.write('\tname:\'{}\'\n'.format(label['name']))
+            f.write('\tid:{}\n'.format(label['id']))
+            f.write('}\n')
+
+
+if __name__ == '__main__':
+    print("Input parameters are:")
+    print(args.json_file, args.pbtxt_file)
+    convert_json_to_pbtxt(args.json_file, args.pbtxt_file)
+    print("Done")
+
+```
+
+Como podemos observar el código necesita solamente 2 parámetros para funcionar: 
+
+- **--json_file**: Contiene la ruta al archivo de origen en formato `json`
+- **--pbtxt_file**: Contiene la ruta al archivo de salida en formato `pbtxt` por defecto utilizará la misma ruta y nombre que el archivo de entrada.
+
+Ejecutamos el código desde terminal: 
+```bash
+python json2pbtxt.py --json_file label_map.json
+```
+Respuesta esperada:
+```commandline
+Input parameters are:
+label_map.json label_map.pbtxt
+Done
+```
+Obtenemos el siguiente archivo a la salida: [label_map.pbtxt](scripts%2Fproject%2Fcore%2Flabel_map.pbtxt)
+```commandline
+item { 
+	name:'carro'
+	id:1
+}
+item { 
+	name:'motos'
+	id:2
+}
+```
+Es un archivo bastante similar al `json` pero con este flujo, no tenemos que preocuparnos por crear el archivo basta con
+tener las clases en el formato cómodo y estandarizado que ya conocemos. 
+
+## 4.3 Creación de TF Records
+
+Ahora que ya tenemos el `LabelMap` podemos continuar con la creación de nuestros `TF-Records` de entrenamiento y test. Pero a
+todo esto ¿Qué es un `TF-Record`?
+
+> Un archivo TFRecord es un formato de almacenamiento utilizado en TensorFlow, un popular framework de aprendizaje automático desarrollado por Google. Los archivos TFRecord están diseñados para almacenar grandes cantidades de datos en un formato eficiente y optimizado para el rendimiento.
+
+> Un archivo TFRecord almacena datos en forma de registros secuenciales. Cada registro consiste en una secuencia de pares clave-valor, donde la clave es una cadena que identifica el tipo de datos almacenados y el valor es la representación codificada de los datos en sí. La codificación de los datos se realiza utilizando el protocolo de serialización de Google (Protocol Buffers), que es un formato binario eficiente y compatible con múltiples lenguajes de programación.
+
+> Los archivos TFRecord son especialmente útiles para procesar grandes conjuntos de datos que se utilizan en el entrenamiento de modelos de aprendizaje automático. Al almacenar los datos en archivos TFRecord, se puede lograr una lectura eficiente y secuencial de los datos durante el entrenamiento, lo que ayuda a optimizar el rendimiento y la velocidad de procesamiento.
+
+Básicamente, son archivos muy eficientes que nos permiten almacenar tanto las imágenes como las etiquetas de las mismas. Utilizan `ProtoBuf` para esta tarea
+por lo mismo es bastante necesario tener instalado una versión compatible. (Esto lo veremos en la sección de entrenamiento)
+
+Recordemos que el código [csv_to_tf_record.py](scripts%2Fproject%2Fcore%2Fcsv_to_tf_record.py) está pensado como un `CLI` esto facilitará
+mucho el proceso de utilización en `Google Colab`, adicionalmente en nuestro archivo [config.py](scripts%2Fproject%2Fcore%2Fconfig.py) ya tenemos todas las variables
+que contienen las rutas que necesitamos para correr el proyecto.
+
+```python
+import os
+import pandas as pd
+import io
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
+from PIL import Image
+from object_detection.utils import dataset_util
+from collections import namedtuple
+import argparse
+
+parser = argparse.ArgumentParser(description="CSV To TFRECORD file converter")
+
+parser.add_argument("-c",
+                    "--csv_file",
+                    help="csv file directory. Format '.csv'",
+                    type=str)
+parser.add_argument("-i",
+                    "--images_dir",
+                    help="path where the images are stored",
+                    type=str)
+
+parser.add_argument("-o",
+                    "--output_file",
+                    help="tf record file directory. Format '.record'",
+                    type=str)
+
+args = parser.parse_args()
+
+
+def split(df, group):
+    data = namedtuple('data', ['filename', 'object'])
+    gb = df.groupby(group)
+    return [data(filename, gb.get_group(x)) for filename, x in zip(gb.groups.keys(), gb.groups)]
+
+
+def create_tf_example(group, path):
+    with tf.io.gfile.GFile(os.path.join(path, '{}'.format(group.filename)), 'rb') as fid:
+        encoded_jpg = fid.read()
+    encoded_jpg_io = io.BytesIO(encoded_jpg)
+    image = Image.open(encoded_jpg_io)
+    width, height = image.size
+
+    filename = group.filename.encode('utf8')
+    image_format = b'jpg'
+    xmins = []
+    xmaxs = []
+    ymins = []
+    ymaxs = []
+    classes_text = []
+    classes = []
+
+    for index, row in group.object.iterrows():
+        xmins.append(row['xmin'] / width)
+        xmaxs.append(row['xmax'] / width)
+        ymins.append(row['ymin'] / height)
+        ymaxs.append(row['ymax'] / height)
+        classes_text.append(row['class'].encode('utf8'))
+        classes.append(row["class_id"])  # Esta es la única alteración al código original de TensorFlow, en mi caso el
+                                         # "row" ya tenía el "class_id" que contiene el número de la clase "class"
+
+    tf_example = tf.train.Example(features=tf.train.Features(feature={
+        'image/height': dataset_util.int64_feature(height),
+        'image/width': dataset_util.int64_feature(width),
+        'image/filename': dataset_util.bytes_feature(filename),
+        'image/source_id': dataset_util.bytes_feature(filename),
+        'image/encoded': dataset_util.bytes_feature(encoded_jpg),
+        'image/format': dataset_util.bytes_feature(image_format),
+        'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
+        'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
+        'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
+        'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
+        'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
+        'image/object/class/label': dataset_util.int64_list_feature(classes),
+    }))
+    return tf_example
+
+
+def main(csv_file, images_dir, output_file):
+
+    writer = tf.io.TFRecordWriter(output_file)
+    path = os.path.join(images_dir)
+    examples = pd.read_csv(csv_file)
+    print(examples.head())
+    print("Starting :)")
+    grouped = split(examples, 'filename')
+    for group in grouped:
+        tf_example = create_tf_example(group, path)
+        writer.write(tf_example.SerializeToString())
+    writer.close()
+    print('Successfully created the TFRecord file at: {}'.format(output_file))
+
+
+if __name__ == '__main__':
+    c_file = args.csv_file
+    i_dir = args.images_dir
+    o_file = args.output_file
+    main(csv_file=c_file, images_dir=i_dir, output_file=o_file)
+```
+
+## 4.4 Actualización de Pipeline Config
+
+Como estamos trabajando con modelos `pre-entrenados` estos tienen un archivo configurable que permite al modelo ser reentrenado
+con ciertas alteraciones. A este documento de configuración se le conoce como `pipeline.config`.
+
+> El archivo `pipeline.config` contiene la configuración necesaria para entrenar, evaluar o utilizar un modelo de detección de objetos. Proporciona información sobre la arquitectura del modelo, los hiperparámetros de entrenamiento, los directorios de datos, las rutas de archivos, las etiquetas de clase y otros detalles relacionados.
+
+Algunas de las principales secciones y configuraciones presentes en un archivo "pipeline.config" son las siguientes:
+
+- `Configuración del modelo:` Se especifica el tipo de arquitectura de red utilizada, como Faster R-CNN, SSD, EfficientDet, etc. Además, se definen aspectos como el número de clases, el tamaño de las imágenes de entrada y las características específicas del modelo.
+
+- `Configuración del entrenamiento:` Aquí se establecen los hiperparámetros de entrenamiento, como la tasa de aprendizaje, el número de pasos de entrenamiento, el optimizador utilizado, los pesos de regularización, entre otros.
+
+- `Configuración del conjunto de datos:` Se especifican los directorios y archivos que contienen los datos de entrenamiento, validación y prueba. También se definen las etiquetas de clase y los archivos de mapeo entre identificadores y nombres de clase.
+
+- `Configuración de salida:` Se establecen los directorios de salida donde se guardarán los modelos entrenados, los registros de eventos para el seguimiento del entrenamiento y los archivos de evaluación.
+
+Pese a que te recomiendo AMPLIAMENTE leer a profundad el `pipeline.config` de tu modelo pre-entrenado para que tengas una mejor
+noción de que contiene, a continuación comparto un código que permite su edición fácil con los requisitos mínimos (y un poco más)
+para poder empezar el proceso de entrenamiento.
+
+> ## Nota:
+> Al descargar un modelo este trae un pipeline.config con algunos parámetros `to_be_configured` puesto que estan preparados 
+> para ser editables por el usuario final. Ejemplo:
+> 
+>     train_input_reader {
+>        label_map_path: "PATH_TO_BE_CONFIGURED"
+>        tf_record_input_reader {
+>        input_path: "PATH_TO_BE_CONFIGURED"
+>        }
+>     }
+
+Este es el último paso que necesitamos programar en código antes de ponernos manos a la obra a entrenar el modelo.
+Si bien el formato de `pipeline.config` es básicamente un `json` la realidad es que es un poco más complicado que eso, y al ser 
+un archivo tan importante, pues es en este donde recae todo lo necesario para configurar el proceso de entrenamiento del 
+modelo. Es por ello que la biblioteca `object_detection` cuenta con un par de métodos que nos ayudan a editar este documento:
+
+- config_util
+- pipeline_pb2
+- text_format (este es de google)
+
+
+
+```python
+import tensorflow as tf
+from object_detection.utils import config_util
+from object_detection.protos import pipeline_pb2
+from google.protobuf import text_format
+import argparse
+
+
+parser = argparse.ArgumentParser(description="Pipeline config updater")
+
+parser.add_argument("--input_config",
+                    help="pipeline configuration file",
+                    type=str)
+parser.add_argument("--n_classes",
+                    help="number of classes",
+                    type=int)
+parser.add_argument("--bs",
+                    help="batch size for training",
+                    type=int)
+parser.add_argument("--checkpoint",
+                    help="checkpoint file to start training",
+                    type=str)
+parser.add_argument("--ptype",
+                    help="problem type {object detection, classification, segmentation}",
+                    type=str)
+parser.add_argument("--label_map",
+                    help="label map file",
+                    type=str)
+
+parser.add_argument("--train_record",
+                    help="train record file in tf_record format",
+                    type=str)
+
+parser.add_argument("--test_record",
+                    help="test record file in tf_record format",
+                    type=str)
+
+args = parser.parse_args()
+
+
+def update_config(input_config, n_classes, batch_size, checkpoint, checkpoint_type, label_map, train_record, test_record):
+    # Obtenemos la configuración del archivo pipeline
+    print("start")
+    config = config_util.get_configs_from_pipeline_file(input_config)
+    # Creamos una variable proto_str para poder modificar las variables del archivo pbtxt
+    pipeline_config = pipeline_pb2.TrainEvalPipelineConfig()
+    with tf.io.gfile.GFile(input_config, "r") as f:
+        proto_str = f.read()
+        text_format.Merge(proto_str, pipeline_config)
+    # Cantidad de clases del modelo
+    pipeline_config.model.ssd.num_classes = n_classes
+    # El tamaño del batch size, entre más grande más costo computacional va a necesitar en el proceso de entrenamiento,
+    # pero a su vez entrenará más rapido.
+    pipeline_config.train_config.batch_size = batch_size
+    # Donde almacenaremos los resultados del entrenamiento
+    pipeline_config.train_config.fine_tune_checkpoint = checkpoint
+    # Qué tipo de detección aplicaremos (Object detection)
+    pipeline_config.train_config.fine_tune_checkpoint_type = checkpoint_type
+    # Dirección del label map
+    pipeline_config.train_input_reader.label_map_path = label_map
+    # Dirección del train TFRecord
+    pipeline_config.train_input_reader.tf_record_input_reader.input_path[0] = train_record
+    # Dirección del label map
+    pipeline_config.eval_input_reader[0].label_map_path = label_map
+    # Dirección del test TFRecord
+    pipeline_config.eval_input_reader[0].tf_record_input_reader.input_path[0] = test_record
+    # Almacenamos nuestro archivo final
+    config_text = text_format.MessageToString(pipeline_config)
+    with tf.io.gfile.GFile(input_config, "wb") as f:
+        f.write(config_text)
+    print("done")
+
+
+if __name__ == '__main__':
+
+    c_file = args.input_config
+    n_c = args.n_classes
+    bs = args.bs
+    ckp = args.checkpoint
+    ckp_t = args.ptype
+    lb_map = args.label_map
+    tra_re = args.train_record
+    tst_re = args.test_record
+    update_config(c_file, n_c, bs, ckp, ckp_t, lb_map, tra_re, tst_re)
+```
+
+Los parámetros que recibe este `CLI` son los mismos que va a configurar en el `pipeline.config` los cuáles son los siguientes:
+
+- **input_config:** es el archivo base `pipeline.config` que va a ser editado
+- **n_classes:** corresponde con el número de clases que contiene nuestro problema de `object detection`
+- **bs:** es el batch-size
+- **checkpoint:** se debe indicar desde que checkpoint se debe continuar el aprendizaje
+- **ptype:** es el tipo de problema, en este caso es `detection`
+- **labelmap:** contiene el archivo `pbtxt` con el nombre de las clases y su `id`
+- **train_record:** archivo `record` de entrenamiento
+- **test_record:** archivo `record` de test.
+
+Una vez que se ejecuta el siguiente comando:
+```python
+command = "python update_config_file.py --input_config={} --n_classes={} --bs={} --checkpoint={} --ptype={} --label_map={} --train_record={} --test_record={}".format(
+    PIPELINE_CONFIG, N_CLASSES, BATCHSIZE, CHECKPOINT, PTYPE, LABEL_MAP_NAME, TRAIN_RECORD_FILE, TEST_RECORD_FILE)
+```
+Valor esperado:
+```commandline
+python update_config_file.py --input_config=vehicle_detection/pipeline.config --n_classes=2 --bs=4 --checkpoint=ssd_mobilenet_v2_fpnlite_320x320_coco17_tpu-8/checkpoint/ckpt-0 --ptype=detection --label_map=vehicle_detection/label_map.pbtxt --train_record=vehicle_detection/train.record --test_record=vehicle_detection/test.record
+```
+Al ejecutar dicho commando se actualizará el archivo `pipeline.config` y por fin estaremos listos para entrenar el modelo.
+
+## 4.5 Entrenamiento
+
+Si has llegado hasta aquí sin problemas entonces ahora debes tener los siguientes archivos listos para entrenar tu modelo:
+
+- labelmap.pbtxt
+- test.record
+- train.record
+- pipeline.config
+
+Si tienes todos los archivos generados, entonces el proceso de entrenamiento es sumamente sencillo, porque cuando descargamos
+el repositorio de `github` de `object detection` en la siguiente ruta se encuentra una archivo de python de entrenamiento:
+
+```commandline
+models/research/object_detection/model_main_tf2.py
+```
+
+La cual recibe `3` parámetros de entrada para poder ejecutar el entrenamiento del modelo:
+
+- **pipeline_config:** el archivo `pipeline.config` contiene TODA la información necesaria para entrenar el modelo
+- **model_dir:** el directorio que se creará para almacenar los checkpoint que se vayan generando.
+- **num_train_steps:** el número de pasos para entrenar el modelo.
+
+Sin embargo, como hemos estado hablando a lo largo de esta sección vamos a utilizar todos los códigos que hemos desarrollado
+hasta este momento y vamos a subir toda esta información a `Google Colab` para entrenar el modelo directamente desde la nube.
+
+[Entrenamiento_Base.ipynb](scripts%2Fproject%2Fcore%2FEntrenamiento_Base.ipynb)
+
+Lo que necesitas es lo siguiente:
+
+- Debes crear una carpeta comprimida en zip llamada: `dataset.zip` que contenga las imágenes de entrenamiento y test de tu base de datos, 
+dentro de esa carpeta también deben estar los dataset etiquetados en formato csv, en este caso: `train_labels.csv` y `test_labels.csv`. Puedes encontrar un ejemplo
+del dataset etiquetado en [dataset.zip](scripts%2Fproject%2Fcore%2Fdataset.zip).
+- Debes subir el archivo de configuración: [config.py](scripts%2Fproject%2Fcore%2Fconfig.py)
+- Debes subir el archivo de conversión: [csv_to_tf_record.py](scripts%2Fproject%2Fcore%2Fcsv_to_tf_record.py)
+- Debes subir el archivo de: [json2pbtxt.py](scripts%2Fproject%2Fcore%2Fjson2pbtxt.py)
+- Debes subir el archivo: [label_map.json](scripts%2Fproject%2Fcore%2Flabel_map.json)
+- Y finalmente, debes subir el archivo: [update_config_file.py](scripts%2Fproject%2Fcore%2Fupdate_config_file.py)
+
+Una vez que hayas subido TODOS los documentos necesarios a colab, puedes empezar a ejecutar cada una de las celdas.
+![3.png](imgs%2F4%2F3.png)
+
+Es en este momento que se entiende por qué `Google Colab` funciona como un `Orquestador` para TODO el código que hemos estado
+desarrollando manualmente en formato de `CLI`.
+
+1: Creando LabelMap
+
+![4.png](imgs%2F4%2F4.png)
+
+2: Creando TF-Records
+
+![5.png](imgs%2F4%2F5.png)
+
+3: Descargamos el modelo pre-entrenado:
+
+![6.png](imgs%2F4%2F6.png)
+
+4: Actualizamos el pipeline:
+
+![7.png](imgs%2F4%2F7.png)
+
+Y ahora podemos observar como ya tenemos en nuestra carpeta `vehicle_detection` TODO lo necesario para entrenar el modelo.
+
+![8.png](imgs%2F4%2F8.png)
+
+5: Finalmente, entrenamos el modelo:
+
+```commandline
+!python /content/models/research/object_detection/model_main_tf2.py \
+--pipeline_config_path={PIPELINE_CONFIG} \
+--model_dir={CUSTOM_MODEL_NAME} \
+--num_train_steps={NUM_STEPS}
+```
+
+
+
+## 4.6 TensorBoard
+
+Tras correr el entrenamiento en `Google Colab` ejecutamos una simple línea de código y podemos visualizar toda la información
+de `TensorBoard` directamente en `Colab`:
+
+![2.png](imgs%2F4%2F2.png)
+
+## 4.7 Exportando Modelo
+
+Es tan sencillo como utilizar otro archivo de python de `object detection` que nos permita guardar el modelo para después
+comprimirlo en formato `zip` descargarlo y posteriormente cargarlo para hacer inferencia con él:
+
+```commandline
+%%capture
+!python /content/models/research/object_detection/exporter_main_v2.py \
+--input_type image_tensor \
+--pipeline_config_path {PIPELINE_CONFIG} \
+--trained_checkpoint_dir {CUSTOM_MODEL_NAME} \
+--output_directory {OUTPUT_DIRECTORY}
+
+!cp {LABEL_MAP_NAME} {OUTPUT_DIRECTORY+'/label_map.pbtxt'}
+
+%%capture
+!zip -r fine_tuned_model.zip {OUTPUT_DIRECTORY}
+```
+
+```python
+from google.colab import files
+files.download('fine_tuned_model.zip')
+```
+
+![9.png](imgs%2F4%2F9.png)
+
+## 4.8 Función de inferencia
+
+El código de `COLAB` para hacer inferencia es el siguiente:
+
+```python
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as viz_utils
+import tensorflow as tf
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
+from google.colab.patches import cv2_imshow
+from cv2 import cvtColor, COLOR_BGR2RGB
+
+def classify(image_path):
+  # La convertimos a array
+  image_np = np.array(Image.open(image_path))
+
+  # La convertimos a tensor y la agregamos una dimensión para que pueda leerla nuestro modelo
+  input_tensor = tf.convert_to_tensor(image_np)
+  input_tensor = input_tensor[tf.newaxis, ...]
+
+  ## Revisar que la ruta sea la misma de la carpeta.
+  PATH_TO_MODEL_DIR = f"/content/{OUTPUT_DIRECTORY}"
+  PATH_TO_SAVE_MODEL = PATH_TO_MODEL_DIR + "/saved_model"
+
+  detect_fn = tf.saved_model.load(PATH_TO_SAVE_MODEL)
+  # Cargamos el label map para utilizarlo.
+  label_map_pbtxt_fname = f"/content/{OUTPUT_DIRECTORY}/label_map.pbtxt"
+  category_index = label_map_util.create_category_index_from_labelmap(label_map_pbtxt_fname)
+
+
+  # Realizamos la detección del objeto
+  detections = detect_fn(input_tensor)
+
+  # Analizamos cuántas detecciones se obtuvieron
+  num_detections = int(detections.pop('num_detections'))
+  detections = {key: value[0,:num_detections].numpy() for key, value in detections.items()}
+
+  detections['num_detections'] = num_detections
+
+  detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
+
+  # Tomamos una imagen y la copiamos para dibujar los bounding box
+  image_np_with_detections = image_np.copy()
+
+  # Utilizamos la libreria de obejct detection para visualizar le bounding box y la clasificación
+  viz_utils.visualize_boxes_and_labels_on_image_array(
+      image_np_with_detections,
+      detections['detection_boxes'],
+      detections['detection_classes'],
+      detections['detection_scores'],
+      category_index,
+      max_boxes_to_draw=200,
+      min_score_thresh=0.30,
+      use_normalized_coordinates = True
+  )
+
+  return image_np_with_detections
+
+# Importamos la imagen
+image_path = "coche.jpg"
+
+image_np_with_detections = classify(image_path)
+
+cv2_imshow(cvtColor(image_np_with_detections, COLOR_BGR2RGB))
+```
+
+Y produce el siguiente resultado:
+
+![10.png](imgs%2F4%2F10.png)
+
+Sin embargo, el código `LOCAL` que programe para poder hacer `inferencia` es diferente y lo puedes encontrar en: [predict.py](scripts%2Fproject%2Fpredict.py)
+
+el resultado de forma `LOCAL` que se produce al hacer inferencia sobre la misma imagen base es:
+
+![annotated.png](scripts%2Fproject%2Fannotated.png)
+
+Bastante similar pero con menos score en la clase `carro`.
+
+
+## 4.9 Re-entrenamiento del modelo para obtener mejores resultados
+
+## 4.10 Seguimiento de centroides con OpenCV
+
+## 4.11 Configuración de los centroides con OpenCV
+
+## 4.12 Algoritmo de dirección y conteo con OpenCV
+
+## 4.13 Crea un ciclo de entrenamiento de tu modelo: MLOps
 
 # 5 Producto con visión computarizada en producción
 
@@ -492,3 +1642,4 @@ En el contexto de nuestro problema a resolver podemos identificar los siguientes
 ## 6.1 Siguientes pasos en inteligencia artificial
 
 
+![2.png](imgs%2F3%2F2.png)[Entrenamiento_Base.ipynb](scripts%2Fproject%2Fcore%2FEntrenamiento_Base.ipynb)
