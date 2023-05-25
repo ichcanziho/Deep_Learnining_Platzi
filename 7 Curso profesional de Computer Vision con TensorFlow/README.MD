@@ -1614,16 +1614,534 @@ el resultado de forma `LOCAL` que se produce al hacer inferencia sobre la misma 
 
 Bastante similar pero con menos score en la clase `carro`.
 
-
 ## 4.9 Re-entrenamiento del modelo para obtener mejores resultados
+
+Básicamente, esta clase solamente se comentó que dado un nuevo conjunto de datos, debíamos rehacer todo 
+el procedimiento y comparar los nuevos resultados.
+
+- Descargar base de datos
+- Limpiar manualmente
+- Distribuir en train-test
+- Etiquetar datos
+- Descargar JSON
+- Convertir JSON - CSV - TF RECORD
+- Entrenar el modelo
+
+
 
 ## 4.10 Seguimiento de centroides con OpenCV
 
+Una vez que se ha detectado un objeto, a dicho objeto se le calcula su centroide. A cada objeto se le asigna un número,
+cuando los objetos se mueven se busca volver a calcular el centroide de los objetos movidos y se utiliza la distancia 
+euclideana para determinar el id del objeto. (se entiende que el centroide con menor distancia al punto anterior es el mismo objeto)
+
+![11.png](imgs%2F4%2F11.png)
+
+Si un nuevo elemento aparece en escena a este elemento se le asigna un nuevo ID. Si después de un determinado tiempo ya no soy
+capaz de detectar el objeto al que perteneció un centroide eso quiere decir que el elemento salió de escena y puedo proceder a
+eliminar su centroide. 
+
+
+![12.png](imgs%2F4%2F12.png)
+
+Para esta parte de la clase vamos a utilizar 2 archivos de python auxiliares:
+
+- [trackableobject.py](scripts%2F4%2Ftrackableobject.py)
+- [centroidtracker.py](scripts%2F4%2Fcentroidtracker.py)
+
+
+Empecemos con: `trackableobject`:
+
+```python
+class TrackableObject:
+	def __init__(self, objectID, centroid):
+		# store the object ID, then initialize a list of centroids
+		# using the current centroid
+		self.objectID = objectID
+		self.centroids = [centroid]
+
+		# initialize a boolean used to indicate if the object has
+		# already been counted or not
+		self.counted = False
+```
+
+El código en sí mismo es solo una estructura de dato que me permite almacenar el ID del objeto su centroide y adicionalmente
+una bandera llamada `counted` para monitorear si ya he contado el objeto cuando paso de un punto A a uno B esto con el objetivo
+de que un mismo objeto NO me haga contar 2 veces que paso por una zona.
+
+El siguiente código que explicaré es: `CentroidTracker` el cuál necesita bastante atención para realmente entender su funcionamiento.
+Afortunadamente, el código viene bastante comentado y eso ayuda a entenderlo mejor:
+
+```python
+# import the necessary packages
+from scipy.spatial import distance as dist
+from collections import OrderedDict
+import numpy as np
+
+class CentroidTracker:
+	def __init__(self, maxDisappeared=50, maxDistance=50):
+		# initialize the next unique object ID along with two ordered
+		# dictionaries used to keep track of mapping a given object
+		# ID to its centroid and number of consecutive frames it has
+		# been marked as "disappeared", respectively
+		self.nextObjectID = 0
+		self.objects = OrderedDict()
+		self.disappeared = OrderedDict()
+
+		# store the number of maximum consecutive frames a given
+		# object is allowed to be marked as "disappeared" until we
+		# need to deregister the object from tracking
+		self.maxDisappeared = maxDisappeared
+
+		# store the maximum distance between centroids to associate
+		# an object -- if the distance is larger than this maximum
+		# distance we'll start to mark the object as "disappeared"
+		self.maxDistance = maxDistance
+
+	def register(self, centroid):
+		# when registering an object we use the next available object
+		# ID to store the centroid
+		self.objects[self.nextObjectID] = centroid
+		self.disappeared[self.nextObjectID] = 0
+		self.nextObjectID += 1
+
+	def deregister(self, objectID):
+		# to deregister an object ID we delete the object ID from
+		# both of our respective dictionaries
+		del self.objects[objectID]
+		del self.disappeared[objectID]
+
+	def update(self, rects):
+		# check to see if the list of input bounding box rectangles
+		# is empty
+		if len(rects) == 0:
+			# loop over any existing tracked objects and mark them
+			# as disappeared
+			for objectID in list(self.disappeared.keys()):
+				self.disappeared[objectID] += 1
+
+				# if we have reached a maximum number of consecutive
+				# frames where a given object has been marked as
+				# missing, deregister it
+				if self.disappeared[objectID] > self.maxDisappeared:
+					self.deregister(objectID)
+
+			# return early as there are no centroids or tracking info
+			# to update
+			return self.objects
+
+		# initialize an array of input centroids for the current frame
+		inputCentroids = np.zeros((len(rects), 2), dtype="int")
+
+		# loop over the bounding box rectangles
+		for (i, (startX, startY, endX, endY)) in enumerate(rects):
+			# use the bounding box coordinates to derive the centroid
+			cX = int((startX + endX) / 2.0)
+			cY = int((startY + endY) / 2.0)
+			inputCentroids[i] = (cX, cY)
+
+		# if we are currently not tracking any objects take the input
+		# centroids and register each of them
+		if len(self.objects) == 0:
+			for i in range(0, len(inputCentroids)):
+				self.register(inputCentroids[i])
+
+		# otherwise, are are currently tracking objects so we need to
+		# try to match the input centroids to existing object
+		# centroids
+		else:
+			# grab the set of object IDs and corresponding centroids
+			objectIDs = list(self.objects.keys())
+			objectCentroids = list(self.objects.values())
+
+			# compute the distance between each pair of object
+			# centroids and input centroids, respectively -- our
+			# goal will be to match an input centroid to an existing
+			# object centroid
+			D = dist.cdist(np.array(objectCentroids), inputCentroids)
+
+			# in order to perform this matching we must (1) find the
+			# smallest value in each row and then (2) sort the row
+			# indexes based on their minimum values so that the row
+			# with the smallest value as at the *front* of the index
+			# list
+			rows = D.min(axis=1).argsort()
+
+			# next, we perform a similar process on the columns by
+			# finding the smallest value in each column and then
+			# sorting using the previously computed row index list
+			cols = D.argmin(axis=1)[rows]
+
+			# in order to determine if we need to update, register,
+			# or deregister an object we need to keep track of which
+			# of the rows and column indexes we have already examined
+			usedRows = set()
+			usedCols = set()
+
+			# loop over the combination of the (row, column) index
+			# tuples
+			for (row, col) in zip(rows, cols):
+				# if we have already examined either the row or
+				# column value before, ignore it
+				if row in usedRows or col in usedCols:
+					continue
+
+				# if the distance between centroids is greater than
+				# the maximum distance, do not associate the two
+				# centroids to the same object
+				if D[row, col] > self.maxDistance:
+					continue
+
+				# otherwise, grab the object ID for the current row,
+				# set its new centroid, and reset the disappeared
+				# counter
+				objectID = objectIDs[row]
+				self.objects[objectID] = inputCentroids[col]
+				self.disappeared[objectID] = 0
+
+				# indicate that we have examined each of the row and
+				# column indexes, respectively
+				usedRows.add(row)
+				usedCols.add(col)
+
+			# compute both the row and column index we have NOT yet
+			# examined
+			unusedRows = set(range(0, D.shape[0])).difference(usedRows)
+			unusedCols = set(range(0, D.shape[1])).difference(usedCols)
+
+			# in the event that the number of object centroids is
+			# equal or greater than the number of input centroids
+			# we need to check and see if some of these objects have
+			# potentially disappeared
+			if D.shape[0] >= D.shape[1]:
+				# loop over the unused row indexes
+				for row in unusedRows:
+					# grab the object ID for the corresponding row
+					# index and increment the disappeared counter
+					objectID = objectIDs[row]
+					self.disappeared[objectID] += 1
+
+					# check to see if the number of consecutive
+					# frames the object has been marked "disappeared"
+					# for warrants deregistering the object
+					if self.disappeared[objectID] > self.maxDisappeared:
+						self.deregister(objectID)
+
+			# otherwise, if the number of input centroids is greater
+			# than the number of existing object centroids we need to
+			# register each new input centroid as a trackable object
+			else:
+				for col in unusedCols:
+					self.register(inputCentroids[col])
+
+		# return the set of trackable objects
+		return self.objects
+```
+
+Dividamos la explicación del código en sus componentes principales:
+
+1. `Importación de paquetes:` En las primeras líneas, se importan los paquetes necesarios para el funcionamiento del código. "scipy.spatial.distance" se utiliza para calcular la distancia entre los centroides, "collections.OrderedDict" se utiliza para mantener el orden de los objetos y los centroides, y "numpy" se utiliza para realizar operaciones numéricas.
+
+2. `Clase CentroidTracker:` Esta clase contiene métodos para registrar, desregistrar y actualizar los objetos rastreados.
+
+3. `Método init:` Este método se llama cuando se crea una instancia de la clase CentroidTracker. Establece los valores iniciales, como el número máximo de cuadros desaparecidos permitidos para un objeto y la distancia máxima para asociar un objeto.
+
+4. `Método register:` Registra un objeto asignándole un ID único y almacenando su centroide en un diccionario.
+
+5. `Método deregister:` Elimina un objeto del seguimiento a través de su ID.
+
+6. `Método update:` Actualiza el seguimiento de objetos en cada cuadro o imagen nueva. Toma una lista de rectángulos delimitadores de los objetos detectados en el cuadro actual.
+
+   - Si no hay rectángulos de entrada, se incrementa el contador de cuadros desaparecidos para cada objeto existente y, si excede un límite, se elimina el objeto del seguimiento.
+
+   - Si hay rectángulos de entrada, se calcula el centroide para cada uno y se almacenan en una matriz.
+
+   - Si no hay objetos en seguimiento, se registran todos los centroides de entrada como nuevos objetos.
+
+   - Si ya hay objetos en seguimiento, se calcula la distancia entre cada par de centroides de seguimiento y los centroides de entrada. Luego, se busca la mejor coincidencia entre ellos basándose en la distancia.
+
+   - Se itera sobre las filas y columnas de la matriz de distancias, y se selecciona la menor distancia disponible que aún no ha sido utilizada.
+
+   - Si la distancia es mayor que la distancia máxima establecida, los centroides no se asocian al mismo objeto.
+
+   - Si la distancia es menor o igual a la distancia máxima, el centroide se asocia al objeto correspondiente, se restablece el contador de cuadros desaparecidos y se marca la fila y la columna como utilizadas.
+
+   - Se revisan las filas y columnas no utilizadas para ver si algunos objetos han desaparecido.
+
+   - Si hay más centroides de seguimiento que centroides de entrada, se incrementa el contador de cuadros desaparecidos para los centroides no utilizados. Si el contador excede el límite, se eliminan los objetos del seguimiento.
+
+   - Si hay más centroides de entrada que centroides de seguimiento, se registran los nuevos centroides como objetos.
+
+   - Finalmente, se devuelve el diccionario de objetos rastreados.
+
+El código general de esta sección lo puedes encontrar en: [Entrenamiento_Base.ipynb](scripts%2Fproject%2Fcore%2FEntrenamiento_Base.ipynb)
+
+Sin embargo, aquí vamos a explicar el código utilizado en la clase conforme se fue explicando.
+
+Empezamos como siempre importando las bibliotecas necesarias:
+
+```python
+import numpy as np
+import imutils
+import time
+import dlib
+import cv2
+from PIL import Image
+import matplotlib.pyplot as plt
+from imutils.video import VideoStream
+from imutils.video import FPS
+from centroidtracker import CentroidTracker
+from trackableobject import TrackableObject
+import tensorflow as tf
+```
+
+Ahora vamos a explicar el código de la clase:
+
+```python
+PATH_TO_SAVE_MODEL = "/content/fine_tuned_model/saved_model"
+
+detect_fn = tf.saved_model.load(PATH_TO_SAVE_MODEL)
+
+# Ruta del video (Se debe cargar de manera manual)
+PATH_VIDEO = "/content/test_video.mp4"
+
+# Ruta del video en donde almacenaremos los resultados
+PATH_OUTPUT = "/content/video_out.mp4"
+
+# Cuántos frames vamos a saltarnos (Durante estos frames nuestro algoritmo de seguimiento funciona)
+SKIP_FPS = 30
+
+# Cuál será el umbral mínimo par que se considere una detección
+TRESHOLD = 0.5
+
+# Cargamos el video
+vs = cv2.VideoCapture(PATH_VIDEO)
+
+# Inicializamos el writer para poder guardar el video
+writer = None
+
+# Definimos ancho y alto
+W = int(vs.get(cv2.CAP_PROP_FRAME_WIDTH))
+H = int(vs.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+# Inicializamos la clase centroid tracker con dos variable fundamentales
+# maxDissapared (Si pasa ese tiempo y no se detecta más el centroide lo elimina)
+# Si la distancia es mayor a maxDistance no lo podra asociar como si fuera el mismo objecto.
+ct = CentroidTracker(maxDisappeared= 40, maxDistance = 50)
+
+# Inicializamos variables principales
+trackers = []
+trackableObjects = {}
+
+totalFrame = 0
+# variables para contar la cantidad de coches que suben y bajan
+totalDown = 0
+totalUp = 0
+
+# Esta variable sirve para definir la orientación de los coches, dependiendo el video que los coches bajen NO necesariamente implica
+# que el cotador de totalDown tiene que subir, piensalo si el "norte" esta en el sur del video, entonces en realidad cuando los coches
+# "bajan" se debe aumentar el "totalUp"
+DIRECTION_PEOPLE = True
+
+# Creamos un umbral para sabre si el carro paso de izquierda a derecha o viceversa
+# En este caso lo deje fijo pero se pudiese configurar según la ubicación de la cámara.
+POINT = [0, int((H/2)-H*0.1), W, int(H*0.1)]
+
+# Los FPS nos van a permitir ver el rendimiento de nuestro modelo y si funciona en tiempo real.
+fps = FPS().start()
+
+# Definimos el formato del archivo resultante y las rutas.
+fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+writer = cv2.VideoWriter(PATH_OUTPUT, fourcc, 20.0, (W, H), True)
+```
+
 ## 4.11 Configuración de los centroides con OpenCV
+
+En la clase anterior ya preparamos todo el código para iniciar la lectura de nuestro video real y empezar a hacer
+`object detection` sobre el mismo y utilizar `trackable objects` para ponerles un identificador a cada uno.
+
+Ahora el objetivo de esta clase es relativamente simple: lograr hacer el `object detection` y el `object tracking` para NO tener
+que obligatoriamente hacer una detección de objetos por cada fotograma que pasa es que usamos el `object tracking` este consume menos recursos.
+
+```python
+# Bucle que recorre todo el video
+while True:
+  # Leemos el primer frame
+  ret, frame = vs.read()
+
+  # Si ya no hay más frame, significa que el video termino y por tanto se sale del bucle
+  if frame is None:
+    break
+  
+  status = "Waiting"
+  rects = []
+
+  # Nos saltamos los frames especificados. Como al inicio totalFrame es 0 entonces en la primera vuelta el modelo de 0 con 30 es 0
+  # por eso en su primera interación empieza con la detección de objetos
+  if totalFrame % SKIP_FPS == 0:
+    status = "Detecting"
+    trackers = []
+    # -------- aqui empieza un código que FUNCIONA EN COLAB PERO NO ME FUNCIONO EN LOCAL
+    # Tomamos la imagen la convertimos a array luego a tensor
+    image_np = np.array(frame)
+    input_tensor = tf.convert_to_tensor(image_np)
+    input_tensor = input_tensor[tf.newaxis, ...]
+    # Predecimos los objectos y clases de la imagen
+    detections = detect_fn(input_tensor)
+    # -------- AQUI TERMINA EL CÓDIGO DE COLAB
+    # A final de cuentas el objetivo es que en este punto tengamos las detecciones del modelo de object detection
+    
+    detection_scores = np.array(detections["detection_scores"][0])
+    # Realizamos una limpieza para solo obtener las clasificaciones mayores al umbral.
+    # es posible que el modelo detecte cosas con un pequeño score entonces esos los eliminamos
+    detection_clean = [x for x in detection_scores if x >= TRESHOLD]
+
+    # Recorremos las detecciones
+    for x in range(len(detection_clean)):
+      idx = int(detections['detection_classes'][0][x])
+      # Tomamos los bounding box 
+      # es un poco raro como te regresa el orden del bounding box, pero esta es la orientación correcta
+      ymin, xmin, ymax, xmax = np.array(detections['detection_boxes'][0][x])
+      # los bouding boxes necesitan ser convertidos al tamaño del video porque el modelo regresaba las coordenadas 
+      # normalizadas en porcentaje de alto y ancho
+      box = [xmin, ymin, xmax, ymax] * np.array([W,H, W, H])
+      # aqui solo nos aseguramos de que cada valor sea un número entero
+      (startX, startY, endX, endY) = box.astype("int")
+
+      # Con la función de dlib empezamos a hacer seguimiento de los boudiung box obtenidos
+      tracker = dlib.correlation_tracker()
+      rect = dlib.rectangle(startX, startY, endX, endY)
+      tracker.start_track(frame, rect)
+
+      trackers.append(tracker)
+  else:
+    # En caso de que no hagamos detección haremos seguimiento
+    # Recorremos los objetos que se les está realizando seguimiento
+    for tracker in trackers:
+      status = "Tracking"
+      # Actualizamos y buscamos los nuevos bounding box
+      tracker.update(frame)
+      pos = tracker.get_position()
+      # los datos obtenidos por la posición del tracker se basa en el centroide del objeto
+      startX = int(pos.left())
+      startY = int(pos.top())
+      endX = int(pos.right())
+      endY = int(pos.bottom())
+      # de forma similar cada cordenada debe ser convertida a un entero
+      rects.append((startX, startY, endX, endY))
+
+  # Dibujamos el umbral de conteo
+  cv2.rectangle(frame, (POINT[0], POINT[1]), (POINT[0]+ POINT[2], POINT[1] + POINT[3]), (255, 0, 255), 2)
+
+  objects = ct.update(rects)
+```
+
+Excelente, hasta este momento ya hemos explicado con comentarios, el código que nos permite hacer detección y seguimiento de objetos.
+Ahora lo que veremos en la próxima clase es como contar la cantidad de coches que van en una u otra dirección.
 
 ## 4.12 Algoritmo de dirección y conteo con OpenCV
 
+ Vamos a terminar el código de esta sección guardando cada fotograma del video con sus nuevas anotaciones e incluyendo el contador
+de coches que suben y bajan;
+
+```python
+# Recorremos cada una de las detecciones
+  for (objectID, centroid) in objects.items():
+    # Revisamos si el objeto ya se ha contado
+    to = trackableObjects.get(objectID, None)
+    if to is None:
+      to = TrackableObject(objectID, centroid)
+
+    else:
+      # Si no se ha contado, analizamos la dirección del objeto
+      y = [c[1] for c in to.centroids]
+      direction = centroid[1] - np.mean(y)
+      to.centroids.append(centroid)
+      if not to.counted:
+        # básicamente esto determina que el centroide este dentro del cuadrado definido anteriormente
+        if centroid[0] > POINT[0] and centroid[0] < (POINT[0]+ POINT[2]) and centroid[1] > POINT[1] and centroid[1] < (POINT[1]+POINT[3]):
+          if DIRECTION_PEOPLE:
+            if direction >0:
+              totalUp += 1
+              to.counted = True
+            else:
+              totalDown +=1
+              to.counted = True
+          else:
+            if direction <0:
+              totalUp += 1
+              to.counted = True
+            else:
+              totalDown +=1
+              to.counted = True
+
+    trackableObjects[objectID] = to
+
+    # Dibujamos el centroide y el ID de la detección encontrada
+    text = "ID {}".format(objectID)
+    cv2.putText(frame, text, (centroid[0]-10, centroid[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+    cv2.circle(frame, (centroid[0], centroid[1]), 4, (0,255,0), -1)
+  
+  # Totalizamos los resultados finales
+  info = [
+          ("Subiendo", totalUp),
+          ("Bajando", totalDown),
+          ("Estado", status),
+  ]
+
+  for (i, (k,v)) in enumerate(info):
+    text = "{}: {}".format(k,v)
+    cv2.putText(frame, text, (10, H - ((i*20) + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,255), 2)
+
+  # Almacenamos el framme en nuestro video resultante.
+  writer.write(frame)
+  totalFrame += 1
+  fps.update()
+
+# Terminamos de analizar FPS y mostramos resultados finales
+fps.stop()
+
+print("Tiempo completo {}".format(fps.elapsed()))
+print("Tiempo aproximado por frame {}".format(fps.fps()))
+
+# Cerramos el stream the almacenar video y de consumir el video.
+writer.release()
+vs.release()
+```
+
+Resultados esperados:
+
+![13.gif](imgs%2F4%2F13.gif)
+
 ## 4.13 Crea un ciclo de entrenamiento de tu modelo: MLOps
+
+En esta clase vamos a introducir el concepto de `DevOps`
+
+![14.png](imgs%2F4%2F14.png)
+
+Es necesario pensar en el flujo de datos, cada cuanto debo pensar en el re-entrenamineto de mi modelo, a su vez, puedo
+automarizar el proceso de entrada y etiquetado de datos y el entrenamiento del modelo?
+
+![15.png](imgs%2F4%2F15.png)
+
+Idealmente, el proceso a seguir sería algo similar al siguiente:
+
+- Automatizar el proceso de recolección de datos, en este caso recolección de imágenes de la cámara de seguridad.
+- Utilizar herramientas de IA para realizar un etiquetado automático de las mismas.
+- Transformación de datos a TF-Records
+- Entrenamiento del modelo de forma trimestral
+
+La arquitectura de nuestro problema sería similar al siguiente:
+
+![16.png](imgs%2F4%2F16.png)
+
+La imagen anterior resume la arquitectura del proceso de automatización que estamos buscando. La imagen se lee de izquierda
+a derecha de arriba a abajo. Empezamos con una "alarma de tiempo aleatoria" que dispara una `cloud function` que le permite
+acceder a la información de la cámara de vigilancia. Posteriormente, estos datos se almacenan en `cloud storage` y el proceso 
+de etiquetado de las imágenes puede ser `manual` o `automático` de ahí con una alarma semanal por ejemplo, pasamos a activar
+otra `cloud function` para entrenar al modelo, creamos un `docker container`y si cumple con ciertos requisitos de calidad 
+hacemos `deploy` al mismo en Vertex AI.
+
 
 # 5 Producto con visión computarizada en producción
 
