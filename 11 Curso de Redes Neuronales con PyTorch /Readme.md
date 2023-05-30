@@ -204,9 +204,301 @@ Process finished with exit code 0
 
 ## 1.4 Creación de Tensores en PyTorch
 
+En el deep learning los tensores son como la gasolina de PyTorch. Básicamente, son una forma elegante de decir una matriz multidimensional que se puede usar para almacenar y manipular datos en PyTorch.
+
+Los tensores son un componente clave para crear y entrenar modelos de machine learning, lo que permite realizar operaciones como la multiplicación de matrices y la multiplicación por elementos en grandes conjuntos de datos. También son útiles para tareas como el procesamiento de imágenes, donde puede representar una imagen como un tensor tridimensional de pixeles.
+
+Pero aquí está la parte interesante, los tensores son súper flexibles y se pueden usar para todo tipo de datos, no solo para imágenes o números. Puedes usarlos para cosas como datos de texto, donde puede representar palabras como vectores o embeddings.
+
+Al dominar los tensores, podrás abordar problemas de deep learning más complejos y desarrollar modelos más sofisticados. Entonces, prepárate para sumergirte profundamente en el mundo de los tensores y ¡continuemos nuestro viaje hacia el emocionante mundo de PyTorch!
+
+> ## Nota: El código de esta sección lo puedes encontrar en [2_tensores.py](scripts%2F1%2F2_tensores.py)
+
+Importa PyTorch, revisemos la versión de PyTorch que estamos usando:
+
+```python
+import torch
+
+print(torch.__version__)
+```
+Respuesta esperada:
+```commandline
+2.0.0+cu117  # nota esto cambiará de acuerdo a la instalación que tengas de PyTorch
+```
+
+Los escalares, vectores, matrices y tensores son conceptos matemáticos que se utilizan en el deep learning y otros campos de la ciencia y la ingeniería.
+
+Un escalar es un valor numérico único, como `3` o `5,7`.
+
+Un vector es una matriz unidimensional de valores numéricos, como `[1, 2, 3]` o `[0.2, 0.5, 0.8]`.
+
+Una matriz es una matriz bidimensional de valores numéricos, como `[[1, 2, 3], [4, 5, 6], [7, 8, 9]]` o `[[0.1, 0.2], [0.3, 0,4], [0,5, 0,6]]`.
+
+Un tensor es una matriz multidimensional de valores numéricos, que se puede considerar como una generalización de vectores y matrices. 
+
+Un escalar es un tensor de orden 0, un vector es un tensor de primer orden y una matriz es un tensor de segundo orden. Los tensores de orden superior, como un tensor de tercer orden o un tensor de cuarto orden, pueden representar estructuras de datos más complejas, como imágenes o videos.
+
+Aquí hay una ilustración simple:
+
+Escalar: `3`
+
+Vector: `[1, 2, 3]`
+
+Matriz: `[[1, 2], [3, 4], [5, 6]]`
+
+Tensor: `[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]`
+
+Podemos representar estas estructuras de datos con PyTorch. Podemos crear tensores usando diferentes tipos de valores. Por ejemplo, random, ceros, o unos.
+
+```python
+escalar = torch.randn(1)
+vector = torch.zeros(1, 10)
+matriz = torch.ones(2, 2)
+
+print(escalar)
+print(vector)
+print(matriz)
+```
+Respuesta esperada:
+```commandline
+tensor([-1.4738])
+tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]])
+tensor([[1., 1.],
+        [1., 1.]])
+```
+
+Pero también podemos representar estructuras sin nombre común:
+
+```python
+t5 = torch.randn(5, 2, 3)
+
+print(t5)
+```
+Respuesta esperada:
+```commandline
+tensor([[[ 1.6913,  1.2107, -0.0387],
+         [ 1.7567, -0.7986, -0.2261]],
+
+        [[-1.6772, -0.8611,  0.4250],
+         [ 0.1645,  0.3996, -1.0157]],
+
+        [[ 0.7795,  0.6061, -1.3222],
+         [-2.1188, -0.2354, -0.5088]],
+
+        [[ 0.6316,  0.3993,  0.2365],
+         [ 1.9170, -1.3484,  0.5882]],
+
+        [[-0.2356,  0.4167,  0.6396],
+         [-1.1904, -0.3743, -1.9593]]])
+```
+Podemos crear tensores con los valores que queramos, no necesariamente aleatorios:
+```python
+t2 = torch.tensor([[2, 2], [3, 3]])
+
+print(t2)
+```
+Respuesta esperada:
+```commandline
+tensor([[2, 2],
+        [3, 3]])
+```
+
 ## 1.5 Debugging de operaciones con tensores
 
+> ## Nota: El código de esta sección lo puedes encontrar en [2_tensores.py](scripts%2F1%2F2_tensores.py)
+
+Cuando trabajamos con tensores y las operaciones resultan no válidas tendremos estos tres problemas más comunes:
+
+- El tamaño o forma.
+- El datatype.
+- El device (dispositivo) en el que se encuentra el tensor.
+
+La forma (shape) te dice cómo están organizados los elementos dentro del tensor.
+
+```python
+print(f"La shape de la matriz es {matriz.shape}")
+print(f"La shape de t5 es {t5.shape}")
+```
+Respuesta esperada:
+```commandline
+La shape de la matriz es torch.Size([2, 2])
+La shape de t5 es torch.Size([5, 2, 3])
+```
+También podemos conocer la dimensión de un tensor.
+```python
+print(f"La shape de la matriz es {matriz.ndim}")
+print(f"La shape de t5 es {t5.ndim}")
+```
+Respuesta esperada:
+```commandline
+La shape de la matriz es 2
+La shape de t5 es 3
+```
+Los tensores pueden tener elementos con diferentes types. Es importante saber qué type estamos usando.
+```python
+print(f"El tensor matriz tiene elementos de tipo: {matriz.dtype}")
+```
+Respuesta esperada:
+```commandline
+El tensor matriz tiene elementos de tipo: torch.float32
+```
+
+Hay muchos tipos de datos de tensor diferentes disponibles en PyTorch.
+
+![3.png](ims%2F1%2F3.png)
+
+El type más común es `torch.float` o `torch.float32` (float de 32 bits). Cuando hablamos de bits estamos tratando con el tamaño de la información necesaria para representar un número. En machine learning trabajamos con miles de números, por lo que elegir el tamaño ideal es clave. 
+
+**La regla es:** los tipos de datos de menores bits (es decir, de menor precisión) son más rápidos de calcular pero sacrifican precisión (más rápido de calcular, pero menos preciso).
+
+Normalmente, cuando operamos entre tensores, PyTorch convierte los tensores a tipos compatibles pero es importante que tengamos presente el tipo de los tensores para evitar errores futuros.
+
+```python
+matriz_float32 = torch.tensor([[3.1, 3.2], [3.3, 3.4]])
+matriz_uint64 = torch.tensor([[3, 3], [3, 3]])
+
+print(matriz_float32.dtype, matriz_uint64.dtype)
+
+print((matriz_float32 + matriz_uint64).dtype)
+```
+Respuesta esperada:
+```commandline
+torch.float32 torch.int64
+torch.float32
+```
+Si es necesario, podemos usar `y = y.to(...)` para convertir los tensores a diferentes types.
+```python
+print(matriz_uint64.to(torch.float32))
+```
+Respuesta esperada:
+```commandline
+tensor([[3., 3.],
+        [3., 3.]])
+```
+Tenemos que tener en cuenta el dispositivo para el que nuestro tensor está preparado. No podemos operar con un tensor diseñado para GPU (CUDA) y uno para CPU.
+```python
+print(matriz_uint64.device)
+```
+Respuesta esperada:
+```commandline
+cpu
+```
+Revisamos si tenemos un GPU disponible con `cuda.is_available()`.
+
+CUDA es una plataforma de computación paralela y una interfaz de programación de aplicaciones (API) que nos permite aprovechar la potencia de las GPU para tareas de deep learning. Cuando usamos CUDA podemos realizar operaciones matemáticas complejas en paralelo en la GPU, lo que puede acelerar significativamente el entrenamiento y la inferencia de modelos de machine learning.
+
+Al usar CUDA, podemos aprovechar las capacidades masivas de procesamiento paralelo de las GPU y entrenar modelos mucho más rápido de lo que podríamos usar solo la CPU. 
+```python
+print(torch.cuda.is_available())
+```
+Respuesta esperada:
+```commandline
+True
+```
+El siguiente código, revisaremos si tenemos CUDA disponible y, si sí, convertimos tensores de CPU a CUDA y viceversa, a la vez que también cambiamos el type.
+```python
+if torch.cuda.is_available():
+    matriz_uint64_cuda = matriz_uint64.to(torch.device("cuda"))
+
+    print(matriz_uint64_cuda, matriz_uint64_cuda.type())
+    print(matriz_uint64_cuda.to("cpu", torch.float32))
+```
+Respuesta esperada:
+```commandline
+tensor([[3, 3],
+        [3, 3]], device='cuda:0') torch.cuda.LongTensor
+tensor([[3., 3.],
+        [3., 3.]])
+```
 ## 1.6 Conversión y operación de tensores con PyTorch
+
+Convierte el tensor a NumPy.
+```python
+print(type(matriz.numpy()))
+```
+Respuesta esperada:
+```commandline
+<class 'numpy.ndarray'>
+```
+Nota que podemos convertir también de NumPy a PyTorch y el type se mantiene.
+```python
+vector = np.ones(5)
+vector_torch = torch.from_numpy(vector)
+print(vector_torch, vector_torch.dtype)
+```
+Respuesta esperada:
+```python
+tensor([1., 1., 1., 1., 1.], dtype=torch.float64) torch.float64
+```
+
+### Operaciones con Tensores
+
+Primero creemos algunos tensores en PyTorch:
+
+```python
+# create a tensor of zeros with shape (3, 4)
+zeros_tensor = torch.zeros((3, 4))
+
+# create a tensor of ones with shape (3, 4)
+ones_tensor = torch.ones((3, 4))
+
+# create a tensor of random values with shape (2, 2)
+random_tensor = torch.randn(4)
+
+print(random_tensor, random_tensor.shape)
+```
+Respuesta esperada:
+```commandline
+tensor([ 1.5882, -0.0746,  0.9659,  0.8113]) torch.Size([4])
+```
+Hagamos operaciones `element-wise:`
+
+```python
+# add two tensors element-wise
+added_tensor = zeros_tensor + ones_tensor
+
+# subtract two tensors element-wise
+subtracted_tensor = zeros_tensor - ones_tensor
+
+# multiply two tensors element-wise
+multiplied_tensor = zeros_tensor * ones_tensor
+
+# divide two tensors element-wise
+divided_tensor = random_tensor / ones_tensor
+
+print(divided_tensor)
+```
+Respuesta esperada:
+```commandline
+tensor([[ 1.5882, -0.0746,  0.9659,  0.8113],
+        [ 1.5882, -0.0746,  0.9659,  0.8113],
+        [ 1.5882, -0.0746,  0.9659,  0.8113]])
+```
+> Nota: Esta respuesta se debe a que PyTorch hizo `broadcasting`, realmente random_tensor tenía un shape de (1, 4) mientras que el tensor de ones era de (3, 4),
+> entonces para que se pudiera hacer esta división exitosamente se extendió el resultado de la division de los números aleatorios a las dimenciones de la matriz que dividio.
+> De esta manera se pudo realizar la operación.
+
+Multiplicación de matrices:
+
+```python
+# create two matrices
+matrix1 = torch.randn(2,3)
+matrix2 = torch.randn(3,2)
+
+print(f"matrix1 shape: {matrix1.shape}")
+print(f"matrix2 shape: {matrix2.shape}")
+
+# perform matrix multiplication
+matx1x2 = torch.matmul(matrix1, matrix2)
+print(matx1x2, matx1x2.shape)
+```
+Respuesta esperada:
+```commandline
+matrix1 shape: torch.Size([2, 3])
+matrix2 shape: torch.Size([3, 2])
+tensor([[-1.2454,  2.2567],
+        [-1.9022,  5.0964]]) torch.Size([2, 2])
+```
 
 # 2 Estructura de modelo de deep learning en PyTorch
 
