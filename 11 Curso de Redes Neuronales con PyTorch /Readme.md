@@ -504,12 +504,434 @@ tensor([[-1.2454,  2.2567],
 
 ## 2.1 Generación y split de datos para entrenamiento del modelo
 
+Cubriremos los fundamentos de la creación de un modelo PyTorch, desde la creación de un objeto nn.Module hasta el entrenamiento del modelo y la adición de una función de pérdida.
+
+Para empezar utilizaremos un ejemplo sencillo de regresión lineal para ilustrar estos conceptos. Al final de esta clase, tendrás una comprensión sólida de cómo funciona PyTorch y cómo crear y entrenar tus propios modelos. ¡Comencemos!
+
+> ### Nota: el código de esta sección está en [1_bloques_de_creacion.py](scripts%2F2%2F1_bloques_de_creacion.py)
+
+### Importar librerías
+
+```python
+import torch
+from torch import nn
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+
+# Comprobar la versión de PyTorch
+print(torch.__version__)
+```
+Respuesta esperada:
+```commandline
+2.0.0+cu117
+```
+
+### Genera tus datos
+
+Por agilidad, para este ejemplo, crearemos datos sintéticos.
+
+Creamos un tensor unidimensional llamado `X` que contiene un rango de valores, utilizando la función arange. Los parámetros de entrada `inicio`, `final` y `step` especifican el inicio, final y tamaño del paso del rango respectivamente.
+
+La función `unsqueeze` se utiliza para agregar una dimensión adicional al tensor, lo que convierte el tensor unidimensional en un tensor de columna (con una dimensión adicional al final).
+
+En resumen, este código crea un tensor de columna con un rango de valores especificados.
+
+```python
+# Crea *nuevos* parámetros
+volumen = 0.8
+sesgo = 0.2
+
+# Crea datos
+inicio = 0
+final = 1
+step = 0.025
+X = torch.arange(inicio, final, step).unsqueeze(dim=1)
+print(f"Shape de X: {X.shape}")
+y = volumen * X + sesgo
+print(f"Shape de y: {y.shape}")
+
+print(X[:10], y[:10])
+```
+Respuesta esperada:
+```commandline
+Shape de X: torch.Size([40, 1])
+Shape de y: torch.Size([40, 1])
+tensor([[0.0000],
+        [0.0250],
+        [0.0500],
+        [0.0750],
+        [0.1000],
+        [0.1250],
+        [0.1500],
+        [0.1750],
+        [0.2000],
+        [0.2250]]) tensor([[0.2000],
+        [0.2200],
+        [0.2400],
+        [0.2600],
+        [0.2800],
+        [0.3000],
+        [0.3200],
+        [0.3400],
+        [0.3600],
+        [0.3800]])
+```
+
+Necesitamos un **conjunto de prueba** y uno de **entrenamiento**.
+
+Cada conjunto tiene un objetivo específico:
+
+*   **Conjunto de entrenamiento:** El modelo aprende de los datos.
+*   **Conjunto de prueba:** El modelo se evalúa con los datos para probar lo que ha aprendido.
+
+```python
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+print(len(X_train), len(X_test))
+```
+Respuesta esperada:
+```commandline
+28 12
+```
+Tenemos 28 muestras para entrenamiento (```X_ent``` y ```y_ent```) y 12 muestras de prueba (```X_prueb``` y ```y_prueb```) 
+Visualizamos nuestros datos.
+
+```python
+def plot_predictions(datos_ent=X_train,
+                     etiq_ent=y_train,
+                     datos_prueba=X_test,
+                     etiq_prueba=y_test,
+                     predictions=None):
+    """
+    Traza datos de entrenamiento, datos de prueba y compara predicciones
+    """
+    plt.figure(figsize=(10, 10))
+
+    # Traza datos de entrenamiento en verde
+    plt.scatter(datos_ent, etiq_ent, c="b", s=6, label="Datos de entrenamiento")
+
+    # Traza datos de prueba en amarillo
+    plt.scatter(datos_prueba, etiq_prueba, c="y", s=6, label="Datos de prueba")
+
+    if predictions is not None:
+        # Traza las predicciones en rojo
+        plt.scatter(datos_prueba, predictions, c="r", s=6, label="Predicciones")
+
+    # Leyenda
+    plt.legend(prop={"size": 12})
+    plt.savefig("datos.png")
+    plt.close()
+
+
+plot_predictions()
+```
+
+Respuesta esperada:
+![datos_1.png](scripts%2F2%2Fdatos_1.png)
+
+
 ## 2.2 Estructura de modelo en PyTorch con torch.nn
+
+Construyamos un modelo de regresión lineal utilizando PyTorch.
+
+`torch.nn` proporciona herramientas para construir redes neuronales, `torch.optim` para optimizar los modelos, `data.Dataset` para manejar los conjuntos de datos y `torch.utils.data.DataLoader` para cargar y transformar los datos. Estas herramientas son fundamentales para la construcción y entrenamiento de modelos de machine learning.
+
+* `torch.nn`: es un módulo que proporciona clases y funciones para construir redes neuronales. Contiene una variedad de capas, como capas de convolución, capas de agrupación, capas de normalización, capas recurrentes y capas completamente conectadas, que se pueden combinar para construir una variedad de arquitecturas de redes neuronales.
+
+* `torch.optim`: proporciona clases y funciones para optimizar los modelos de machine learning. Contiene una variedad de algoritmos de optimización, como SGD, Adam, Adagrad y Adadelta, que se utilizan para ajustar los parámetros de los modelos durante el entrenamiento.
+
+* `torch.utils.data.Dataset`: es una clase que se utiliza para representar conjuntos de datos de machine learning. Proporciona una interfaz consistente para acceder a los datos y sus etiquetas. Se puede personalizar para trabajar con conjuntos de datos de diferentes formatos y tipos.
+
+* `torch.utils.data.DataLoader`: es una clase que se utiliza para cargar y transformar datos de un conjunto en lotes para el entrenamiento de modelos. Se encarga de la asignación de los lotes, la mezcla de los datos y la carga de los datos en la GPU si es necesario, lo que facilita el procesamiento de grandes conjuntos de datos.
+
+Por el momento, vamos a utilizar los dos primeros módulos. En el proyecto final usaremos `DataLoader`.
+
+> ## Nota: el código de esta sección esta en [1_bloques_de_creacion.py](scripts%2F2%2F1_bloques_de_creacion.py)
+
+El siguiente fragmento define una clase llamada `ModeloRegresionLineal` que hereda de la clase `nn.Module` en PyTorch. 
+
+La clase tiene dos parámetros ajustables (`volumen` y `sesgo`) que se inicializan con valores aleatorios y se pueden optimizar durante el entrenamiento. 
+
+La función `forward` realiza el cálculo del modelo, donde se multiplica el tensor de entrada `x` por el parámetro `volumen` y se le agrega el parámetro `sesgo`.
+
+En resumen, este código define una clase de modelo de regresión lineal con dos parámetros ajustables y define la operación de cálculo del modelo. Esto se utiliza como una plantilla para definir y entrenar modelos de regresión lineal en PyTorch.
+
+```python
+# Crea una clase de modelo de regresión lineal
+class ModeloRegresionLineal(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.volumen = nn.Parameter(torch.randn(1, dtype=torch.float), requires_grad=True)
+        self.sesgo = nn.Parameter(torch.randn(1, dtype=torch.float), requires_grad=True)
+
+    # Define el cálculo en el modelo
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.volumen * x + self.sesgo
+```
+
+`torch.manual_seed(42)` establece la semilla del generador de números aleatorios en 42. Lo que significa que los mismos números aleatorios se generarán en cada ejecución del código que utilice tensores de PyTorch. 
+
+Esto puede ser útil para reproducir resultados y garantizar la reproducibilidad de los experimentos de machine learning.
+
+```python
+torch.manual_seed(42)
+# Crea un objeto instanciando la clase ModeloRegresionLineal
+
+model_1 = ModeloRegresionLineal()
+
+print(model_1)
+```
+Respuesta esperada:
+```commandline
+ModeloRegresionLineal()
+```
+`model_1.state_dict()` devolverá el diccionario que contiene los valores de todos los parámetros entrenables del modelo. Este diccionario puede ser útil para guardar y cargar modelos.
+```python
+print(model_1.state_dict())
+```
+Respuesta esperada:
+```commandline
+OrderedDict([('volumen', tensor([0.3367])), ('sesgo', tensor([0.1288]))])
+```
+Los valores de las variables volumen y sesgo aparecen como tensores aleatorios.
+
+Iniciamos con parámetros aleatorios para luego hacer que el modelo los actualice hacia parámetros que se ajusten mejor a nuestros datos.
+
+### Predicciones usando `torch.inference_mode()`
+
+Para hacer predicciones con `torch.inference_mode()` podemos pasar los datos de prueba `X_prueb` para ver qué tan cerca pasan de `y_prueb`.
+
+Cuando pasemos datos al modelo, pasarán por `forward()` produciendo un resultado con el cálculo que definimos anteriormente.
+
+```python
+# Hacer predicciones con el modelo
+with torch.inference_mode():
+    y_predc = model_1(X_test)
+```
+
+> `#torch.inference_mode` se usa para hacer inferencia (predicciones). Además, desactiva algunas opciones como el seguimiento del gradiente (necesario para el entrenamiento, NO para inferencia).
+
+```python
+# Comprueba las predicciones
+print(y_predc)
+```
+Respuesta esperada:
+```commandline
+tensor([[0.2887],
+        [0.2635],
+        [0.2551],
+        [0.3477],
+        [0.1625],
+        [0.2298],
+        [0.4402],
+        [0.3561],
+        [0.4571],
+        [0.1793],
+        [0.3392],
+        [0.2046]])
+```
+Hay un valor de predicción por muestra de prueba debido al tipo de datos implementados.
+
+
+
+> En este caso, para una línea recta, un valor `X` se asigna a un valor `y`. Sin embargo, los modelos de aprendizaje automático son muy flexibles. Podemos asignar 80 valores de `X` para 10 valores `y`.
+
+Visualicemos nuestros datos utilizando `plot_predictions()`
+
+```python
+plot_predictions(predictions=y_predc, name="2")
+```
+Respuesta esperada:
+![datos_2.png](scripts%2F2%2Fdatos_2.png)
+
+Recuerda que nuestro modelo solo usa valores de parámetros aleatorios para hacer predicciones, básicamente al azar. **Por ello, la predicción se ve mal.**
 
 ## 2.3 Entrenamiento, funciones de pérdida y optimizadores
 
+Para arreglar los valores aleatorios de los parámetros del modelo podemos actualizar los parámetros internos de las variables `# volumen` y `# sesgo` para representar mejor los datos.
+
+Para ello, crearemos una **función de pérdida** así como un **optimizador** con PyTorch.
+
+> La `# función de pérdida` mide qué tan equivocadas están las predicciones del modelo `# y_predc`, en comparación con las etiquetas `# y_prueb`. PyTorch tiene muchas funciones de pérdida integradas en `#torch.nn`.
+
+
+> El `#optimizador` le indica a los modelos cómo actualizar sus parámetros internos para reducir la pérdida. Podemos encontrar varias implementaciones en `#torch.optim`.
+
+Dependiendo del tipo de problema que estemos trabajando vamos a emplear una determinada función de pérdida y optimización.
+
+Para nuestro problema utilizaremos el **Error Cuadrático Medio (MAE)** como la función de pérdida `(torch.nn.L1Loss)` para medir la diferencia absoluta entre dos puntos y tomar la media en todos los ejemplos.
+
+También usaremos **Stochastic Gradient Descent (SGD)** `(torch.optim.SGD(params, lr))` como nuestro optimizador, donde `# params` son los parámetros del modelo (volumen y sesgo) y `# lr` es la tasa de aprendizaje a la que desea que el optimizador actualice los parámetros.
+
+Además, fijamos arbitrariamente una tasa de aprendizaje de `0.01
+
+```python
+# Crea función de pérdida
+fn_perd = torch.nn.L1Loss()
+
+# Crea el optimizador
+optimizador = torch.optim.SGD(params=model_1.parameters(), lr=0.01)  # tasa de aprendizaje (cuánto debe cambiar el
+# optimizador de parámetros en cada paso, más alto = más (menos estable), más bajo = menos (puede llevar mucho tiempo))
+
+print(fn_perd)
+```
+Respuesta esperada:
+```commandline
+L1Loss()
+```
+
+Ya que tenemos una función de pérdida y un optimizador, vamos a crear un ciclo de entrenamiento y uno de prueba. Esto implica que el modelo pase por los datos de entrenamiento y aprenda la relación entre `features` y `labels`.
+
+El ciclo de prueba implica revisar los datos de prueba y evaluar qué tan buenos son los patrones que el modelo aprendió de los datos de entrenamiento.
+
+Para entrenar, vamos a escribir un bucle `for` de Python.
+
+
+### Bucle de entrenamiento:
+
+**Pasos a seguir:**
+
+1.  El modelo pasa por todos los datos de entrenamiento nuevamente, realizando sus cálculos en funciones `forward ()`. *Código:* `modelo(X_ent)`
+2. Las predicciones se comparan  y se evalúan para ver qué tan equivocadas están. *Código:* `perdida = fn_perd(y_predc, y_ent)`.
+3. Los gradientes de los optimizadores se establecen en cero para que puedan recalcularse y dar paso al entrenamiento específico. *Código:* `optimizer.zero_grad()`.
+4. Se calcula el gradiente de la pérdida con respecto a cada parámetro que se actualizará (retroprogramación). *Código:* `loss.backward()`.
+5. Se actualizan los parámetros con `requires_grand=True` respecto a la pérdida para mejorarlos. *Código:* `optimizer.step()`.
+
+```python
+torch.manual_seed(42)
+
+# Establezca cuántas veces el modelo pasará por los datos de entrenamiento
+epocas = 100
+
+# Cree listas de vacías para realizar un seguimiento de nuestro modelo
+entrenamiento_loss = []
+test_loss = []
+
+for epoca in range(epocas):
+    # Entrenamiento
+
+    # Pon el modelo en modo entrenamiento
+    model_1.train()
+
+    # 1. Pase hacia adelante los datos usando el método forward()
+    y_predc = model_1(X_train)
+
+    # 2. Calcula la pérdida (Cuán diferentes son las predicciones de nuestros modelos)
+    perdida = fn_perd(y_predc, y_train)
+
+    # 3. Gradiente cero del optimizador
+    optimizador.zero_grad()
+
+    # 4. Pérdida al revés
+    perdida.backward()
+
+    # 5. Progreso del optimizador
+    optimizador.step()
+
+    # Función de prueba
+
+    # Pon el modelo en modo evaluación
+    model_1.eval()
+```
+Hasta este momento ya tenemos un código capaz de iterar `epoca` a `epoca` y mejorando continuamente
+los resultados del modelo. En la siguiente clase vamos a ver como podemos ir guardando la perdida del modelo `epoca` a `epoca`
+para ello volveremos a utilizar el `torch.inference_model()`
+
 ## 2.4 Entrenamiento y visualización de pérdida
+
+Como el modelo ya se encuentra en `modo evaluación` entonces podemos empezar a hacer inferencias con el modelo entrenado en un
+punto específico
+```python
+    with torch.inference_mode():
+
+        # 1. Reenviar datos de prueba
+        prueba_predc = model_1(X_test)
+
+        # 2. Calcular la pérdida en datos de prueba
+        prueb_perd = fn_perd(prueba_predc, y_test.type(torch.float))
+
+        # Imprime lo que está pasando
+        if epoca % 10 == 0:
+            # usamos `.detach()` porque NO queremos almacenar el número como un `tensor` es más fácil trabajar con el como un valor de `numpy`
+            entrenamiento_loss.append(perdida.detach().numpy())
+            test_loss.append(prueb_perd.detach().numpy())
+            print(f"Epoca: {epoca} | Entrenamiento pérdida: {perdida} | Test pérdida {prueb_perd}")
+
+```
+Respuesta esperada:
+```commandline
+Epoca: 0 | Entrenamiento pérdida: 0.29664039611816406 | Test pérdida 0.28563693165779114
+Epoca: 10 | Entrenamiento pérdida: 0.17860610783100128 | Test pérdida 0.16613411903381348
+Epoca: 20 | Entrenamiento pérdida: 0.11701875925064087 | Test pérdida 0.10174953937530518
+Epoca: 30 | Entrenamiento pérdida: 0.09006500989198685 | Test pérdida 0.07594708353281021
+Epoca: 40 | Entrenamiento pérdida: 0.07644685357809067 | Test pérdida 0.06794114410877228
+Epoca: 50 | Entrenamiento pérdida: 0.0689956396818161 | Test pérdida 0.06417617946863174
+Epoca: 60 | Entrenamiento pérdida: 0.06370030343532562 | Test pérdida 0.05965892970561981
+Epoca: 70 | Entrenamiento pérdida: 0.058579545468091965 | Test pérdida 0.054845139384269714
+Epoca: 80 | Entrenamiento pérdida: 0.0534588024020195 | Test pérdida 0.050031352788209915
+Epoca: 90 | Entrenamiento pérdida: 0.04834337159991264 | Test pérdida 0.045158278197050095
+```
+
+Parece que nuestra pérdida fue disminuyendo con cada época, veamos graficamente:
+```python
+# Traza las curvas de pérdida
+plt.plot(entrenamiento_loss, label="Perd entrenamiento")
+plt.plot(test_loss, label="Perd prueba")
+plt.ylabel("Pérdida")
+plt.xlabel("Epoca")
+plt.legend()
+plt.savefig(f"datos_perdida.png")
+plt.close()
+```
+Respuesta esperada:
+![datos_perdida.png](scripts%2F2%2Fdatos_perdida.png)
+
+
 ## 2.5 Predicción con un modelo de PyTorch entrenado
+
+Una vez entrenado el modelo, podemos hacer inferencia (predicciones) con él.
+
+Hay tres aspectos que debemos recordar para hacer predicciones correctamente:
+
+1. Configurar el modelo en modo de evaluación `(model.eval())`.
+2. Realizar las predicciones utilizando el administrador de contexto del modo de inferencia `(with torch.inference_mode(): ...)`.
+3. Todas las predicciones deben realizarse con objetos en el mismo dispositivo (datos y modelo solo en GPU o datos y modelo solo en CPU).
+
+```python
+# 1. Configura el modelo en modo de evaluación
+model_1.eval()
+
+# 2. Configura el administrador de contexto del modo de inferencia
+with torch.inference_mode():
+    # 3. Asegúrate de que los cálculos se realicen con el modelo y los datos en el mismo dispositivo en nuestro caso,
+    # nuestros datos y modelo están en la CPU de forma predeterminada
+    # model_1.to(device)
+    # X_prueb = X_prueb.to(device)
+    y_predc = model_1(X_test)
+print(y_predc)
+```
+Respuesta esperada:
+```commandline
+tensor([[0.6694],
+        [0.6829],
+        [0.6965],
+        [0.7100],
+        [0.7236],
+        [0.7371],
+        [0.7506],
+        [0.7642],
+        [0.7777],
+        [0.7913],
+        [0.8048],
+        [0.8184]])
+```
+Observa cómo se ve gráficamente el modelo entrenado:
+```python
+plot_predictions(predictions=y_predc, name="3")
+```
+![datos_3.png](scripts%2F2%2Fdatos_3.png)
+
+
 
 # 3 Redes neuronales con PyTorch
 
