@@ -937,26 +937,556 @@ plot_predictions(predictions=y_predc, name="3")
 
 ## 3.1 Datos para clasificación de texto
 
+El objetivo de esta sección es utilizar `nn.module` y `torchtext` para crear un modelo de clasificación de texto. Vamos a tokenizar el texto
+, entrenarlo, evaluarlo y subirlo a la plataforma de `hugging face`.
+
+
+
+El Proyecto PyTorch contiene librerías para diferentes tipos de datos y fines.
+
+* `torchaudio`
+* `torchvision`
+* `TorchElastic`
+* `TorchServe`
+
+Vamos a utilizar `torchtext` para clasificación de texto. El paquete `torchtext` consta de utilidades de procesamiento de datos y conjuntos de datos populares para lenguaje natural.
+
+Sin embargo, no dudes en probar otras de las librerías disponibles en PyTorch. ¡`torchvision` es particularmente utilizado por aplicaciones que trabajan con imágenes!
+
+Antes de continuar es buena idea visitar: [Torchtext datasets](https://pytorch.org/text/stable/datasets.html)
+
+![1.png](ims%2F3%2F1.png)
+
+Estos datasets tienen diferentes propósitos entre los que podemos enlistar los siguientes:
+
+1. Text classification
+2. Language Modeling
+3. Machine Translation
+4. Sequence Tagging
+5. Question Answering
+6. Unsupervised Learning
+
+Para nuestro problema de `Text Classification` vamos a utilizar [Dbpedia](https://pytorch.org/text/stable/datasets.html#dbpedia)
+
+![2.png](ims%2F3%2F2.png)
+
+### 1. Importando librerías y dataset
+
+Empecemos por instalar ciertas bibliotecas necesarias:
+```bash
+pip install portalocker>=2.0.0
+pip install torchtext --upgrade
+```
+
+```python
+import torch
+import torchtext
+from torchtext.datasets import DBpedia
+ 
+# Comprobar la versión
+torchtext.__version__
+```
+Respuesta esperada:
+```commandline
+0.15.2+cpu
+```
+
 ## 3.2 Procesamiento de datos: tokenización y creación de vocabulario
+
+Importa las bibliotecas `torch` y `torchtext`. Utiliza `torchtext` para cargar el conjunto de datos DBpedia. 
+
+Luego, utiliza la función `iter` para crear un objeto de iteración para el conjunto de datos de entrenamiento. Finalmente, el código imprime la versión de la biblioteca `torchtext` utilizada.
+
+```python
+train_iter = iter(DBpedia(split="train"))
+print(next(train_iter))
+print(next(train_iter))
+```
+Respuesta esperada:
+```commandline
+
+```
+
+Construiremos un vocabulario con el conjunto de datos implementando la función incorporada `build_vocab_from_iterator`que acepta el iterador que produce una lista o un iterador de tokens.
+
+Usamos `torchtext` para construir un vocabulario a partir de un conjunto de datos del DBpedia en inglés. 
+
+En primer lugar, importa la función `get_tokenizer` de la biblioteca `torchtext` para obtener un tokenizador predefinido para el idioma inglés. Luego, define un iterador de datos para el conjunto de datos de entrenamiento de DBpedia.
+
+A continuación, se define una función `yield_tokens` que utiliza el tokenizador para dividir el texto en tokens y devolverlos uno a uno. Esta función se utiliza como entrada para la función `build_vocab_from_iterator`, que construye un vocabulario a partir de los tokens devueltos por la función `yield_tokens`. La función `build_vocab_from_iterator` también toma una lista de tokens especiales, que se utilizarán para representar palabras fuera del vocabulario.
+
+En resumen, este fragmento de código construye un vocabulario a partir de un conjunto de datos de entrenamiento y lo prepara para su uso en modelos de aprendizaje automático que utilizan PyTorch.
+
+```python
+from torchtext.data.utils import get_tokenizer
+from torchtext.vocab import build_vocab_from_iterator
+
+tokenizador = get_tokenizer("basic_english")
+train_iter = DBpedia(split="train")
+
+def yield_tokens(data_iter):
+  for _, texto in data_iter:
+    yield tokenizador(texto)
+
+vocab = build_vocab_from_iterator(yield_tokens(train_iter), specials=["<unk>"])
+vocab.set_default_index(vocab["<unk>"])
+```
+Nuestro vocabulario transforma la lista de tokens en números enteros.
+```python
+vocab(tokenizador("Hello how are you? I am a platzi student"))
+```
+Respuesta esperada:
+```commandline
+vocab(tokenizador("Hello how are you? I am a platzi student"))
+```
+Definimos dos funciones lambda, `text_pipeline` y `label_pipeline`, que se utilizan para procesar los datos de entrada en un formato que se puede utilizar para entrenar y evaluar modelos.
+
+La primera función, `text_pipeline`, toma una cadena de texto como entrada y la procesa utilizando el tokenizador y el vocabulario que definimos. Recuerda que el tokenizador divide el texto en tokens (palabras o subpalabras), mientras que el vocabulario mapea cada token a un índice entero único. La función devuelve una lista de índices enteros que representan los tokens en el texto.
+
+La segunda función, `label_pipeline`, toma una etiqueta como entrada y la convierte en un número entero. En este caso, la etiqueta se resta en `1` para ajustarla a un rango de índice de `0` a `n-1`, donde `n` es el número de clases en el problema.
+
+
+```python
+texto_pipeline = lambda x: vocab(tokenizador(x))
+label_pipeline = lambda x: int(x) - 1
+ans = texto_pipeline("Hello I am Omar")
+print(ans)
+print(label_pipeline("1"))
+```
+Respuesta esperada:
+```commandline
+[7296, 187, 2409, 5688]
+0
+```
 
 ## 3.3 Procesamiento de datos: preparación de DataLoader()
 
+
+Creamos una función llamada `collate_batch` para procesar un lote de datos. La entrada batch es una lista de tuplas, donde cada tupla contiene una etiqueta y su correspondiente texto.
+
+* Se inicializan tres listas: `label_list`, `text_list` y `offsets`. Offsets almacena el índice de inicio de cada secuencia de texto en el tensor concatenado de secuencias de texto. Ayuda a realizar un seguimiento de los límites de las secuencias de texto individuales dentro del tensor concatenado. Comienza con un valor 0, que representa el índice de inicio de la primera secuencia de texto.
+
+* La función recorre cada punto de datos en el lote. Para cada punto de datos, procesa la etiqueta utilizando `label_pipeline(_label)` y agrega el resultado a `label_list`. Procesa el texto utilizando `texto_pipeline(_text)` y lo convierte en un tensor de tipo torch.`int64`. El texto procesado se agrega a `text_list` y su longitud `(size(0))` se agrega a offsets.
+
+* El último elemento en la lista offsets se elimina mediante el corte `offsets[:-1]`. Luego, la función `cumsum` calcula la suma acumulativa de los elementos en la lista offsets a lo largo de la dimensión 0.
+
+* La `text_list` se concatena en un único tensor 1D utilizando `torch.cat(text_list)`.
+
+* Los tensores `label_list`, `text_list` y `offsets` se convierten al dispositivo especificado (ya sea GPU o CPU).
+
+```python
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+
+def collate_batch(batch):
+  label_list = []
+  text_list = []
+  offsets = [0]
+
+  for (_label, _text) in batch:
+    label_list.append(label_pipeline(_label))
+    processed_text = torch.tensor(texto_pipeline(_text), dtype=torch.int64)
+    text_list.append(processed_text)
+    offsets.append(processed_text.size(0))
+
+  label_list = torch.tensor(label_list, dtype=torch.int64)
+  offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
+  text_list = torch.cat(text_list)
+  return label_list.to(device), text_list.to(device), offsets.to(device)
+```
+
+Un `DataLoader` maneja el proceso de iteración a través de un conjunto de datos en mini lotes. El DataLoader es importante porque ayuda a administrar de manera eficiente la memoria, mezclar los datos y paralelizar fácilmente la carga de datos.
+
+```python
+from torch.utils.data import DataLoader
+
+train_iter = DBpedia(split="train")
+dataloader = DataLoader(train_iter, batch_size=8, shuffle=False, collate_fn=collate_batch)
+print(dataloader)
+```
+Resultado esperado:
+```commandline
+<torch.utils.data.dataloader.DataLoader at 0x7f9c0ad4b850>
+```
+
 ## 3.4 Creación de modelo de clasificación de texto con PyTorch
+
+Creamos `ModeloClasificacionTexto`, una clase de red neuronal que implementa una arquitectura simple pero efectiva para la clasificación de texto, utilizando capas de embedding, normalización por lotes y fully connected.
+
+* `__init__(self, vocab_size, embed_dim, num_class)`: Este método inicializa el modelo con tres argumentos: el tamaño del vocabulario (vocab_size), la dimensión de incrustación (embed_dim) y el número de clases (num_class).
+
+* `self.embedding`: La capa de incrustación (nn.EmbeddingBag) convierte cada palabra del texto en un vector de dimensión embed_dim. La incrustación se realiza de forma eficiente en lotes para las secuencias de texto en la entrada.
+
+* `self.bn1`: La capa de normalización por lotes (nn.BatchNorm1d) mejora la estabilidad y la velocidad de entrenamiento del modelo, normalizando las características de entrada a lo largo de la dimensión especificada (en este caso, embed_dim).
+
+* `self.fc`: La capa completamente conectada (nn.Linear) realiza la proyección de las características de incrustación normalizadas y activadas en un espacio de dimensión igual al número de clases (num_class). Esta capa produce las probabilidades de clase para la clasificación.
+
+```python
+from torch import nn
+import torch.nn.functional as F
+
+class ModeloClasificacionTexto(nn.Module):
+  def __init__(self, vocab_size, embed_dim, num_class):
+    super(ModeloClasificacionTexto, self).__init__()
+        
+        # Capa de incrustación (embedding)
+    self.embedding = nn.EmbeddingBag(vocab_size, embed_dim)
+        
+        # Capa de normalización por lotes (batch normalization)
+    self.bn1 = nn.BatchNorm1d(embed_dim)
+        
+        # Capa completamente conectada (fully connected)
+    self.fc = nn.Linear(embed_dim, num_class)
+
+  def forward(self, text, offsets):
+        # Incrustar el texto (embed the text)
+    embedded = self.embedding(text, offsets)
+        
+        # Aplicar la normalización por lotes (apply batch normalization)
+    embedded_norm = self.bn1(embedded)
+        
+        # Aplicar la función de activación ReLU (apply the ReLU activation function)
+    embedded_activated = F.relu(embedded_norm)
+        
+        # Devolver las probabilidades de clase (output the class probabilities)
+    return self.fc(embedded_activated)
+
+```
+Construimos un modelo con una dimensión de embedding de 100.
+
+```python
+train_iter = DBpedia(split="train")
+num_class = len(set([label for (label, text) in train_iter]))
+vocab_size = len(vocab)
+embedding_size = 100
+
+modelo = ModeloClasificacionTexto(vocab_size=vocab_size, embed_dim=embedding_size, num_class=num_class).to(device)
+print(vocab_size)
+
+```
+Respuesta esperada:
+```commandline
+
+```
+Verificando la arquitectura del modelo:
+```python
+# arquitectura
+print(modelo)
+
+
+# Número de parámetros entrenables en nuestro modelo
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+print(f"El modelo tiene {count_parameters(modelo):,} parámetros entrenables")
+```
+Respuesta esperada:
+```commandline
+
+```
 
 ## 3.5 Función para entrenamiento
 
+Ahora, definimos las funciones para entrenar el modelo y evaluar los resultados.
+
+Utilizamos `torch.nn.utils.clip_grad_norm_` para limitar el valor máximo de la norma del gradiente durante el entrenamiento de una red neuronal. En otras palabras, se asegura de que los gradientes no sean demasiado grandes y, por lo tanto, evita que la red neuronal se vuelva inestable durante el entrenamiento.
+
+El primer argumento, `modelo.parameters()`, se refiere a los parámetros del modelo que se están entrenando. El segundo argumento, "0.1", es el valor máximo permitido para la norma del gradiente.
+
+
+```python
+def entrena(dataloader):
+    # Colocar el modelo en formato de entrenamiento
+    modelo.train()
+
+    # Inicializa accuracy, count y loss para cada epoch
+    epoch_acc = 0
+    epoch_loss = 0
+    total_count = 0 
+
+    for idx, (label, text, offsets) in enumerate(dataloader):
+        # reestablece los gradientes después de cada batch
+        optimizer.zero_grad()
+        # Obten predicciones del modelo
+        prediccion = modelo(text, offsets)
+
+        # Obten la pérdida
+        loss = criterio(prediccion, label)
+        
+        # backpropage la pérdida y calcular los gradientes
+        loss.backward()
+        
+        # Obten la accuracy
+        acc = (prediccion.argmax(1) == label).sum()
+        
+        # Evita que los gradientes sean demasiado grandes 
+        torch.nn.utils.clip_grad_norm_(modelo.parameters(), 0.1)
+
+        # Actualiza los pesos
+        optimizer.step()
+
+        # Llevamos el conteo de la pérdida y el accuracy para esta epoch
+        epoch_acc += acc.item()
+        epoch_loss += loss.item()
+        total_count += label.size(0)
+
+        if idx % 500 == 0 and idx > 0:
+          print(f" epoca {epoch} | {idx}/{len(dataloader)} batches | perdida {epoch_loss/total_count} | accuracy {epoch_acc/total_count}")
+
+    return epoch_acc/total_count, epoch_loss/total_count
+```
+
 ## 3.6 Función para evaluación
+
+En PyTorch, tanto `torch.no_grad()` como `torch.inference_mode()` se utilizan para deshabilitar ciertos aspectos del seguimiento automático de gradiente de PyTorch durante la inferencia, lo que puede llevar a mejoras de rendimiento y ahorro de memoria. Sin embargo, hay una diferencia clave entre las dos:
+
+`torch.no_grad()`: Este contexto se utiliza para deshabilitar el seguimiento automático de gradiente en PyTorch. Al entrar en el bloque `with torch.no_grad()`, las operaciones dentro de ese bloque no se rastrean para calcular gradientes y no se almacenan en el gráfico computacional. Esto es útil durante la inferencia, donde no necesitamos calcular gradientes y solo estamos interesados en obtener los resultados finales. Al deshabilitar el seguimiento automático de gradiente, se ahorra memoria y se mejora el rendimiento. Por ejemplo:
+
+```python
+with torch.no_grad():
+    # Cálculos de inferencia
+    output = model(input)
+```
+
+`torch.inference_mode():` Esta función se introdujo en PyTorch 1.9 como una forma de habilitar un modo de inferencia más eficiente en términos de memoria y rendimiento. Al entrar en el bloque with torch.inference_mode(), no solo se deshabilita el seguimiento automático de gradiente, sino que también se aplican más optimizaciones, como el recálculo selectivo y la exclusión de subgrafos que no contribuyen a los resultados finales. Esto puede conducir a una mayor mejora de rendimiento y ahorro de memoria en comparación con torch.no_grad(). Por ejemplo:
+```python
+with torch.inference_mode():
+    # Cálculos de inferencia
+    output = model(input)
+```
+En resumen, mientras que `torch.no_grad() se utiliza principalmente para deshabilitar el seguimiento automático de gradiente durante la inferencia, `torch.inference_mode()` va más allá y también aplica optimizaciones adicionales para mejorar el rendimiento y el uso de memoria. Si estás utilizando PyTorch 1.9 o versiones posteriores, se recomienda utilizar `torch.inference_mode()` para obtener los beneficios adicionales que proporciona.
+
+```python
+def evalua(dataloader):
+    modelo.eval()
+    epoch_acc = 0
+    total_count = 0
+    epoch_loss = 0
+
+    with torch.inference_mode():
+        for idx, (label, text, offsets) in enumerate(dataloader):
+            # Obtenemos la la etiqueta predecida
+            prediccion = modelo(text, offsets)
+
+            # Obtenemos pérdida y accuracy
+            loss = criterio(prediccion, label)
+            acc = (prediccion.argmax(1) == label).sum()
+
+            # Llevamos el conteo de la pérdida y el accuracy para esta epoch
+            epoch_loss += loss.item()
+            epoch_acc += acc.item()
+            total_count += label.size(0)
+
+    return epoch_acc / total_count, epoch_loss / total_count
+```
 
 ## 3.7 Split de datos, pérdida y optimización
 
+Dividimos el conjunto de datos de entrenamiento en conjuntos de entrenamiento válidos con una proporción de división de 0.95 (entrenamiento) y 0.5 (válido) utilizando la función `torch.utils.data.dataset.random_split`
+
+```python
+# Hiperparámetros
+
+EPOCHS = 4 # epochs
+TASA_APRENDIZAJE = 0.2  # tasa de aprendizaje
+BATCH_TAMANO = 64 # tamaño de los batches
+```
+
+Explora las otras funciones de pérdida disponibles en PyTorch. Puedes encontrarlas todas aquí: https://pytorch.org/docs/stable/nn.html#loss-functions.
+
+La función de pérdida es la que mide qué tan buenas son las predicciones de nuestro modelo en comparación con las etiquetas reales. PyTorch ofrece una amplia gama de funciones de pérdida que podemos utilizar para entrenar nuestros modelos en diferentes tipos de problemas, como regresión, clasificación y modelado de secuencia a secuencia.
+
+Al profundizar en estas otras funciones de pérdida, podemos ampliar nuestro conocimiento de machine learning. Lo mismo aplica para los optimizadores. PyTorch proporciona una variedad de algoritmos de optimización: https://pytorch.org/docs/stable/optim.html#algorithms.
+
+Dedica tiempo a explorar la documentación de PyTorch sobre funciones de pérdida y optimizadores. Experimenta con diferentes funciones en tus proyectos.
+
+```python
+# Pérdida, optimizador
+criterio = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(modelo.parameters(), lr= TASA_APRENDIZAJE)
+```
+
+Dividimos el conjunto de datos en tres partes: entrenamiento, validación y prueba. 
+
+Primero, importamos la función `random_split` de la clase Dataset y la función `to_map_style_dataset` de `torchtext.data.functional`. Luego, cargamos el conjunto de datos `DBpedia` usando el método `DBpedia()`. A continuación, convertimos el conjunto de datos en un formato que pueda ser utilizado por el `DataLoader` de PyTorch utilizando la función `to_map_style_dataset`.
+
+Luego, definimos la proporción de datos que utilizaremos para entrenar nuestro modelo (el 95%) y el porcentaje que utilizaremos para validar nuestro modelo (el 5%). Utilizamos la función `random_split` para dividir el conjunto de datos de entrenamiento en entrenamiento y validación.
+
+Finalmente, creamos tres DataLoaders para cada parte del conjunto de datos: uno para el entrenamiento, uno para la validación y otro para la prueba. Utilizamos el argumento `batch_size` para definir el tamaño de los lotes de datos que se utilizarán en el entrenamiento y la prueba. El argumento `collate_fn` especifica cómo se deben unir las muestras de datos para formar un lote.
+
+```python
+from torch.utils.data.dataset import random_split
+from torchtext.data.functional import to_map_style_dataset
+
+# Obten el trainset y testset
+train_iter, test_iter = DBpedia()
+train_dataset = to_map_style_dataset(train_iter)
+test_dataset = to_map_style_dataset(test_iter)
+
+# Entrenamos el modelo con el 95% de los datos del trainset
+num_train = int(len(train_dataset) * 0.95)
+
+# Creamos un dataset de validación con el 5% del trainset
+split_train_, split_valid_ = random_split(train_dataset, [num_train, len(train_dataset)-num_train])
+
+# Creamos dataloaders listos para ingresar a nuestro modelo
+train_dataloader = DataLoader(split_train_, batch_size=BATCH_TAMANO, shuffle=True, collate_fn=collate_batch)
+valid_dataloader = DataLoader(split_valid_, batch_size=BATCH_TAMANO, shuffle=True, collate_fn=collate_batch)
+test_dataloader = DataLoader(test_dataset, batch_size=BATCH_TAMANO, shuffle=True, collate_fn=collate_batch)
+```
+
 ## 3.8 Entrenamiento y evaluación de modelo de clasificación de texto
+
+Ahora vamos a entrenar y evaluar nuestro modelo. En primer lugar, se define la variable `mejor_loss_validacion` y se inicializa con un valor infinito positivo. Esta variable se utiliza para realizar un seguimiento de la mejor pérdida de validación durante el entrenamiento.
+
+Luego, se realiza un `for` a través de las épocas. Dentro de cada época, se realiza el entrenamiento y la validación del modelo utilizando los conjuntos de datos de entrenamiento y validación respectivamente.
+
+En otras palabras, si la pérdida de validación actual es menor que la mejor pérdida de validación anterior, se guarda el estado actual del modelo en el archivo `pesos_guardados.pt`.
+
+```python
+# Obten la mejor pérdida 
+major_loss_validation = float('inf')
+
+# Entrenamos
+for epoch in range(1, EPOCHS + 1):
+    # Entrenamiento
+    entrenamiento_acc, entrenamiento_loss = entrena(train_dataloader)
+    
+    # Validación
+    validacion_acc, validacion_loss = evalua(valid_dataloader)
+
+    # Guarda el mejor modelo
+    if validacion_loss < major_loss_validation:
+      best_valid_loss = validacion_loss
+      torch.save(modelo.state_dict(), "mejores_guardados.pt")
+```
+Respuesta esperada:
+```commandline
+
+```
+Evaluamos el modelo en el test dataset
+
+```python
+test_acc, test_loss = evalua(test_dataloader)
+
+print(f'Accuracy del test dataset -> {test_acc}')
+print(f'Pérdida del test dataset -> {test_loss}')
+```
+Respuesta esperada:
+```commandline
+
+```
 
 ## 3.9 Inferencia utilizando torch.compile(): el presente con PyTorch 2.X
 
+Probemos con un ejemplo. Probemos con dos ejemplos de textos en inglés. Usaremos `torch.compile()` para la acelerar la inferencia del modelo. Le damos el argumento `mode="reduce-overhead"` que hace referencia a reducir el overhead computacional de nuestro modelo, es decir, reducir recursos computacionales como el uso del GPU y reducir el tiempo necesario para correr la inferencia o, en otros casos, entrenar el modelo.
+
+`reduce-overhead` permite que nuestro código se ejecute de manera más eficiente. Sin embargo, esta optimización puede tener el costo de una pequeña cantidad de memoria adicional. Es el modo recomendado para modelos pequeños como el nuestro para clasificación.
+
+El modo `max-autotune` compila el código durante más tiempo, tratando de optimizar el código tanto como sea posible para lograr la mayor velocidad de ejecución. Este modo puede implicar explorar diferentes estrategias de optimización y encontrar la mejor, lo que puede dar como resultado tiempos de compilación más largos pero un mejor rendimiento durante la ejecución.
+
+```python
+DBpedia_label = {1: 'Company',
+                2: 'EducationalInstitution',
+                3: 'Artist',
+                4: 'Athlete',
+                5: 'OfficeHolder',
+                6: 'MeanOfTransportation',
+                7: 'Building',
+                8: 'NaturalPlace',
+                9: 'Village',
+                10: 'Animal',
+                11: 'Plant',
+                12: 'Album',
+                13: 'Film',
+                14: 'WrittenWork'}
+
+def predict(predict_model, text, texto_pipeline):
+  with torch.no_grad():
+    text = torch.tensor(texto_pipeline(text))
+    opt_mod = torch.compile(predict_model, mode="reduce-overhead")
+    output = opt_mod(text, torch.tensor([0]))
+    return output.argmax(1).item() + 1
+
+
+ejemplo_1 = "Nithari is a village in the western part of the state of Uttar Pradesh India bordering on New Delhi. Nithari forms part of the New Okhla Industrial Development Authority's planned industrial city Noida falling in Sector 31. Nithari made international news headlines in December 2006 when the skeletons of a number of apparently murdered women and children were unearthed in the village."
+
+
+model = modelo.to("cpu")
+
+
+print(f"El ejemplo 1 es de categoría {DBpedia_label[predict(model, ejemplo_1, texto_pipeline)]}")
+```
+Respuesta esperada:
+```commandline
+
+```
+
+
 ## 3.10 Almacenamiento del modelo con torch.save() y state_dict()
+
+El método `state_dict()` se utiliza para devolver el diccionario del estado del modelo. Este diccionario contiene todos los parámetros entrenables del modelo. Como pesos y sesgos en forma de tensores de PyTorch.
+
+Es útil para una variedad de tareas, como guardar y cargar modelos o transferir los parámetros aprendidos de un modelo a otro. Permite manipular fácilmente el estado del modelo como un diccionario de parámetros con nombres, sin tener que acceder a ellos directamente.
+
+Por ejemplo, si queremos guardar nuestro modelo en el disco de memoria, podemos utilizarlo para obtener un diccionario de los parámetros del modelo y luego guardar ese diccionario utilizando el módulo `pickle` de Python. Luego, cuando queramos cargar el modelo nuevamente, podemos utilizar el método `load_state_dict()` para cargar el diccionario guardado en una nueva instancia del modelo.
+
+```python
+model_state_dict = model.state_dict()
+optimizer_state_dict = optimizer.state_dict()
+
+checkpoint = {
+    "model_state_dict" :  model_state_dict,
+    "optimizer_state_dict" : optimizer_state_dict,
+    "epoch" : epoch,
+    "loss" : entrenamiento_loss,
+}
+
+torch.save(checkpoint, "model_checkpoint.pth")
+```
+
 
 ## 3.11 Sube tu modelo de PyTorch a Hugging Face
 
+Subimos el modelo al Hub de Hugging Face para que otros miembros de la comunidad tengan acceso a él y también tengamos una copia en la nube.
+Primero instalamos `huggingface_hub` por si lo tenías antes
+```bash
+pip install huggingface_hub
+```
+
+
+
 ## 3.12 Carga de modelo de PyTorch con torch.load()
+
+Ahora carguemos nuestro modelo
+
+```python
+checkpoint = torch.load("model_checkpoint.pth")
+
+train_iter = DBpedia(split="train")
+num_class = len(set([label for (label, text) in train_iter]))
+vocab_size = len(vocab)
+embedding_size = 100
+
+modelo_2 = ModeloClasificacionTexto(vocab_size=vocab_size, embed_dim=embedding_size, num_class=num_class)
+optimizer_2 = torch.optim.SGD(modelo_2.parameters(), lr=0.2)
+modelo_2.load_state_dict(checkpoint["model_state_dict"])
+optimizer_2.load_state_dict(checkpoint["optimizer_state_dict"])
+epoch_2 = checkpoint["epoch"]
+loss_2 = checkpoint["loss"]
+
+ejemplo_2 = "Axolotls are members of the tiger salamander, or Ambystoma tigrinum, species complex, along with all " \
+            "other Mexican species of Ambystoma."
+
+model_cpu = modelo_2.to("cpu")
+
+ans = DBpedia_label[predict(modelo_2, ejemplo_2, texto_pipeline)]
+
+print(ans)
+```
+Respuesta esperada:
+```commandline
+
+```
 
 # 4 Cierre del curso
