@@ -180,17 +180,654 @@ Los corpora desempeñan un papel fundamental en el desarrollo y avance del campo
 
 # 2 Fundamentos con NLTK
 
+(Natural Language Toolkit) es una biblioteca de Python muy popular y ampliamente utilizada para el procesamiento del lenguaje natural (NLP, por sus siglas en inglés). Proporciona una amplia gama de herramientas y recursos para trabajar con texto y datos de lenguaje humano.
+
+![1.png](ims%2F2%2F1.png)
+
+Entre los usos más populares para los cuales podemos emplear NLTK podemos mencionar:
+
+- **Preprocesamiento de texto:** NLTK ofrece una variedad de funciones y métodos para realizar tareas de preprocesamiento de texto, como tokenización (división de texto en palabras o frases), eliminación de puntuación, normalización de texto, lematización y etiquetado gramatical.
+
+- **Colecciones de corpus:** NLTK proporciona una amplia gama de corpus (conjuntos de datos de texto) en diferentes idiomas y dominios. Estos corpus incluyen textos de libros, discursos, chats, etiquetas gramaticales, entre otros. También ofrece herramientas para trabajar con corpus personalizados.
+
+- **Modelos de aprendizaje automático:** NLTK facilita la construcción y el entrenamiento de modelos de aprendizaje automático para tareas de procesamiento del lenguaje natural. Proporciona algoritmos para clasificación, análisis de sentimientos, extracción de información, segmentación de texto y más. Además, ofrece interfaces para integrar modelos de bibliotecas externas, como scikit-learn.
+
+- **Visualización de datos:** NLTK incluye funciones para visualizar datos de lenguaje natural, como distribuciones de frecuencia de palabras, nubes de palabras, gráficos de dispersión y árboles sintácticos. Estas visualizaciones pueden ayudar en el análisis y comprensión de los datos de texto.
+
+- **Recursos léxicos:** NLTK proporciona acceso a varios recursos léxicos, como WordNet, que es una base de datos léxica ampliamente utilizada que contiene sinónimos, antónimos, hiperónimos y otras relaciones semánticas entre las palabras. Estos recursos pueden ser útiles para tareas de desambiguación, expansión de consultas y generación de palabras clave.
+
+
+
 ## 2.1 Configurar ambiente de trabajo
+
+Para empezar, primero debemos instalar la biblioteca [NLTK](https://www.nltk.org/)
+
+```bash
+pip install nltk
+```
+Respuesta esperada:
+```commandline
+Collecting nltk
+  Downloading nltk-3.8.1-py3-none-any.whl (1.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.5/1.5 MB 2.8 MB/s eta 0:00:00
+Requirement already satisfied: click in ./venv/lib/python3.10/site-packages (from nltk) (8.1.3)
+Requirement already satisfied: joblib in ./venv/lib/python3.10/site-packages (from nltk) (1.2.0)
+Requirement already satisfied: regex>=2021.8.3 in ./venv/lib/python3.10/site-packages (from nltk) (2023.3.23)
+Requirement already satisfied: tqdm in ./venv/lib/python3.10/site-packages (from nltk) (4.65.0)
+Installing collected packages: nltk
+Successfully installed nltk-3.8.1
+```
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [1_configurar_ambiente_de_trabajo.py](scripts%2F1_configurar_ambiente_de_trabajo.py)
+
+Primero vamos a empezar por importar la biblioteca y descargar nuestro primer ejemplo de corpus de texto en español
+el cual es [cess_esp](https://mailman.uib.no/public/corpora/2007-October/005448.html)
+
+```python
+import nltk
+
+# Descargamos un corpus en español
+nltk.download('cess_esp')
+```
+Respuesta esperada:
+```commandline
+[nltk_data] Downloading package cess_esp to
+[nltk_data]     /home/ichcanziho/nltk_data...
+[nltk_data]   Unzipping corpora/cess_esp.zip.
+```
+
+Inspeccionamos nuestro corpus descargado
+
+```python
+# Cargamos las oraciones en la variable corpus
+corpus = nltk.corpus.cess_esp.sents()
+print(corpus)
+print(len(corpus))
+```
+Respuesta esperada:
+```commandline
+[['El', 'grupo', 'estatal', 'Electricité_de_France', '-Fpa-', 'EDF', '-Fpt-', 'anunció', 'hoy', ',', 'jueves', ',', 'la', 'compra', 'del', '51_por_ciento', 'de', 'la', 'empresa', 'mexicana', 'Electricidad_Águila_de_Altamira', '-Fpa-', 'EAA', '-Fpt-', ',', 'creada', 'por', 'el', 'japonés', 'Mitsubishi_Corporation', 'para', 'poner_en_marcha', 'una', 'central', 'de', 'gas', 'de', '495', 'megavatios', '.'], ['Una', 'portavoz', 'de', 'EDF', 'explicó', 'a', 'EFE', 'que', 'el', 'proyecto', 'para', 'la', 'construcción', 'de', 'Altamira_2', ',', 'al', 'norte', 'de', 'Tampico', ',', 'prevé', 'la', 'utilización', 'de', 'gas', 'natural', 'como', 'combustible', 'principal', 'en', 'una', 'central', 'de', 'ciclo', 'combinado', 'que', 'debe', 'empezar', 'a', 'funcionar', 'en', 'mayo_del_2002', '.'], ...]
+6030
+```
+Podemos observar como nuestro corpus es una lista de oraciones en donde cada oración es en si misma otra lista con las palabras
+ya tokenizadas. Podemos observar como nuestro corpus tiene `6030` oraciones. Sin embargo, ahora nos interesa tener una sola lista con todas las palabras disponibles no una lista de listas, entonces
+vamos a hacer `plana` nuestra lista.
+
+```python
+# Convertimos nuestro arreglo bidimensional en unidimensional
+flatten = [item for sublist in corpus for item in sublist]
+print(flatten[0:20])
+print(len(flatten))
+```
+Respuesta esperada:
+```commandline
+['El', 'grupo', 'estatal', 'Electricité_de_France', '-Fpa-', 'EDF', '-Fpt-', 'anunció', 'hoy', ',', 'jueves', ',', 'la', 'compra', 'del', '51_por_ciento', 'de', 'la', 'empresa', 'mexicana']
+192686
+```
+Genial ahora tenemos todas las palabras dentro de una sola lista y observamos que en total tenemos `192,686` palabras, más adeltante
+veremos métricas que nos ayuden a entender un poco más la riqueza de este corpus.
 
 ## 2.2 Palabras, textos y vocabularios
 
+En esta clase vamos a ver un par de ejemplos de como podemos utilizar la biblioteca de `re` para utilizar `expresiones regulares` en python.
+
+> Las expresiones regulares (regexp o regex) son secuencias de caracteres que forman un patrón de búsqueda. Se utilizan para buscar y manipular texto de manera eficiente. Las expresiones regulares permiten realizar tareas como encontrar coincidencias de patrones, validar y extraer información específica de un texto.
+
+En `python` podemos utilizar la biblioteca `re`para utilizar estas expresiones regulares.
+Un ejemplo básico de uso de `re` es el siguiente:
+
+```python
+import re
+
+texto = "Hola, ¿cómo estás?"
+patron = r"estás"  # El prefijo 'r' indica una cadena de texto cruda (raw string)
+
+coincidencia = re.search(patron, texto)
+if coincidencia:
+    print("Se encontró una coincidencia")
+else:
+    print("No se encontraron coincidencias")
+```
+
+Ahora con base en el código de la clase pasada veamos un par de expresiones regulares que nos pueden ser útiles para crear
+nuestros vocabularios limpios.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [2_palabras_textos_vocabularios.py](scripts%2F2_palabras_textos_vocabularios.py)
+
+De la clase anterior tenemos:
+
+```python
+# Clase 1
+import nltk
+corpus = nltk.corpus.cess_esp.sents()
+flatten = [item for sublist in corpus for item in sublist]
+```
+
+Continuemos con unas búsquedas muy simples. Como el ejemplo anterior, si queremos buscar que una palabra o una secuencia de texto se encuentre dentro
+de otra podemos utilizar `re.search(patron, texto)`
+
+```python
+# Clase 2
+import re
+
+# Meta-caracteres básicos
+arr = [w for w in flatten if re.search('es', w)]
+print(arr[:5])
+```
+Respuesta esperada:
+```commandline
+['estatal', 'jueves', 'empresa', 'centrales', 'francesa']
+```
+El código nos permitio encontrar 5 palabras que contengan la secuencia `es` dentro de si mismas.
+
+Pero algo un poco más avanzado sería preguntar por las palabras que inicien o terminen con la secuencia `es` para ello hacemos:
+```python
+# Utilizamos $ para buscar palabras que terminen con un patron 
+arr = [w for w in flatten if re.search('es$', w)]
+print(arr[:5])
+
+# Utilizamos ^ para buscar palabras que inicien con un patron 
+arr = [w for w in flatten if re.search('^es', w)]
+print(arr[:5])
+```
+Respuesta esperada:
+```commandline
+['jueves', 'centrales', 'millones', 'millones', 'dólares']
+['estatal', 'es', 'esta', 'esta', 'eso']
+```
+Ahora un reto un poco más interesante. Podemos combinar los comandos anteriores `$` y `^` para buscar palabras que inicien
+y terminen de una forma concreta, sin embargo, podemos usar una secuencia `comodin` para indicar que puede haber cualquier 
+cantidad de caracteres presentes usando `..`.
+
+```python
+arr = [w for w in flatten if re.search('^..j..t..$', w)]
+print(arr)
+```
+Respuesta esperada:
+```commandline
+['tajantes']
+```
+La palabra `tajantes` cumple con nuestra expresión regular, porque la expresión se puede leer así:
+
+- `^..` > una palabra que inicie con cualquier letra y con cualquier cantidad de ellas
+- `j` > que eventualmente encuentre una letra `j`
+- `..` > seguido de cualquier letra cualquier cantidad de veces
+- `t` > que eventualmente encuentre una letra `t`
+- `..$` > y que finalmente termine con cualquier letra cualquier cantidad de veces
+
+Algo interesante es que podemos utilizar `rangos` para buscar secuencias específicas de letras entre una lista de letras disponibles.
+
+```python
+# Rangos [a-z], [A-Z], [0-9]
+arr = [w for w in flatten if re.search('^[ghi][mno][jlk][def]$', w)]
+print(arr)
+```
+Respuesta esperada:
+```commandline
+['golf', 'golf']
+```
+El código anterior permite encontrar una palabra de 4 letras donde la primer letra puede ser cualquiera entre `(g, h, i)` y la siguiente
+puede ser entre `(m, n, o)` de esta manera una palabra que cumple con esta expresión es `golf`
+
+Finalmente, podemos utilizar `Kleene closures` para decir si nos interesa que aparezca un patron 0 o más veces o al menos 1 vez:
+
+```python
+# Clausuras *, * (Kleene closures)
+# El comando * es para indicar un 0 o más veces (osea que NO es indispensable que aparezca el patron)
+arr = [w for w in flatten if re.search('^(no)*', w)]
+print(arr[:10])
+# El comando + es para indicar que necesita aparecer al menos 1 vez
+arr = [w for w in flatten if re.search('(no)+', w)]
+print(arr[:10])
+```
+Respuesta esperada:
+```commandline
+['El', 'grupo', 'estatal', 'Electricité_de_France', '-Fpa-', 'EDF', '-Fpt-', 'anunció', 'hoy', ',']
+['norte', 'no', 'no', 'noche', 'no', 'no', 'gobierno', 'notificación', 'Unión_Fenosa_Inversiones', 'italiano']
+```
+
+Como ejercicio extra, una vez que hemos encontrado un cierto patron en el texto podemos utilizar group() para extraer ese texto
+e incluso agruparlo en caso de que el patron contenga varias secuencias.
+
+```python
+texto = "Mi número de teléfono es 123-456-7890"
+patron = r"(\d{3})-(\d{3})-(\d{4})"
+
+coincidencia = re.search(patron, texto)
+if coincidencia:
+    numero_telefono = coincidencia.group()  # Obtiene la coincidencia completa
+    area = coincidencia.group(1)  # Obtiene el grupo de captura 1 (código de área)
+    print("Número de teléfono:", numero_telefono)
+    print("Código de área:", area)
+```
+Respuesta esperada:
+```commandline
+Número de teléfono: 123-456-7890
+Código de área: 123
+```
+
 ## 2.3 Tokenizacion con Expresiones Regulares
+
+> **Normalización de Texto** (como aplicación de las expresiones regulares)
+**Tokenización:** Es el proceso mediante el cual se sub-divide una cadena de texto en unidades linguísticas minimas (palabras)
+
+Como ya conocemos un poco de `regexp` podemos utilizar este conocimiento para crear un sistema de tokenizado que nos permita
+separar las palabras de una oración.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [3_tokenizado_con_regexp.py](scripts%2F3_tokenizado_con_regexp.py)
+
+Empecemos importando bibliotecas y descargando paquetes que vamos a necesitar:
+
+```python
+import re
+import nltk
+
+nltk.download('wordnet')
+print("="*64)
+nltk.download('punkt')
+print("="*64)
+```
+Respuesta esperada:
+```commandline
+[nltk_data] Downloading package wordnet to
+[nltk_data]     /home/ichcanziho/nltk_data...
+[nltk_data] Downloading package punkt to /home/ichcanziho/nltk_data...
+================================================================
+[nltk_data]   Unzipping tokenizers/punkt.zip.
+================================================================
+```
+
+Ahora para probar nuestros tokenizadores veamos un texto de ejemplo:
+
+```python
+texto = """ Cuando sea el rey del mundo  (imaginaba él en su cabeza) no tendré que  preocuparme por estas bobadas.
+            Era solo un niño de 7 años, pero pensaba que podría ser cualquier cosa que su imaginación le permitiera visualizar en su cabeza ..."""
+
+print(texto)
+```
+respuesta esperada:
+```commandline
+ Cuando sea el rey del mundo  (imaginaba él en su cabeza) no tendré que  preocuparme por estas bobadas.
+            Era solo un niño de 7 años, pero pensaba que podría ser cualquier cosa que su imaginación le permitiera visualizar en su cabeza ...
+```
+Quizá lo más lógico es partir por la idea de que las palabras se separan por espacios entonces hacer un split por ' ' no parece
+una mala idea.
+
+```python
+# Caso 1: tokenizacion más simple: por espacios vacios !
+print(re.split(r' ', texto))
+```
+Respuesta esperada:
+```commandline
+['', 'Cuando', 'sea', 'el', 'rey', 'del', 'mundo', '', '(imaginaba', 'él', 'en', 'su', 'cabeza)', 'no', 'tendré', 'que', '', 'preocuparme', 'por', 'estas', 'bobadas.\n', '', '', '', '', '', '', '', '', '', '', '', 'Era', 'solo', 'un', 'niño', 'de', '7', 'años,', 'pero', 'pensaba', 'que', 'podría', 'ser', 'cualquier', 'cosa', 'que', 'su', 'imaginación', 'le', 'permitiera', 'visualizar', 'en', 'su', 'cabeza', '...']
+```
+Observamos que no es perfecto porque hay palabras que tienen más de un espacio seguido o que tienen saltos de línea `\n` y este tokenizador no lidia con esos problemas,
+Podemos utilizar una variación ligeramente más inteligente que es `\s` que indica cualquier separador no solo espacios.
+
+```python
+# Caso 2: tokenización usando expresiones regulares
+print(re.split(r'[ \s]+', texto))
+```
+Respuesta esperada:
+```commandline
+['', 'Cuando', 'sea', 'el', 'rey', 'del', 'mundo', '(imaginaba', 'él', 'en', 'su', 'cabeza)', 'no', 'tendré', 'que', 'preocuparme', 'por', 'estas', 'bobadas.', 'Era', 'solo', 'un', 'niño', 'de', '7', 'años,', 'pero', 'pensaba', 'que', 'podría', 'ser', 'cualquier', 'cosa', 'que', 'su', 'imaginación', 'le', 'permitiera', 'visualizar', 'en', 'su', 'cabeza', '...']
+```
+Mejoro respecto al pasado, pero aún tiene problemas con identificar palabras por ejemplo: `'(imaginaba'` o `cabeza)`
+Entonces podemos utilizar la expresión `\W\s` letras sin contar signos de puntuación o números.
+
+```python
+# RegEx reference: \W -> all characters other than letters, digits or underscore
+print(re.split(r'[ \W\s]+', texto))
+```
+Respuesta esperada:
+```commandline
+['', 'Cuando', 'sea', 'el', 'rey', 'del', 'mundo', 'imaginaba', 'él', 'en', 'su', 'cabeza', 'no', 'tendré', 'que', 'preocuparme', 'por', 'estas', 'bobadas', 'Era', 'solo', 'un', 'niño', 'de', '7', 'años', 'pero', 'pensaba', 'que', 'podría', 'ser', 'cualquier', 'cosa', 'que', 'su', 'imaginación', 'le', 'permitiera', 'visualizar', 'en', 'su', 'cabeza', '']
+```
+Ese código mejora los resultados, pero sigue siendo un tokenizador muy simple que falla con textos un poco más complejos, por
+ejemplo tomemos el siguiente caso:
+
+```python
+# nuestra antigua regex no funciona en este caso:
+texto = 'En los E.U. esa postal vale $15.50 ...'
+
+print(re.split(r'[ \W\s]+', texto))
+```
+Respuesta esperada:
+```commandline
+['En', 'los', 'E', 'U', 'esa', 'postal', 'vale', '15', '50', '']
+```
+Nuestro tokenizador simple no logra entender siglas o dinero con centavos.
+
+Podemos utilizar un patron mucho más inteligente y completo y usarlo junto con `nltk.regexp_tokenize` para justamente tener nuestro
+tokenizador.
+
+```python
+pattern = r'''(?x)                 # set flag to allow verbose regexps
+              (?:[A-Z]\.)+         # abbreviations, e.g. U.S.A.
+              | \w+(?:-\w+)*       # words with optional internal hyphens
+              | \$?\d+(?:\.\d+)?%? # currency and percentages, e.g. $12.40, 82%
+              | \.\.\.             # ellipsis
+              | [][.,;"'?():-_`]   # these are separate tokens; includes ], [
+'''
+
+print(nltk.regexp_tokenize(texto, pattern))
+```
+Respuesta esperada:
+```commandline
+['En', 'los', 'E.U.', 'esa', 'postal', 'vale', '$15.50', '...']
+```
+Esta respuesta es muy limpia e interesante. Sin embargo, también podemos utilizar un tokenizador en español pre-entrenado.
+
+```python
+from nltk import word_tokenize
+
+print(word_tokenize(texto, language="spanish"))
+```
+Respuesta esperada:
+```commandline
+['En', 'los', 'E.U', '.', 'esa', 'postal', 'vale', '$', '15.50', '...']
+```
+
+### Normalizando las palabras
+
+En esta breve sección vamos a explicar los conceptos de `Stemming` y `Lemmatization`.
+
+Tanto los stemmers como los lematizadores son herramientas utilizadas en el procesamiento del lenguaje natural (NLP) para reducir las palabras a su forma base o raíz, lo que ayuda a normalizar el texto y reducir la variación morfológica. Aunque tienen objetivos similares, se diferencian en su enfoque y resultados.
+
+**Stemming (Stemmer):**
+
+El stemming (o el stemmer) es un proceso de reducción de palabras a su raíz o "stem" eliminando afijos o sufijos comunes. El resultado a menudo no es una palabra real o legible en el lenguaje natural, pero aún puede ser útil para ciertos análisis de texto. El stemming es un enfoque basado en reglas heurísticas simples y no tiene en cuenta el contexto de las palabras.
+
+```python
+from nltk.stem import PorterStemmer
+
+stemmer = PorterStemmer()
+
+words = ["running", "runs", "ran"]
+
+for word in words:
+    stemmed_word = stemmer.stem(word)
+    print(word, "->", stemmed_word)
+```
+Respuesta esperada:
+```commandline
+running -> run
+runs -> run
+ran -> ran
+```
+En el ejemplo, el stemmer de Porter de NLTK reduce las palabras a su forma base eliminando sufijos comunes.
+
+**Lemmatization (Lemmatizer):**
+
+La lematización (o el lematizador) es un enfoque más avanzado que busca la forma base de una palabra, conocida como "lematización", conservando la legibilidad y validez en el lenguaje natural. A diferencia del stemming, la lematización tiene en cuenta el contexto y la morfología de las palabras. Los lematizadores utilizan reglas lingüísticas y bases de datos léxicas (como WordNet) para obtener el lema de una palabra.
+```python
+from nltk.stem import WordNetLemmatizer
+
+lemmatizer = WordNetLemmatizer()
+
+words = ["running", "runs", "ran"]
+
+for word in words:
+    lemmatized_word = lemmatizer.lemmatize(word)
+    print(word, "->", lemmatized_word)
+```
+Respuesta esperada:
+```commandline
+running -> running
+runs -> run
+ran -> ran
+```
+
+En este ejemplo, el lematizador de NLTK produce lemas válidos para las palabras en contexto, teniendo en cuenta las diferentes formas gramaticales.
 
 ## 2.4 Estadísticas básicas del lenguaje
 
+Empecemos importando las bibliotecas y datos necesarios:
+
+```python
+import nltk
+nltk.download('book')
+from nltk.book import *
+```
+Respuesta esperada:
+```commandline
+*** Introductory Examples for the NLTK Book ***
+Loading text1, ..., text9 and sent1, ..., sent9
+Type the name of the text or sentence to view it.
+Type: 'texts()' or 'sents()' to list the materials.
+text1: Moby Dick by Herman Melville 1851
+text2: Sense and Sensibility by Jane Austen 1811
+text3: The Book of Genesis
+text4: Inaugural Address Corpus
+text5: Chat Corpus
+text6: Monty Python and the Holy Grail
+text7: Wall Street Journal
+text8: Personals Corpus
+text9: The Man Who Was Thursday by G . K . Chesterton 1908
+```
+Ahora sabemos que tenemos 9 libros a nuestra disposición, vamos a analizar el primero de ellos
+`Moby Dick`:
+
+```python
+# escogemos text1 que es el famoso libro Moby Dick
+print(text1)
+
+# Vemos que el texto ya viene tokenizado incluyendo caracteres especiales ....
+print(text1.tokens[:10])
+
+# ¿Cuantos tokens tiene el libro?
+print(len(text1))
+```
+Respuesta esperada:
+```commandline
+<Text: Moby Dick by Herman Melville 1851>
+['[', 'Moby', 'Dick', 'by', 'Herman', 'Melville', '1851', ']', 'ETYMOLOGY', '.']
+260819
+```
+Ahora sabemos que hay un total de 260,819 palabras en el texto, pero nos interesa obtener la cantidad de palabras únicas
+y con ello construir nuestro vocabulario. Con esta información podemos definir: **Medida de riqueza lexica en un texto:**
+
+![formula](https://latex.codecogs.com/gif.download?%5Cdpi%7B120%7D%20%5Cbg_white%20R_%7Bl%7D%20%3D%20%5Cfrac%7B%5Ctext%7Btotal%20de%20palabras%20unicas%7D%7D%7B%5Ctext%7Btotal%20de%20palabras%7D%7D%20%3D%20%5Cfrac%7B%5Ctext%7Blongitud%20del%20vocabulario%7D%7D%7B%5Ctext%7Blongitud%20del%20texto%7D%7D)
+
+```python
+# Primero realizamos la construcción de un vocabulario (identificamos las palabras unicas que hay en el libro)
+vocabulario = sorted(set(text1))
+print(len(vocabulario))
+print(vocabulario[1000:1050])
+
+# luego definimos la medida de riqueza léxica:
+rl = len(set(text1)) / len(text1)
+print(rl)
+```
+Respuesta esperada:
+
+```commandline
+19317
+['Crew', 'Crish', 'Crockett', 'Cross', 'Crossed', 'Crossing', 'Crotch', 'Crowding', 'Crown', 'Crozetts', 'Cruelty', 'Cruising', 'Cruppered', 'Crusaders', 'Crushed', 'Crying', 'Cuba', 'Curious', 'Curse', 'Cursed', 'Curses', 'Cussed', 'Customs', 'Cut', 'Cutter', 'Cutting', 'Cuvier', 'Cyclades', 'Czar', 'D', 'DAGGOO', 'DAM', 'DANCE', 'DANCING', 'DANIEL', 'DANISH', 'DARKENS', 'DARWIN', 'DAVENANT', 'DEAD', 'DEATH', 'DEBELL', 'DECK', 'DEL', 'DESTROYED', 'DEVIL', 'DICTIONARY', 'DID', 'DIGNITY', 'DISCOVERS']
+0.07406285585022564
+```
+
+De esta forma podemos observar que el libro, sin una limpieza en las palabras, cuenta con 19,317 palabras diferentes, lo cuáñ
+representa una riqueza léxica del 7.4%.
+
+```python
+# podemos definir funciones en python para estas medidas léxicas:
+def riqueza_lexica(texto):
+    return len(set(texto)) / len(texto)
+
+
+def porcentaje_palabra(palabra, texto):
+    c = texto.count(palabra)
+    return 100 * c / len(texto), c
+
+
+print(riqueza_lexica(text1))
+print(porcentaje_palabra("monster", text1))
+```
+Respuesta esperada:
+```commandline
+0.07406285585022564
+(0.018786974875296663, 49)
+```
+
 ## 2.5 Distribuciones de frecuencia de palabras
 
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar en: [5_distribucion_palabras.py](scripts%2F5_distribucion_palabras.py)
+
+Los cálculos estadísticos más simples que se pueden efectuar sobre un texto o un corpus son los relacionados con frecuencia de aparición de palabras.
+
+* Podemos construir un diccionario en Python donde las llaves sean las palabras y los valores sean las frecuencias de ocurrencias de esas palabras.
+
+* ejemplo `dic = {'monster': 49 ,  'boat': 54,  ...}`
+
+El método más simple que se nos puede ocurrir para esta tarea sería recorrer cada una de las palabras diferentes dentro de nuestro
+vocabulario y contar cada una de ellas y almacenar en un diccionario la palabra como `key` y la frecuencia como `value`:
+
+```python
+start = time()
+# METODO NO recomendable para conjuntos muy grandes
+dic = {}
+for palabra in set(text1):
+    # dic[palabra] = porcentaje_palabra(palabra, text1)
+    dic[palabra] = text1.count(palabra)
+
+print("Execution's time:", time()-start, "seconds")
+print(dic)
+```
+Respuesta esperada:
+```commandline
+Execution's time: 30.865009546279907 seconds
+{'claret': 1, 'trowsers': 13, 'observation': 5, 'Won': 1, 'arises': 1, 'panting': 3, 'Sebastian': 9, 'dedicates': 1, 'expediency': 1, 'coined': 1, 'Dusk': 1, 'Sub': 7, 'goggling': 1, 'screamed': 1, 'whistled': 1, 'fibrous': 1, 'wander': 1, 'opening': 14, 'anchor': 21, 'BLOODY': 1, 'extant': 3, 'BLACK': 2,...}
+```
+Sin embargo, este método es muy ineficiente y NLTK proporciona un método mucho más simple y eficaz.
+```python
+start = time()
+# NLTK tiene un metodo muy eficiente
+fdist = FreqDist(text1)
+print("Execution's time:", time()-start, "seconds")
+print(fdist.most_common(20))
+```
+Respuesta esperada:
+```commandline
+Execution's time: 0.0629119873046875 seconds
+[(',', 18713), ('the', 13721), ('.', 6862), ('of', 6536), ('and', 6024), ('a', 4569), ('to', 4542), (';', 4072), ('in', 3916), ('that', 2982), ("'", 2684), ('-', 2552), ('his', 2459), ('it', 2209), ('I', 2124), ('s', 1739), ('is', 1695), ('he', 1661), ('with', 1659), ('was', 1632)]
+```
+Adicinoalmente el objeto `fdist` tiene un método `plot`:
+```python
+fdist.plot(20)
+plt.savefig("i1.png")
+plt.close()
+```
+Respuesta esperada:
+![i1.png](scripts%2Fi1.png)
+
 ## 2.6 Refinamiento y visualización de cuerpos de texto
+
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar en: [6_refinamiento.py](scripts%2F6_refinamiento.py)
+
+En este código veremos una forma más detallada de limpiar y normalizar nuestro texto para gráficar las 20 palabras más comunes.
+
+Empezamos importando nuestras bibliotecas:
+
+```python
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import matplotlib.pyplot as plt
+from collections import Counter
+from nltk.book import text1
+import string
+import re
+```
+Ahora creamos un `lematizador` y un conjunto de `stop words` que eliminaremos del texto original:
+
+```python
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+```
+
+Ahora creamos una función que limpie el texto por nosotros utilizando las variables anteriormente definidas.
+
+```python
+def clean_corpus(corpus, sw, lem, min_words, most_common):
+    """
+    Limpia un corpus de texto aplicando diferentes filtros.
+
+    Args:
+        corpus (list): Corpus de texto a limpiar.
+        sw (set): Conjunto de palabras vacías (stop words) a eliminar.
+        lem (WordNetLemmatizer): Objeto lematizador de palabras.
+        min_words (int): Mínimo número de palabras en una palabra filtrada.
+        most_common (int): Número de palabras más comunes a extraer.
+
+    Returns:
+        tuple: Una tupla que contiene el diccionario de palabras filtradas y una lista de las palabras más comunes.
+    """
+    # empezamos minimizando todas las palabras y eliminando las palabras que sean stopwords
+    filtered_corpus = [word.lower() for word in corpus if word.lower() not in sw]
+    # eliminamos signos de puntación
+    filtered_corpus = [word for word in filtered_corpus if word not in string.punctuation]
+    # eliminamos palabras que tengan una longitud menor o igual a 5 letras
+    filtered_corpus = [word for word in filtered_corpus if len(word) > 5]
+    # eliminamos letras que no sean texto
+    filtered_corpus = [word for word in filtered_corpus if not re.match(r'\d', word)]
+    # lematizamos cada palabra
+    filtered_corpus = [lem.lemmatize(word) for word in filtered_corpus]
+    # obtenemos un contador de las palabras en el corpus
+    filtered_corpus = Counter(filtered_corpus)
+    # guardamos las palabras más comunes
+    mc = filtered_corpus.most_common(most_common)
+    # eliminamos palabras cuya frecuencia sea menor a un umbral
+    elementos_filtrados = {clave: valor for clave, valor in filtered_corpus.items() if valor > min_words}
+    # regresamos el contador y las palabras más comunes
+    return elementos_filtrados, mc
+```
+
+Finalmente, creamos una función para graficar nuestra lista de palabras más comunes:
+
+```python
+def plot_freq(elementos):
+    """
+       Grafica la frecuencia de las palabras en un diccionario.
+
+       Args:
+           elementos (list): Lista de tuplas que contienen palabras y sus frecuencias.
+       """
+    palabras = [elemento[0] for elemento in elementos]
+    frecuencias = [elemento[1] for elemento in elementos]
+    plt.plot(palabras, frecuencias)
+    plt.xticks(rotation=90)
+    plt.grid(True)
+    plt.xlabel('Palabras')
+    plt.ylabel('Frecuencia')
+    plt.title('Frecuencia de palabras')
+    plt.tight_layout()
+    plt.savefig("i2.png")
+```
+
+Y ahora mandamos a llamar a nuestras funciones definidas:
+
+```python
+if __name__ == '__main__':
+
+    lemmatizer = WordNetLemmatizer()
+    stop_words = set(stopwords.words('english'))
+    vocabulario_filtrado, vocabulario_popular = clean_corpus(text1, stop_words, lemmatizer, 5, 20)
+    print(vocabulario_filtrado)
+    print(vocabulario_popular)
+    plot_freq(vocabulario_popular)
+```
+Respuesta esperada:
+```commandline
+{'supplied': 12, 'school': 18, 'nation': 17, 'somehow': 44, 'mildly': 10, 'others': 39, 'called': 116, 'tongue': 14, 'leaving': 39, 'ignorance': 11, 'letter': 26, 'almost': 195, 'animal': 22, 'rolling': 36, 'arched': 11, 'dictionary': 6, 'immediately': 17, 'english': 49, 'french': 23, 'spanish': 12, 'extract': 7, 'appears': 7, 'street': 28, 'whatever': 46, 'allusion': 12, 'whale': 268, 'sacred': 10, 'therefore': 67, 'statement': 8, 'however': 95, 'cetology': 10, 'touching': 46, 'ancient': 28, 'author': 12, 'generally': 31, 'solely': 6, 'valuable': 11, 'glancing': 14, 'thought': 184, 'fancied': 9, 'leviathan': 113, 'generation': 6, 'including': 8, 'hopeless': 8, 'strong': 36, 'sometimes': 87, 'devilish': 9, 'glass': 10, 'altogether': 29, 'please': 13, 'heart': 29, 'friend': 43, 'clearing': 6, 'heaven': 68, 'making': 47, 'gabriel': 20, 'coming': 54, 'strike': 37, 'splintered': 7, 'together': 64, 'created': 7, 'prepared': 12, 'swallow': 15, 'therein': 6, 'serpent': 8, 'crooked': 8, 'dragon': 7, 'besides': 50, 'within': 79, 'monster': 58, 'bottomless': 7, 'holland': 7, 'indian': 61, 'length': 82, 'scarcely': 9, 'proceeded': 6, 'sunrise': 11, 'appeared': 10, 'former': 20, 'monstrous': 11, 'towards': 114, 'beating': 11, 'history': 25, 'visited': 7, 'country': 29, 'catching': 7, 'brought': 38, 'killed': 35, 'narrative': 12, 'whereas': 18, 'thing': 132, 'whether': 91, 'vessel': 81, 'dreadful': 6, 'swallowed': 13, 'sleep': 7, 'described': 8, 'prophet': 19, 'patient': 6, 'boiling': 15, 'received': 26, 'nothing': 115, 'certain': 89, 'exceeding': 12, 'incredible': 9, 'quantity': 13, 'secure': 12, 'breast': 8, 'wounded': 9, 'immense': 16, 'motion': 29, 'body': 9, 'peaceful': 6, 'trouble': 11, 'learned': 25, 'thirty': 27, 'plainly': 39, 'browne': 6, 'modern': 19, 'ponderous': 13, 'battle': 32, 'summer': 18, 'island': 51, 'opening': 15, 'without': 156, 'stream': 15, 'living': 73, 'creature': 76, 'stretched': 10, 'promontory': 6, 'moving': 15, 'breath': 25, 'spout': 16, 'mighty': 47, 'swimming': 30, 'behind': 50, 'attend': 10, 'chance': 54, 'mistake': 11, 'floating': 26, 'twelve': 16, 'voyage': 121, 'nature': 44, 'placed': 37, 'shoulder': 25, 'africa': 8, 'forced': 19, 'proceed': 15, 'frequently': 14, 'barrel': 21, 'herring': 6, 'harpooneer': 137, 'caught': 45, 'greenland': 36, 'several': 47, 'afford': 9, 'weight': 17, 'baleen': 11, 'garden': 9, 'master': 25, 'swiftness': 6, 'southern': 12, 'hundred': 58, 'captain': 353, 'attended': 6, 'america': 13, 'special': 15, 'important': 19, 'charge': 11, 'compare': 7, 'respect': 24, 'magnitude': 22, 'appear': 6, 'comparison': 6, 'doubtless': 13, 'largest': 19, 'creation': 8, 'little': 249, 'afternoon': 11, 'supposed': 15, 'towing': 14, 'ashore': 34, 'seemed': 283, 'endeavor': 8, 'larger': 9, 'seldom': 25, 'attack': 12, 'afraid': 15, 'mention': 16, 'article': 16, 'prevent': 6, 'approach': 6, 'active': 8, 'fierce': 11, 'requires': 7, 'fisherman': 35, 'reference': 14, 'nantucket': 96, 'fishery': 69, 'stranded': 12, 'shore': 7, 'somewhere': 24, 'branch': 9, 'ordinary': 19, 'consideration': 14, 'pirate': 16, 'either': 40, 'thrown': 25, 'property': 8, 'barbed': 6, 'bright': 25, 'spire': 6, 'driven': 10, 'around': 38, 'spouted': 6, 'express': 9, 'london': 14, 'fifteen': 11, 'gallon': 7, 'stroke': 18, 'velocity': 10, 'hunter': 48, 'account': 43, 'roaring': 9, 'passage': 35, 'inferior': 11, 'cuvier': 11, 'degree': 31, 'covered': 11, 'purpose': 43, 'extending': 8, 'spermaceti': 19, 'element': 19, 'beneath': 76, 'colour': 21, 'language': 7, 'cannot': 69, 'mariner': 45, 'million': 9, 'gather': 6, 'shoal': 8, 'mysterious': 11, 'instinct': 9, 'region': 9, 'though': 384, 'shark': 51, 'people': 46, 'atlantic': 20, 'person': 34, 'observing': 8, 'spouting': 12, 'observed': 18, 'pointing': 19, 'pasture': 7, 'child': 18, 'setting': 13, 'pacific': 36, 'answered': 22, 'pretty': 29, 'christian': 25, 'fellow': 65, 'cooper': 10, 'paper': 10, 'introduced': 6, 'conversation': 6, 'matter': 100, 'finally': 27, 'destroyed': 10, 'shroud': 18, 'moonlight': 8, 'engaged': 18, 'capture': 14, 'nearly': 34, 'tremendous': 9, 'distance': 41, 'scoresby': 10, 'enormous': 26, 'everything': 20, 'utterly': 13, 'astonishment': 6, 'interesting': 8, 'entirely': 29, 'excited': 8, 'curiosity': 10, 'numerous': 16, 'possessed': 7, 'convenient': 11, 'opportunity': 6, 'better': 64, 'weapon': 17, 'extremity': 11, 'manner': 38, 'regarded': 24, 'dangerous': 13, 'specie': 31, 'whaling': 131, 'demanded': 11, 'point': 14, 'steady': 29, 'breach': 9, 'thunder': 34, 'lightning': 31, 'occurred': 10, 'belonged': 13, 'hussey': 17, 'pursued': 10, 'assault': 9, 'furious': 7, 'rushed': 15, 'comrade': 19, 'leaping': 14, 'striking': 24, 'peculiar': 56, 'portion': 7, 'interest': 20, 'thousand': 67, 'largely': 8, 'report': 9, 'application': 6, 'directly': 20, 'probably': 15, 'moment': 117, 'whaleman': 46, 'adventure': 11, 'gathered': 8, 'homeward': 7, 'cruise': 11, 'commodore': 12, 'replied': 11, 'samuel': 11, 'brother': 14, 'another': 115, 'northern': 11, 'possible': 30, 'discover': 7, 'object': 50, 'forward': 57, 'laying': 6, 'whalemen': 72, 'indirectly': 13, 'mystic': 17, 'something': 123, 'impossible': 17, 'struck': 49, 'appearance': 15, 'eagerly': 8, 'different': 24, 'regular': 24, 'current': 10, 'vicinity': 20, 'elsewhere': 13, 'upright': 12, 'entrance': 8, 'perhaps': 89, 'arctic': 7, 'returned': 14, 'pursuit': 26, 'bloody': 9, 'possession': 13, 'savage': 65, 'taking': 53, 'american': 40, 'return': 15, 'departed': 14, 'suddenly': 50, 'perpendicularly': 8, 'coffin': 59, 'harpooned': 8, 'bethink': 9, 'chapter': 181, 'occasion': 15, 'slowly': 52, 'naturalist': 15, 'exclaimed': 15, 'turning': 53, 'instant': 77, 'destruction': 7, 'killer': 7, 'boundless': 6, 'ishmael': 20, 'precisely': 27, 'particular': 58, 'watery': 25, 'driving': 9, 'whenever': 15, 'growing': 9, 'involuntarily': 12, 'pausing': 10, 'bringing': 10, 'especially': 44, 'principle': 13, 'deliberately': 8, 'stepping': 7, 'knocking': 8, 'pistol': 8, 'quietly': 19, 'surprising': 7, 'cherish': 9, 'feeling': 34, 'commerce': 6, 'extreme': 14, 'breeze': 24, 'previous': 35, 'thence': 7, 'silent': 26, 'mortal': 50, 'revery': 7, 'leaning': 28, 'seated': 27, 'looking': 70, 'bulwark': 37, 'rigging': 34, 'striving': 10, 'landsman': 18, 'nailed': 11, 'field': 8, 'pacing': 11, 'straight': 46, 'seemingly': 9, 'strange': 98, 'content': 25, 'yonder': 18, 'possibly': 30, 'falling': 12, 'league': 12, 'magnetic': 7, 'virtue': 22, 'needle': 22, 'compass': 27, 'thither': 10, 'carry': 16, 'leaf': 19, 'absent': 10, 'minded': 6, 'plunged': 9, 'deepest': 6, 'infallibly': 11, 'desert': 10, 'happen': 8, 'desire': 12, 'romantic': 7, 'valley': 11, 'hollow': 23, 'meadow': 9, 'cattle': 6, 'sleepy': 8, 'distant': 21, 'reaching': 12, 'mountain': 25, 'picture': 35, 'unless': 29, 'prairie': 18, 'wanting': 11, 'travel': 9, 'receiving': 13, 'handful': 10, 'silver': 13, 'needed': 7, 'invest': 6, 'passenger': 11, 'mystical': 9, 'vibration': 6, 'persian': 7, 'separate': 20, 'surely': 7, 'meaning': 21, 'deeper': 19, 'fountain': 13, 'drowned': 12, 'ocean': 16, 'phantom': 22, 'conscious': 8, 'night': 11, 'general': 69, 'distinction': 7, 'office': 10, 'honourable': 7, 'schooner': 6, 'confess': 8, 'considerable': 26, 'officer': 35, 'salted': 6, 'egyptian': 11, 'house': 9, 'pyramid': 10, 'simple': 11, 'sailor': 133, 'forecastle': 38, 'rather': 72, 'enough': 76, 'honour': 26, 'particularly': 8, 'family': 14, 'putting': 16, 'schoolmaster': 8, 'order': 24, 'amount': 7, 'scale': 6, 'archangel': 9, 'think': 20, 'anything': 43, 'instance': 49, 'knowing': 16, 'everybody': 7, 'served': 10, 'universal': 8, 'passed': 42, 'blade': 8, 'always': 80, 'single': 39, 'contrary': 12, 'difference': 19, 'activity': 9, 'really': 30, 'marvellous': 15, 'considering': 31, 'earnestly': 7, 'believe': 27, 'earthly': 16, 'astern': 29, 'quarter': 52, 'atmosphere': 6, 'second': 60, 'breathes': 6, 'leader': 7, 'suspect': 6, 'wherefore': 13, 'merchant': 20, 'invisible': 16, 'influence': 16, 'unaccountable': 16, 'answer': 28, 'formed': 22, 'united': 9, 'state': 7, 'exactly': 24, 'recall': 6, 'circumstance': 52, 'spring': 38, 'presented': 19, 'various': 38, 'judgment': 12, 'portentous': 6, 'rolled': 43, 'nameless': 18, 'peril': 24, 'marvel': 10, 'sight': 12, 'sound': 12, 'helped': 15, 'tormented': 14, 'everlasting': 9, 'remote': 11, 'coast': 7, 'perceive': 8, 'horror': 17, 'social': 12, 'reason': 75, 'welcome': 6, 'wonder': 49, 'conceit': 17, 'floated': 18, 'endless': 15, 'procession': 6, 'hooded': 7, 'carpet': 9, 'started': 27, 'quitting': 6, 'arrived': 14, 'bedford': 18, 'learning': 6, 'already': 32, 'sailed': 38, 'following': 24, 'related': 6, 'connected': 12, 'famous': 37, 'pleased': 9, 'gradually': 10, 'business': 68, 'original': 21, 'canoe': 8, 'partly': 14, 'harpoon': 108, 'bowsprit': 8, 'destined': 7, 'became': 24, 'meanwhile': 28, 'dismal': 8, 'anxious': 9, 'sounded': 8, 'pocket': 20, 'piece': 18, 'wherever': 6, 'middle': 37, 'dreary': 6, 'darkness': 32, 'conclude': 8, 'crossed': 15, 'looked': 64, 'window': 21, 'everywhere': 7, 'inch': 20, 'remorseless': 6, 'service': 11, 'miserable': 9, 'stopping': 9, 'followed': 26, 'block': 7, 'blackness': 11, 'candle': 16, 'proved': 16, 'presently': 19, 'proceeding': 10, 'entering': 8, 'flying': 30, 'picked': 11, 'hearing': 13, 'pushed': 15, 'opened': 9, 'interior': 12, 'sitting': 22, 'turned': 66, 'beyond': 24, 'pulpit': 18, 'church': 20, 'muttered': 17, 'wretched': 8, 'swinging': 13, 'painting': 9, 'representing': 7, 'spouter': 8, 'connexion': 9, 'common': 51, 'suppose': 37, 'wooden': 27, 'district': 6, 'stricken': 16, 'coffee': 6, 'corner': 20, 'howling': 13, 'tossed': 31, 'nevertheless': 50, 'pleasant': 16, 'posse': 7, 'outside': 7, 'thrust': 20, 'universe': 6, 'pillow': 7, 'shaking': 9, 'shivering': 8, 'afterwards': 25, 'light': 10, 'oriental': 13, 'privilege': 9, 'holding': 37, 'sumatra': 6, 'lengthwise': 12, 'equator': 11, 'wonderful': 22, 'iceberg': 8, 'moored': 9, 'frozen': 10, 'society': 10, 'orphan': 6, 'plenty': 18, 'scrape': 6, 'fashioned': 12, 'careful': 18, 'inquiry': 6, 'mass': 8, 'shade': 6, 'shadow': 30, 'england': 20, 'earnest': 10, 'repeated': 21, 'throwing': 11, 'conclusion': 6, 'hovering': 10, 'centre': 23, 'perpendicular': 11, 'nervous': 9, 'fairly': 16, 'midnight': 27, 'unnatural': 8, 'blasted': 8, 'winter': 12, 'breaking': 16, 'resemblance': 7, 'gigantic': 20, 'design': 6, 'opinion': 16, 'subject': 26, 'visible': 32, 'exasperated': 6, 'opposite': 18, 'heathenish': 6, 'spear': 8, 'glittering': 8, 'shaped': 8, 'handle': 17, 'sweeping': 12, 'cannibal': 30, 'implement': 6, 'lance': 23, 'broken': 50, 'wildly': 9, 'sunset': 10, 'entered': 14, 'crossing': 18, 'central': 12, 'chimney': 9, 'wrinkled': 15, 'plank': 31, 'furiously': 6, 'cracked': 7, 'filled': 22, 'remotest': 10, 'projecting': 10, 'stand': 29, 'attempt': 13, 'ranged': 8, 'bottle': 9, 'cursed': 12, 'indeed': 89, 'delirium': 6, 'downwards': 12, 'bottom': 55, 'parallel': 7, 'meridian': 6, 'measure': 18, 'number': 31, 'seaman': 56, 'specimen': 8, 'sought': 18, 'landlord': 34, 'telling': 19, 'desired': 11, 'forehead': 40, 'blanket': 14, 'bitter': 9, 'decent': 6, 'supper': 30, 'settle': 8, 'carved': 14, 'diligently': 7, 'working': 15, 'trying': 17, 'winding': 6, 'button': 8, 'monkey': 16, 'jacket': 27, 'finger': 27, 'dumpling': 7, 'addressed': 7, 'direful': 10, 'whispered': 11, 'company': 39, 'resolved': 13, 'evening': 18, 'starting': 11, 'morning': 75, 'hurrah': 10, 'shaggy': 7, 'muffled': 9, 'woollen': 7, 'landed': 12, 'standing': 82, 'weather': 36, 'mounted': 14, 'somewhat': 27, 'shipmate': 40, 'become': 28, 'sleeping': 22, 'concerned': 8, 'description': 7, 'height': 19, 'deeply': 6, 'contrast': 12, 'announced': 6, 'companion': 6, 'slipped': 8, 'minute': 38, 'raised': 20, 'bulkington': 8, 'darted': 38, 'seeming': 8, 'private': 13, 'unknown': 36, 'stranger': 55, 'anybody': 10, 'bachelor': 9, 'apartment': 6, 'hammock': 34, 'certainly': 29, 'finest': 6, 'getting': 26, 'changed': 10, 'carpenter': 54, 'saying': 40, 'grinning': 10, 'shaving': 7, 'narrow': 12, 'higher': 23, 'interval': 57, 'draught': 7, 'immediate': 7, 'inside': 18, 'violent': 15, 'seeing': 37, 'spending': 6, 'awhile': 6, 'dropping': 18, 'bedfellow': 7, 'pretend': 7, 'actually': 16, 'blessed': 11, 'sunday': 7, 'market': 6, 'shouted': 17, 'calmly': 13, 'passion': 9, 'understand': 17, 'belongs': 8, 'story': 7, 'confidential': 9, 'highest': 8, 'demand': 6, 'thereby': 18, 'render': 6, 'zealand': 7, 'morrow': 12, 'wanted': 9, 'stopped': 8, 'string': 8, 'otherwise': 26, 'mystery': 14, 'showed': 16, 'stayed': 7, 'fluke': 37, 'dreaming': 6, 'pitched': 10, 'lighted': 13, 'anchor': 28, 'considered': 14, 'stair': 10, 'furnished': 16, 'prodigious': 18, 'placing': 7, 'double': 16, 'comfortable': 9, 'eyeing': 27, 'disappeared': 15, 'counterpane': 7, 'glanced': 6, 'belonging': 8, 'properly': 9, 'lashed': 11, 'containing': 8, 'likewise': 22, 'outlandish': 6, 'concerning': 40, 'uncommonly': 7, 'commenced': 7, 'thinking': 30, 'beginning': 19, 'jumped': 11, 'blowing': 6, 'tumbled': 6, 'infernal': 8, 'perfectly': 6, 'spoken': 13, 'identical': 7, 'eagerness': 8, 'employed': 15, 'accomplished': 7, 'yellow': 23, 'square': 22, 'terrible': 22, 'surgeon': 11, 'chanced': 13, 'sticking': 6, 'cheek': 7, 'remembered': 6, 'tattooed': 8, 'concluded': 19, 'course': 47, 'similar': 25, 'honest': 14, 'unearthly': 12, 'complexion': 6, 'completely': 33, 'independent': 9, 'tattooing': 6, 'produced': 6, 'extraordinary': 7, 'effect': 17, 'passing': 23, 'noticed': 11, 'difficulty': 6, 'pulled': 13, 'tomahawk': 19, 'singing': 12, 'surprise': 10, 'twisted': 9, 'bolted': 7, 'dinner': 18, 'coward': 21, 'purple': 6, 'rascal': 7, 'inexplicable': 7, 'continued': 14, 'escaped': 11, 'marked': 18, 'running': 46, 'shipped': 12, 'aboard': 21, 'shuddering': 9, 'attention': 9, 'previously': 17, 'curious': 54, 'embalmed': 6, 'polished': 7, 'removing': 6, 'backed': 9, 'chapel': 11, 'screwed': 8, 'hidden': 23, 'meantime': 23, 'follow': 20, 'place': 20, 'carefully': 11, 'biscuit': 11, 'snatch': 7, 'whereby': 9, 'succeeded': 9, 'drawing': 37, 'accompanied': 6, 'increased': 7, 'symptom': 8, 'concluding': 11, 'operation': 11, 'cloud': 12, 'tobacco': 6, 'sprang': 13, 'giving': 28, 'sudden': 43, 'angel': 9, 'scattered': 9, 'queequeg': 252, 'clothes': 11, 'smoking': 19, 'waking': 6, 'daylight': 9, 'loving': 8, 'coloured': 8, 'figure': 26, 'precise': 19, 'keeping': 13, 'hardly': 33, 'explain': 8, 'remember': 17, 'reality': 8, 'cutting': 37, 'sending': 8, 'mother': 24, 'dragged': 17, 'sheet': 10, 'sixteen': 7, 'entire': 55, 'resurrection': 7, 'voice': 7, 'dressed': 7, 'softly': 11, 'conscientious': 6, 'greatest': 12, 'subsequent': 13, 'troubled': 15, 'dream': 8, 'wrapped': 9, 'instantly': 23, 'supernatural': 7, 'closely': 14, 'daring': 8, 'consciousness': 6, 'glided': 14, 'month': 17, 'experienced': 11, 'event': 15, 'naught': 14, 'strove': 8, 'slight': 9, 'hatchet': 6, 'pickle': 6, 'serious': 10, 'character': 15, 'civilized': 16, 'delicacy': 7, 'treated': 7, 'staring': 6, 'watching': 16, 'unusual': 12, 'trowsers': 13, 'hunted': 19, 'movement': 12, 'straining': 9, 'neither': 16, 'completed': 6, 'crushed': 8, 'commanded': 24, 'amazement': 6, 'behold': 16, 'begin': 11, 'vigorous': 9, 'scraping': 6, 'vengeance': 12, 'exceedingly': 15, 'breakfast': 14, 'quickly': 21, 'descending': 10, 'malice': 12, 'scarce': 12, 'proper': 32, 'backward': 8, 'blacksmith': 24, 'brawny': 6, 'tropic': 9, 'slightly': 13, 'western': 8, 'contrasting': 9, 'flinging': 7, 'traveller': 12, 'parlor': 7, 'solitary': 21, 'stomach': 7, 'anywhere': 14, 'reflection': 10, 'profound': 20, 'silence': 20, 'slightest': 20, 'boarded': 6, 'calling': 13, 'warrior': 7, 'jeopardy': 6, 'coolly': 7, 'peculiarity': 18, 'applied': 8, 'glimpse': 15, 'individual': 15, 'foreign': 8, 'mediterranean': 9, 'affrighted': 6, 'lady': 13, 'native': 20, 'mentioned': 18, 'mostly': 11, 'whence': 17, 'bumpkin': 6, 'distinguished': 7, 'canvas': 14, 'throat': 6, 'tempest': 9, 'condition': 6, 'planted': 14, 'question': 36, 'hither': 14, 'father': 31, 'daughter': 6, 'porpoise': 26, 'wedding': 6, 'recklessly': 6, 'august': 8, 'beautiful': 8, 'tapering': 12, 'flower': 6, 'refuse': 7, 'sunlight': 6, 'seventh': 9, 'instead': 24, 'shortly': 10, 'returning': 8, 'congregation': 8, 'reigned': 6, 'shriek': 8, 'steadfastly': 6, 'marble': 18, 'tablet': 10, 'memory': 15, 'eighteen': 7, 'overboard': 27, 'sister': 6, 'forming': 14, 'ground': 67, 'sideways': 29, 'affected': 8, 'countenance': 12, 'present': 87, 'notice': 11, 'reading': 8, 'accident': 12, 'caused': 12, 'buried': 14, 'despair': 9, 'deadly': 22, 'being': 9, 'perished': 6, 'mankind': 13, 'included': 11, 'secret': 30, 'yesterday': 10, 'significant': 11, 'infidel': 7, 'immortal': 16, 'eternal': 19, 'trance': 6, 'century': 22, 'unspeakable': 9, 'doubt': 6, 'eternity': 9, 'methinks': 10, 'mistaken': 8, 'substance': 33, 'spiritual': 11, 'venerable': 10, 'sufficiently': 9, 'mapple': 9, 'wrinkle': 15, 'verdure': 7, 'utmost': 15, 'carried': 30, 'removed': 10, 'ladder': 13, 'provided': 6, 'headed': 25, 'contrivance': 10, 'grasping': 7, 'upwards': 19, 'ascending': 7, 'usually': 6, 'unnecessary': 6, 'gaining': 10, 'furthermore': 7, 'unseen': 14, 'outward': 11, 'faithful': 7, 'feature': 16, 'gallant': 16, 'breaker': 7, 'distinct': 16, 'inserted': 17, 'likeness': 7, 'foremost': 11, 'descried': 22, 'complete': 25, 'authority': 13, 'ordered': 8, 'starboard': 17, 'gangway': 6, 'larboard': 9, 'paused': 16, 'folded': 8, 'across': 31, 'uplifted': 10, 'closed': 10, 'offered': 12, 'prayer': 10, 'prolonged': 11, 'solemn': 12, 'continual': 14, 'terror': 42, 'sorrow': 7, 'plunging': 6, 'relief': 6, 'dolphin': 7, 'record': 8, 'joined': 7, 'swelled': 6, 'smallest': 10, 'depth': 10, 'lesson': 14, 'billow': 25, 'water': 69, 'wilful': 7, 'command': 31, 'wherein': 8, 'seeking': 12, 'tarshish': 7, 'hitherto': 17, 'strait': 19, 'worthy': 8, 'slouched': 8, 'shipping': 6, 'suspicion': 9, 'touched': 13, 'fugitive': 6, 'search': 8, 'hoisting': 12, 'confidence': 6, 'innocent': 6, 'whisper': 8, 'missing': 16, 'murderer': 12, 'apprehension': 8, 'custom': 8, 'harmless': 6, 'sooner': 13, 'glance': 35, 'intently': 9, 'swiftly': 19, 'written': 11, 'expose': 6, 'freely': 12, 'thrice': 8, 'flight': 12, 'prudent': 7, 'contains': 6, 'allowed': 6, 'locked': 16, 'ceiling': 6, 'resting': 12, 'bowel': 12, 'obvious': 11, 'conscience': 13, 'chamber': 6, 'anguish': 8, 'prodigy': 6, 'misery': 6, 'wicked': 11, 'burden': 7, 'hideous': 10, 'timber': 11, 'asleep': 6, 'frightened': 6, 'sleeper': 15, 'startled': 7, 'stagger': 6, 'finding': 8, 'afloat': 12, 'overhead': 6, 'downward': 10, 'attitude': 11, 'casting': 6, 'discovered': 10, 'receive': 8, 'straightway': 13, 'dropped': 27, 'float': 11, 'smooth': 9, 'whirling': 7, 'commotion': 12, 'awaiting': 6, 'observe': 11, 'direct': 11, 'temple': 13, 'conduct': 12, 'speaking': 23, 'heaved': 12, 'silently': 15, 'motionless': 8, 'leaned': 13, 'bowing': 7, 'aspect': 42, 'greater': 13, 'hatch': 10, 'listen': 9, 'nineveh': 6, 'escape': 25, 'reached': 19, 'fathom': 15, 'delight': 20, 'bidding': 7, 'castaway': 7, 'lifting': 9, 'heavenly': 6, 'treacherous': 6, 'chiefly': 19, 'waving': 7, 'remained': 34, 'hearth': 7, 'peering': 8, 'gently': 10, 'spirit': 28, 'devil': 17, 'bearing': 26, 'excellent': 12, 'popular': 8, 'regularly': 18, 'george': 10, 'heeded': 6, 'presence': 6, 'wholly': 27, 'occupied': 9, 'indifference': 7, 'advance': 27, 'circle': 37, 'singular': 9, 'sublime': 8, 'twenty': 34, 'planet': 6, 'serenity': 6, 'philosopher': 9, 'lonely': 12, 'burning': 12, 'intensity': 9, 'swell': 11, 'sensible': 9, 'lurked': 8, 'producing': 6, 'naturally': 12, 'pressed': 9, 'phrase': 6, 'dollar': 9, 'mechanically': 8, 'dividing': 7, 'worship': 13, 'pagan': 6, 'couple': 7, 'future': 16, 'position': 15, 'bodily': 26, 'quality': 12, 'merely': 19, 'crystal': 6, 'except': 31, 'elastic': 7, 'serene': 8, 'hanging': 20, 'scene': 11, 'skeleton': 39, 'whaler': 38, 'priest': 15, 'harbor': 21, 'paddle': 9, 'gliding': 14, 'gained': 14, 'chain': 18, 'suspended': 30, 'wrist': 6, 'desperate': 12, 'prince': 6, 'coronation': 7, 'consider': 23, 'fearful': 12, 'throne': 9, 'vocation': 11, 'intention': 9, 'boldly': 10, 'world': 7, 'ignorant': 10, 'settled': 12, 'alarmed': 7, 'hinted': 25, 'assured': 6, 'inland': 6, 'furnish': 9, 'owner': 20, 'fragrant': 6, 'commander': 22, 'gentleman': 58, 'majesty': 6, 'unlike': 8, 'immemorial': 7, 'proceeds': 8, 'perilous': 15, 'nostril': 9, 'pointed': 29, 'homage': 9, 'intense': 18, 'strength': 24, 'bursting': 12, 'yelled': 6, 'expression': 11, 'roared': 13, 'happened': 16, 'strain': 13, 'parted': 8, 'handled': 8, 'snatching': 9, 'madness': 17, 'splinter': 7, 'capable': 6, 'consternation': 11, 'crawling': 6, 'secured': 15, 'stripped': 11, 'shooting': 8, 'dragging': 7, 'surrounded': 8, 'table': 6, 'wondrous': 42, 'infant': 6, 'direction': 24, 'nantucketers': 10, 'captured': 17, 'season': 23, 'declared': 14, 'mightiest': 6, 'animated': 7, 'unconscious': 6, 'fearless': 8, 'malicious': 9, 'power': 7, 'blazing': 7, 'nantucketer': 22, 'emperor': 11, 'empire': 7, 'smell': 12, 'strangely': 29, 'chowder': 12, 'moreover': 20, 'inhabitant': 6, 'painted': 12, 'impression': 15, 'remaining': 11, 'carrying': 15, 'affair': 23, 'spread': 26, 'hurried': 7, 'leading': 12, 'apparently': 9, 'prospect': 9, 'butter': 11, 'appetite': 6, 'resumed': 6, 'vertebra': 12, 'superior': 16, 'feeding': 10, 'marching': 7, 'nearest': 10, 'variety': 8, 'concern': 11, 'strongly': 11, 'inasmuch': 8, 'forgotten': 9, 'fitted': 12, 'accordingly': 8, 'determined': 6, 'rushing': 17, 'energy': 8, 'ramadan': 13, 'pequod': 173, 'japanese': 10, 'typhoon': 11, 'bearded': 6, 'antiquity': 7, 'retired': 6, 'material': 10, 'barbaric': 11, 'chased': 14, 'hempen': 7, 'tiller': 13, 'curiously': 6, 'hereditary': 7, 'helmsman': 11, 'steered': 8, 'melancholy': 8, 'wigwam': 9, 'temporary': 11, 'fibre': 6, 'carving': 6, 'heavily': 7, 'quaker': 13, 'sailing': 35, 'windward': 22, 'muscle': 7, 'advancing': 20, 'damned': 6, 'humorous': 6, 'hailed': 21, 'vineyard': 8, 'bildad': 76, 'nearer': 15, 'hearty': 8, 'exclamation': 9, 'inclined': 9, 'indispensable': 11, 'experience': 15, 'perceived': 14, 'obliquely': 8, 'horizon': 19, 'squall': 25, 'uncommon': 16, 'originally': 17, 'retain': 7, 'fashion': 13, 'audacious': 6, 'greatly': 6, 'natural': 36, 'watch': 12, 'virgin': 11, 'advantage': 6, 'result': 6, 'deemed': 14, 'according': 26, 'lovely': 11, 'spilled': 8, 'religion': 10, 'practical': 13, 'rising': 32, 'header': 8, 'hearted': 12, 'clutch': 6, 'hammer': 37, 'beside': 6, 'spectacle': 11, 'volume': 15, 'knowledge': 12, 'unconsciously': 7, 'mumbling': 7, 'profit': 7, 'importance': 6, 'splice': 7, 'eventually': 8, 'management': 6, 'vainly': 6, 'knowest': 6, 'seventy': 22, 'corrupt': 6, 'doubloon': 27, 'solemnly': 8, 'advice': 6, 'steadily': 11, 'insult': 12, 'flame': 16, 'sliding': 10, 'temporarily': 9, 'stepped': 8, 'withdrawing': 8, 'leeward': 29, 'significance': 6, 'foolish': 17, 'accursed': 10, 'happens': 12, 'walked': 6, 'incidentally': 7, 'revealed': 18, 'notion': 6, 'knocked': 6, 'fastened': 11, 'landlady': 6, 'abroad': 6, 'murder': 10, 'handed': 10, 'doctor': 6, 'talking': 6, 'seized': 18, 'dashed': 22, 'pushing': 6, 'change': 8, 'intolerable': 9, 'probability': 7, 'pudding': 6, 'becomes': 12, 'frantic': 15, 'health': 6, 'useless': 6, 'sagacious': 6, 'hereafter': 10, 'cooked': 6, 'inference': 6, 'mouth': 9, 'remark': 7, 'simply': 10, 'walking': 9, 'loudly': 7, 'member': 9, 'meeting': 15, 'thyself': 24, 'belong': 11, 'belief': 6, 'quohog': 9, 'glistening': 7, 'preliminary': 10, 'entitled': 10, 'latter': 15, 'remain': 23, 'domestic': 10, 'thrusting': 10, 'levelled': 9, 'ribbed': 7, 'rapidly': 19, 'laughed': 7, 'elijah': 15, 'intent': 15, 'shrouded': 7, 'relieved': 10, 'knife': 10, 'period': 21, 'steward': 18, 'charity': 9, 'safety': 7, 'comfort': 8, 'longer': 18, 'whalebone': 11, 'hatchway': 10, 'rigger': 6, 'expected': 7, 'necessary': 8, 'involved': 9, 'uncertain': 10, 'twilight': 6, 'hailing': 7, 'scuttle': 24, 'slumber': 6, 'alluded': 6, 'heaving': 15, 'vapour': 19, 'starbuck': 198, 'lively': 14, 'hauled': 9, 'issued': 8, 'steering': 13, 'capstan': 13, 'handspike': 8, 'approaching': 10, 'windlass': 22, 'apparition': 9, 'whisker': 8, 'elephant': 30, 'eternally': 7, 'remains': 24, 'ranging': 7, 'alongside': 27, 'invested': 21, 'encounter': 20, 'continent': 7, 'coiling': 7, 'grasped': 6, 'lantern': 17, 'gazing': 23, 'murmured': 12, 'forget': 11, 'locker': 6, 'beware': 14, 'cheese': 9, 'screaming': 6, 'blindly': 7, 'encountered': 16, 'shudder': 6, 'infinite': 8, 'hereby': 9, 'accounted': 9, 'profession': 7, 'procedure': 6, 'invariably': 11, 'slippery': 6, 'compared': 8, 'abounding': 9, 'taper': 6, 'admiral': 7, 'expense': 6, 'manned': 13, 'remarkable': 13, 'archipelago': 6, 'musket': 12, 'distinctly': 8, 'discovery': 12, 'declare': 6, 'shiver': 7, 'darting': 14, 'imperial': 10, 'capital': 6, 'conspicuous': 7, 'dignity': 20, 'possibility': 6, 'precious': 18, 'surmise': 6, 'supply': 10, 'knight': 7, 'endure': 10, 'latitude': 28, 'vitality': 8, 'lingering': 8, 'action': 11, 'superstition': 9, 'intelligence': 7, 'portent': 6, 'welded': 11, 'evinced': 21, 'vicissitude': 8, 'courage': 9, 'lowering': 20, 'critical': 14, 'reasonable': 8, 'withstand': 9, 'terrific': 14, 'enraged': 6, 'sparkling': 9, 'circumference': 7, 'divine': 8, 'hammered': 8, 'valiant': 10, 'indifferent': 11, 'loaded': 13, 'personally': 6, 'majestic': 7, 'danger': 7, 'encountering': 6, 'divided': 10, 'wrought': 6, 'battering': 6, 'headsman': 15, 'descend': 12, 'tashtego': 57, 'village': 10, 'believed': 6, 'daggoo': 37, 'golden': 22, 'securing': 8, 'heedful': 6, 'retained': 10, 'military': 6, 'brain': 8, 'alabama': 6, 'tambourine': 11, 'retreat': 8, 'heightened': 6, 'subtle': 11, 'emotion': 11, 'calculated': 7, 'readily': 13, 'taffrail': 8, 'perseus': 11, 'scorched': 6, 'slender': 6, 'throughout': 10, 'manxman': 12, 'tradition': 9, 'popularly': 8, 'elevated': 11, 'pitching': 6, 'continually': 17, 'cruising': 27, 'dancing': 9, 'velvet': 6, 'potency': 6, 'noiseless': 7, 'agency': 7, 'steersman': 7, 'repose': 12, 'mainmast': 11, 'cannon': 6, 'speechless': 6, 'violently': 9, 'advanced': 11, 'powder': 10, 'riddle': 6, 'kicked': 9, 'binnacle': 16, 'narwhale': 13, 'bubble': 14, 'sinking': 13, 'fright': 8, 'eating': 12, 'lifted': 17, 'halloa': 10, 'hereabouts': 6, 'launched': 6, 'leviathanic': 8, 'research': 7, 'covering': 6, 'science': 9, 'ultimate': 7, 'scientific': 16, 'outline': 6, 'promise': 8, 'foundation': 7, 'system': 12, 'argument': 9, 'external': 14, 'horizontal': 16, 'smaller': 11, 'lurking': 7, 'octavo': 12, 'duodecimo': 8, 'german': 18, 'obtained': 7, 'derived': 10, 'bestowed': 8, 'commonly': 7, 'specially': 8, 'isolated': 6, 'surface': 42, 'sullen': 6, 'notwithstanding': 6, 'detached': 10, 'regard': 11, 'structure': 8, 'irregular': 6, 'example': 22, 'diving': 7, 'embrace': 8, 'breathing': 6, 'recognised': 9, 'corresponding': 7, 'average': 6, 'blubber': 34, 'exceed': 7, 'strictly': 7, 'clumsy': 10, 'correct': 6, 'tossing': 12, 'fourth': 15, 'beholding': 11, 'delicate': 7, 'lowered': 20, 'existence': 7, 'attached': 21, 'lodged': 9, 'hunting': 9, 'vigilance': 7, 'grandeur': 8, 'obedience': 8, 'usage': 6, 'intended': 9, 'superiority': 6, 'observation': 7, 'reckoning': 6, 'reserved': 9, 'swing': 8, 'dexterous': 6, 'customary': 14, 'problem': 9, 'intelligent': 7, 'derive': 6, 'presumed': 9, 'lounging': 6, 'mouthful': 6, 'insanity': 6, 'belly': 9, 'tumultuous': 9, 'blind': 10, 'opposing': 6, 'hearse': 15, 'colossal': 7, 'comparatively': 8, 'produce': 6, 'shattered': 6, 'murderous': 10, 'right': 6, 'sucking': 6, 'simultaneously': 14, 'stander': 6, 'formation': 6, 'summit': 11, 'tackle': 28, 'column': 8, 'hercules': 6, 'excitement': 7, 'envelope': 6, 'additional': 12, 'drawer': 7, 'trumpet': 7, 'occasionally': 14, 'widely': 7, 'revolving': 9, 'lightly': 7, 'sunken': 6, 'vision': 8, 'pervading': 6, 'uprising': 6, 'flitting': 6, 'enchanted': 12, 'rocking': 8, 'inscrutable': 8, 'transparent': 8, 'fiercely': 6, 'mechanical': 7, 'raise': 6, 'separately': 7, 'specific': 8, 'wrenched': 6, 'measureless': 8, 'closer': 8, 'guinea': 6, 'turkish': 6, 'foremast': 6, 'subterranean': 6, 'warning': 10, 'innermost': 7, 'necessity': 10, 'seizing': 16, 'socket': 9, 'bearer': 6, 'shivered': 6, 'sidelong': 7, 'flashing': 6, 'swerve': 6, 'insufferable': 6, 'horrible': 15, 'consequence': 9, 'carcase': 7, 'frigate': 8, 'brace': 6, 'copper': 8, 'pulling': 24, 'cluster': 6, 'tahiti': 6, 'violence': 6, 'revenge': 8, 'stretch': 7, 'cunning': 15, 'fatality': 8, 'rumor': 8, 'smitten': 7, 'contact': 11, 'longitude': 9, 'superstitious': 10, 'recalled': 6, 'oftentimes': 6, 'detail': 8, 'sounding': 20, 'flank': 7, 'imagination': 6, 'disaster': 8, 'monomaniac': 11, 'probable': 6, 'darker': 6, 'profundity': 6, 'appalling': 10, 'chasing': 7, 'whiteness': 28, 'beauty': 8, 'symbol': 12, 'forked': 6, 'witness': 6, 'fleece': 13, 'beheld': 21, 'albatross': 10, 'horse': 11, 'peculiarly': 6, 'potent': 6, 'pallor': 6, 'ghost': 7, 'evangelist': 6, 'earthquake': 6, 'phenomenon': 6, 'comparative': 6, 'buffalo': 12, 'cabaco': 6, 'bucket': 20, 'occasional': 9, 'chart': 7, 'circular': 7, 'expand': 6, 'breadth': 10, 'preceding': 6, 'equatorial': 7, 'trade': 7, 'resuming': 6, 'vulture': 6, 'adequately': 7, 'incident': 6, 'historical': 8, 'killing': 6, 'hieroglyphic': 7, 'plague': 6, 'dashing': 8, 'directed': 6, 'suffering': 6, 'amazing': 6, 'reeled': 6, 'hurled': 6, 'solomon': 8, 'easily': 9, 'swaying': 6, 'playing': 6, 'weaving': 7, 'lashing': 10, 'shuttle': 6, 'thread': 9, 'perched': 8, 'heading': 10, 'basket': 6, 'gunwale': 29, 'technically': 7, 'coiled': 11, 'manilla': 6, 'fedallah': 27, 'leaped': 13, 'rowing': 8, 'ginger': 16, 'oarsman': 32, 'indolent': 6, 'jerking': 6, 'loggerhead': 7, 'firmly': 12, 'betrayed': 6, 'feather': 6, 'plate': 7, 'curling': 7, 'headlong': 7, 'worked': 8, 'stretching': 6, 'abandoned': 7, 'published': 8, 'involve': 6, 'silvery': 6, 'buoyant': 7, 'eastward': 11, 'shower': 8, 'dripping': 10, 'storm': 8, 'equally': 8, 'englishman': 7, 'skull': 6, 'sebastian': 9, 'radney': 22, 'steelkilt': 40, 'lakeman': 24, 'rigged': 7, 'hoisted': 30, 'canallers': 8, 'signal': 10, 'corpse': 14, 'crowding': 6, 'bowsman': 8, 'strained': 9, 'blinding': 6, 'slackened': 6, 'hindoo': 6, 'tender': 8, 'wrecked': 8, 'highly': 7, 'engraving': 10, 'drooping': 7, 'profile': 6, 'ninety': 7, 'separated': 6, 'murdered': 6, 'gentle': 7, 'thickness': 7, 'chock': 6, 'vibrating': 6, 'clinging': 9, 'spiracle': 8, 'churning': 6, 'contracting': 7, 'crotch': 10, 'freighted': 9, 'forged': 6, 'unctuous': 7, 'considerably': 9, 'diminished': 6, 'spade': 10, 'snapped': 8, 'shred': 6, 'beheaded': 6, 'jeroboam': 10, 'mayhew': 8, 'burned': 6, 'margin': 6, 'submerged': 8, 'lucifer': 6, 'parsee': 28, 'proportion': 6, 'heidelburgh': 8, 'combined': 9, 'curled': 6, 'cavity': 6, 'spinal': 8, 'derick': 12, 'feeder': 9, 'yarman': 7, 'adrift': 6, 'vishnoo': 8, 'pitchpoling': 6, 'spoutings': 7, 'masonry': 6, 'smiting': 6, 'hovered': 6, 'drugged': 7, 'measured': 8, 'frenchman': 8, 'plaintiff': 6, 'ambergris': 13, 'bouton': 6, 'guernsey': 11, 'monsieur': 9, 'squeeze': 9, 'enderby': 7, 'bunger': 13, 'weaver': 6, 'burton': 6, 'fossil': 7, 'sneeze': 8, 'quadrant': 8, 'corpusants': 6, 'rachel': 6, 'cherry': 6}
+[('though', 384), ('captain', 353), ('seemed', 283), ('whale', 268), ('queequeg', 252), ('little', 249), ('starbuck', 198), ('almost', 195), ('thought', 184), ('chapter', 181), ('pequod', 173), ('without', 156), ('harpooneer', 137), ('sailor', 133), ('thing', 132), ('whaling', 131), ('something', 123), ('voyage', 121), ('moment', 117), ('called', 116)]
+```
+![i2.png](scripts%2Fi2.png)
+
 
 ## 2.7 N-gramas y Colocaciones del lenguaje
 
