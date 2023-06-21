@@ -1092,9 +1092,115 @@ Respuesta esperada:
 
 ## 2.10 Colocaciones en gráficos de dispersión
 
+Explicación del gráfico de PMI:
+
+![5.png](ims%2F2%2F5.png)
+
+Recordemos que solamente el valor del PMI no es suficiente informativo para saber si las combinaciones de palabras son o no
+colocaciones porque si el PMI es más cercano a 0 da la apariencia de que se trata de un PMI, sin embargo, este valor es fácilmente
+obtenible si la frecuencia del bi-grama y de sus palabras individuales es muy pequeña.
+
+Para tomar en cuenta esta desventaja es que hacemos un gráfico de PMI vs Frecuencia, sin embargo, como el PMI está en escala 
+logarítmica es buena idea pasar la frecuencia del bi-grama a la misma escala para que los ejes X & Y sean proporcionales.
+
+![6.png](ims%2F2%2F6.png)
+
+La verdadera interpretación de colaciones son palabras que, en este caso, bi-gramas que tienen un PMI cercano a 0 y una Frecuencia 
+más alta. Si la frecuencia es muy alta, pero el PMI es bajo entonces no son colocaciones.
+
+![7.png](ims%2F2%2F7.png)
+
+Tampoco son colocaciones PMI muy bajas si tienen una frecuencia de aparición muy baja.
+
+
 ## 2.11 Filtros y colocaciones en NLTK
 
+Con NLTK podemos realizar el proceso de búsqueda de colocaciones de forma más sistemática y eficiente. En esta clase veremos
+cómo utilizar NLTK para encontrar las colocaciones sin tener que utilizar gráficos adicionales.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [9_colocaciones_nltk.py](scripts%2F9_colocaciones_nltk.py)
+
+Para esta sección vamos a apoyarnos principalemnte de 2 métodos de `nltk.collocations` los cuales son:
+
+- BigramAssocMeasures: de aquí vamos a obtener la métrica de PMI
+- BigramCollocationFinder: con esto podemos buscar las colocaciones
+
+```python
+from nltk.collocations import BigramAssocMeasures, BigramCollocationFinder
+import nltk
+nltk.download('cess_esp')  # Esta descarga es para tener ejemplos de texto en español
+from nltk.book import text1
+from pprint import pprint  # solo es para imprimir texto de forma más "linda"
+```
+Ahora vamos a obtener las colocaciones:
+```python
+bigram_measures = BigramAssocMeasures()  # Creamos un objeto bigram_measures que tengas la métrica de PMI
+finder = BigramCollocationFinder.from_words(text1)  # Empezamos a buscar los bigramas del corpus text1
+finder.apply_freq_filter(20)  # nos quedamos con aquellos que tengan al menos una frecuencia de 20
+ans = finder.nbest(bigram_measures.pmi, 10)  # obtenemos los 10 mejores ejemplos usando como base el PMI
+pprint(ans)
+```
+Respuesta esperada:
+```commandline
+[('Moby', 'Dick'),
+ ('Sperm', 'Whale'),
+ ('White', 'Whale'),
+ ('Right', 'Whale'),
+ ('Captain', 'Peleg'),
+ (',"', 'said'),
+ ('never', 'mind'),
+ ('!"', 'cried'),
+ ('no', 'means'),
+ ('each', 'other')]
+```
+Ahora veamos un ejemplo adicional pero con un corpus de texto en español:
+```python
+corpus = nltk.corpus.cess_esp.sents()
+print(corpus[:2])
+flatten_corpus = [w for l in corpus for w in l]  # Descomprimimos la lista de listas en una sola lista
+print(flatten_corpus[:50])
+```
+Respuesta esperada:
+```commandline
+[['El', 'grupo', 'estatal', 'Electricité_de_France', '-Fpa-', 'EDF', '-Fpt-', 'anunció', 'hoy', ',', 'jueves', ',', 'la', 'compra', 'del', '51_por_ciento', 'de', 'la', 'empresa', 'mexicana', 'Electricidad_Águila_de_Altamira', '-Fpa-', 'EAA', '-Fpt-', ',', 'creada', 'por', 'el', 'japonés', 'Mitsubishi_Corporation', 'para', 'poner_en_marcha', 'una', 'central', 'de', 'gas', 'de', '495', 'megavatios', '.'], ['Una', 'portavoz', 'de', 'EDF', 'explicó', 'a', 'EFE', 'que', 'el', 'proyecto', 'para', 'la', 'construcción', 'de', 'Altamira_2', ',', 'al', 'norte', 'de', 'Tampico', ',', 'prevé', 'la', 'utilización', 'de', 'gas', 'natural', 'como', 'combustible', 'principal', 'en', 'una', 'central', 'de', 'ciclo', 'combinado', 'que', 'debe', 'empezar', 'a', 'funcionar', 'en', 'mayo_del_2002', '.']]
+['El', 'grupo', 'estatal', 'Electricité_de_France', '-Fpa-', 'EDF', '-Fpt-', 'anunció', 'hoy', ',', 'jueves', ',', 'la', 'compra', 'del', '51_por_ciento', 'de', 'la', 'empresa', 'mexicana', 'Electricidad_Águila_de_Altamira', '-Fpa-', 'EAA', '-Fpt-', ',', 'creada', 'por', 'el', 'japonés', 'Mitsubishi_Corporation', 'para', 'poner_en_marcha', 'una', 'central', 'de', 'gas', 'de', '495', 'megavatios', '.', 'Una', 'portavoz', 'de', 'EDF', 'explicó', 'a', 'EFE', 'que', 'el', 'proyecto']
+```
+Buscamos las colocaciones con la misma metodología anteriormente utilizada:
+
+```python
+# repetimos el procedimiento anterior pero con el corpus en español
+finder = BigramCollocationFinder.from_documents(corpus)
+finder.apply_freq_filter(10)
+ans = finder.nbest(bigram_measures.pmi, 10)
+pprint(ans)
+```
+Respuesta esperada:
+```commandline
+[('señora', 'Aguirre'),
+ ('secretario', 'general'),
+ ('elecciones', 'generales'),
+ ('campaña', 'electoral'),
+ ('quiere', 'decir'),
+ ('Se', 'trata'),
+ ('segunda', 'vuelta'),
+ ('director', 'general'),
+ ('primer', 'ministro'),
+ ('primer', 'lugar')]
+```
+Podemos observar como `campaña electoral` es un excelente ejemplo de una colocación puesto que el significado de ambas palabras
+es más que la suma de las palabras aisladas.
+
 ## 2.12 Introducción a los recursos léxicos
+
+![8.png](ims%2F2%2F8.png)
+
+Un recurso léxico es una colección de palabras o términos que se utilizan como referencia para diversas tareas lingüísticas. Estos recursos léxicos suelen incluir información adicional asociada a las palabras, como su definición, categoría gramatical, sinónimos, antónimos, relaciones semánticas, información morfológica, frecuencia de uso, entre otros.
+
+![9.png](ims%2F2%2F9.png)
+
+En el ejemplo de esta imagen, el recurso léxico se compone de una `entrada léxica`, `categoría léxica`, `significado`
+Los recursos léxicos son de gran utilidad en NLP, ya que proporcionan información valiosa sobre las palabras y permiten enriquecer el análisis lingüístico.
 
 ## 2.13 Recursos léxicos en NLTK
 
