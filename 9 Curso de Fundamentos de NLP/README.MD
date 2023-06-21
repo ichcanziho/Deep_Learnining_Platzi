@@ -831,9 +831,264 @@ Respuesta esperada:
 
 ## 2.7 N-gramas y Colocaciones del lenguaje
 
+**¿Qué es un N-grama?**
+
+Los n-gramas son secuencias de n elementos (ya sean caracteres o palabras) extraídos de un texto. Un n-grama puede ser un unigrama (n = 1), un bigrama (n = 2), un trigrama (n = 3) o cualquier otro número de elementos. Estos n-gramas se utilizan para analizar la estructura y el contenido de un texto.
+
+![2.png](ims%2F2%2F2.png)
+
+Cuando se trabaja con palabras, los n-gramas son secuencias consecutivas de n palabras en un texto. Por ejemplo, si tenemos la 
+oración "Estoy aprendiendo cosas increíbles", los unigramas serían ["Estoy", "aprendiendo", "cosas" "increíbles"], los bigramas 
+serían ["Estoy aprendiendo", "aprendiendo cosas", "cosas increíbles"], y los trigramas serían ["estoy aprendiendo cosas", 
+"aprendiendo cosas increíbles"].
+
+Los n-gramas son útiles en NLP porque capturan información sobre la co-ocurrencia de elementos en un texto y pueden revelar patrones y estructuras lingüísticas. Se utilizan en diversas aplicaciones, como el análisis de sentimientos, la generación de texto predictivo, la traducción automática y la detección de spam, entre otros.
+
+Al calcular la frecuencia de los n-gramas en un corpus de texto, se pueden obtener estadísticas útiles, como la frecuencia de palabras individuales o la probabilidad condicional de una palabra dada su historia (usando n-gramas de orden superior). Estas estadísticas son utilizadas por modelos de lenguaje y otras técnicas de procesamiento de texto en NLP.
+
+**Por otro lado tenemos a las `colocaciones`**
+
+Las colocaciones son combinaciones de palabras que tienden a aparecer juntas con una frecuencia superior a la esperada por azar. En otras palabras, son secuencias de palabras que tienen una asociación léxica o semántica fuerte y son utilizadas de manera idiomática por los hablantes nativos de un idioma.
+
+![3.png](ims%2F2%2F3.png)
+
+Por ejemplo:
+
+![4.png](ims%2F2%2F4.png)
+
+Gramaticalmente hablando ambas oraciones tienen sentido y están bien escritas, sin embargo, es más natural para nosotros en español
+pensar en "le dieron ganas" a "le introdujeron ganas" pese a que ambas están bien dichas.
+
+Otra forma de interpretar a las `colocaciones` es pensar en ellas como conexiones de palabras recurrentes cuyo significado
+es más que la suma de sus palabras individuales. Por ejemplo, en inglés, las colocaciones comunes son "strong coffee" (café fuerte), "fast food" (comida rápida) o "catch a bus" (tomar un autobús). Estas expresiones son consideradas colocaciones porque son frecuentes y su significado no puede deducirse de forma directa a partir del significado individual de las palabras que las componen.
+
+
+> Las colocaciones son relevantes en NLP porque capturan la naturaleza idiomática y la semántica de las combinaciones de palabras en un idioma. Son utilizadas en diversas tareas, como la traducción automática, la generación de lenguaje natural, la desambiguación léxica y la recuperación de información, entre otras. El reconocimiento y el manejo adecuado de las colocaciones son importantes para comprender y generar texto de manera más precisa y natural.
+>
+
+
 ## 2.8 ¿Cómo extraer n-gramas de un texto en Python?
 
+> ## Nota:
+> El código completo de esta sección lo puedes encontrar en: [7_extraer_ngramas.py](scripts%2F7_extraer_ngramas.py)
+
+Primero partimos de una base de código de limpieza muy similar al visto en [6_refinamiento.py](scripts%2F6_refinamiento.py)
+
+```python
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import matplotlib.pyplot as plt
+from collections import Counter
+from nltk.book import text1
+import string
+import re
+
+
+def filter_corpus(corpus, sw, lem):
+    filtered_corpus = [word.lower() for word in corpus if word.lower() not in sw]
+    filtered_corpus = [word for word in filtered_corpus if word not in string.punctuation]
+    filtered_corpus = [word for word in filtered_corpus if len(word) > 5]
+    filtered_corpus = [word for word in filtered_corpus if not re.match(r'\d', word)]
+    filtered_corpus = [lem.lemmatize(word) for word in filtered_corpus]
+    return filtered_corpus
+
+
+def plot_freq(elementos, figname):
+    palabras = [elemento[0] for elemento in elementos]
+    frecuencias = [elemento[1] for elemento in elementos]
+    plt.plot(palabras, frecuencias)
+    plt.xticks(rotation=90)
+    plt.grid(True)
+    plt.xlabel('Palabras')
+    plt.ylabel('Frecuencia')
+    plt.title('Frecuencia de palabras')
+    plt.tight_layout()
+    plt.savefig(f"{figname}.png")
+    plt.close()
+```
+Pero vamos a añadir una nueva biblioteca que hará los bi-gramas y n-gramas por nosotros:
+```python
+from nltk import bigrams, ngrams
+```
+
+Empezamos por los bi-gramas vamos a limpiar el `text1` para ver como lucen cuando normalizamos el texto:
+
+```python
+    lemmatizer = WordNetLemmatizer()
+    stop_words = set(stopwords.words('english'))
+
+    text1_filtered = filter_corpus(text1, stop_words, lemmatizer)
+    md_bigrams = list(bigrams(text1_filtered))
+    print(md_bigrams[:10])
+```
+Respuesta esperada:
+```commandline
+[('herman', 'melville'), ('melville', 'etymology'), ('etymology', 'supplied'), ('supplied', 'consumptive'), ('consumptive', 'grammar'), ('grammar', 'school'), ('school', 'threadbare'), ('threadbare', 'dusting'), ('dusting', 'lexicon'), ('lexicon', 'grammar')]
+```
+Ahora podemos utilizar `Counter` y `most_common` para extraer los 20 bi-gramas más utilizados:
+
+```python
+    bigrams_counter = Counter(md_bigrams)
+    mc_bigrams = bigrams_counter.most_common(20)
+    # aqui simplemente convertimos una lista de palabras en un texto que contenga todas sus palabras
+    mc_bigrams = [(" ".join(grams), freq) for grams, freq in mc_bigrams]
+    print(mc_bigrams)
+    plot_freq(mc_bigrams, "i3")
+```
+Respuesta esperada:
+```commandline
+[('captain bildad', 19), ('whaling voyage', 17), ('cruising ground', 13), ('though indeed', 11), ('almost thought', 10), ('captain captain', 10), ('beneath surface', 10), ('queequeg queequeg', 9), ('father mapple', 9), ('whaling vessel', 8), ('business whaling', 8), ('nothing nothing', 8), ('hundred seventy', 8), ('harpoon lance', 8), ('latitude longitude', 8), ('almost seemed', 8), ('specie leviathan', 7), ('stranger captain', 7), ('chapter pequod', 7), ('monkey jacket', 6)]
+```
+![i3.png](scripts%2Fi3.png)
+
+Ahora vamos a repetir pero usando `n-grams`:
+
+```python
+    # aquí he decido NO limpiar el text1 para observar las diferencias :)
+    md_trigrams = list(ngrams(text1, 3))
+    print(md_trigrams[:10])
+```
+Respuesta esperada:
+```commandline
+[('[', 'Moby', 'Dick'), ('Moby', 'Dick', 'by'), ('Dick', 'by', 'Herman'), ('by', 'Herman', 'Melville'), ('Herman', 'Melville', '1851'), ('Melville', '1851', ']'), ('1851', ']', 'ETYMOLOGY'), (']', 'ETYMOLOGY', '.'), ('ETYMOLOGY', '.', '('), ('.', '(', 'Supplied')]
+```
+Creamos el contador y gráficamos los `tri-gramas` más populares:
+
+```python
+    trigrams_counter = Counter(md_trigrams)
+    mc_trigrams = trigrams_counter.most_common(20)
+    mc_trigrams = [(" ".join(grams), freq) for grams, freq in mc_trigrams]
+    print(mc_trigrams)
+    plot_freq(mc_trigrams, "i4")
+```
+Respuesta esperada:
+```commandline
+[(', and the', 187), ("don ' t", 103), ('of the whale', 101), (', in the', 93), (', then ,', 87), ("whale ' s", 81), ('. It was', 81), ("ship ' s", 80), ('the Sperm Whale', 77), (', as if', 76), ("he ' s", 76), ("Ahab ' s", 75), ('. Now ,', 74), ("' s a", 73), ("' s the", 72), ("that ' s", 69), (', as the', 68), ('the sea ,', 67), ("it ' s", 67), (', and then', 67)]
+```
+![i4.png](scripts%2Fi4.png)
+
+Observamos como aquí la frecuencia es mucho mayor a pesar de que son `tri-gramas` esto es debido a que en el ejemplo anterior eliminamos
+tanto los signos de puntuación como los stopwords, aquí vemos que la mayoría de los `tri-gramas` que fueron encontrados usan stopwords
+y signos de puntuación.
+
 ## 2.9 Colocaciones en Python
+
+El PMI (Pointwise Mutual Information) es una métrica basada en la teoría de la información que se utiliza para medir la asociación entre dos elementos en un corpus de texto, como palabras o n-gramas. Es especialmente útil para identificar collocations o colocaciones, que son combinaciones de palabras que tienden a aparecer juntas con una frecuencia mayor de la esperada por azar.
+
+El PMI se calcula utilizando la probabilidad de ocurrencia conjunta de dos elementos y las probabilidades marginales de cada elemento por separado. La fórmula general del PMI para dos elementos A y B es la siguiente:
+
+PMI(A, B) = log2(P(A, B) / (P(A) * P(B)))
+
+Donde:
+
+- P(A, B) es la probabilidad de ocurrencia conjunta de A y B.
+- P(A) es la probabilidad de ocurrencia de A.
+- P(B) es la probabilidad de ocurrencia de B.
+
+- El PMI mide la desviación de la ocurrencia conjunta de A y B con respecto a lo que se esperaría si A y B fueran eventos independientes. Un valor de PMI alto indica que la ocurrencia conjunta es mayor de lo esperado y sugiere una asociación fuerte entre los dos elementos.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [8_colocaciones.py](scripts%2F8_colocaciones.py)
+
+Para este ejemplo vamos a usar los `bi-gramas` que entendimos en la clase pasada y vamos a usar un método de limpieza de
+bi-gramas sumamente sencillo y es que cada una de las palabras que compone el bigrama debe tener al menos más de 2 letras, de
+esta forma eliminamos signos de puntuación y una que otra stopword.
+
+```python
+import numpy as np
+from nltk.book import text1
+from nltk import bigrams, FreqDist
+import pandas as pd
+# esta biblioteca me permite hacer gráficos interactivos
+import plotly.express as px
+
+md_bigrams = list(bigrams(text1))
+
+threshold = 2
+# Obtenemos los bigramas donde cada palabra tenga más de 2 letras
+filtered_bigrams = [bigram for bigram in md_bigrams if len(bigram[0]) > threshold and len(bigram[1]) > threshold]
+# Usamos un contador para obtener la frecuencia de los bigramas
+filtered_bigram_dist = FreqDist(filtered_bigrams)
+# Obtenemos las palabras individuales que tengan más de 2 letras
+filtered_words = [word for word in text1 if len(word) > threshold]
+# Usamos un contador para obtener la frecuencia de las palabras (unigramas)
+filtered_word_dist = FreqDist(filtered_words)
+```
+Ahora vamos a gener un `DataFrame` de pandas que contenga las principales variables que vamos a utilizar para el calculo del 
+PMI (solo que en lugar de utilizar directamente las probabilidades, vamos a utilizar la frecuencia de las palabras)
+
+```python
+# Para entender mejor las variables que vamos a utilizar vamos a construir un DataFrame de pandas
+df = pd.DataFrame()
+df['bi_gram'] = list(set(filtered_bigrams))
+df['word_0'] = df['bi_gram'].apply(lambda x: x[0])
+df['word_1'] = df['bi_gram'].apply(lambda x: x[1])
+# Aquí estamos usando los diccionarios de filtered_bigram_dist y filtered_word_dist para obtener la frecuencia de una
+# palabra con base justamente en esa palabra
+df['bi_gram_freq'] = df['bi_gram'].apply(lambda x: filtered_bigram_dist[x])
+df['word_0_freq'] = df['word_0'].apply(lambda x: filtered_word_dist[x])
+df['word_1_freq'] = df['word_1'].apply(lambda x: filtered_word_dist[x])
+print(df)
+```
+Respuesta esperada:
+```commandline
+                 bi_gram  word_0  ... word_0_freq  word_1_freq
+0            (very, act)    very  ...         311           30
+1         (object, here)  object  ...          39          272
+2            (the, sons)     the  ...       13721            4
+3             (!--, see)     !--  ...         141          253
+4           (the, fires)     the  ...       13721            4
+...                  ...     ...  ...         ...          ...
+67937       (thou, must)    thou  ...         232          282
+67938         (the, wit)     the  ...       13721            2
+67939   (the, direction)     the  ...       13721           15
+67940  (lithe, swayings)   lithe  ...           2            1
+67941   (Slowly, wading)  Slowly  ...           3            2
+
+[67942 rows x 6 columns]
+```
+
+Finalmente, calculamos el PMI, y el log de la frecuencia de los bigramas:
+
+```python
+# Calculamos un pseudo PMI (NO es directamente la probabilidad de las palabras) pero es similar usar
+# la frecuencia de las palabras
+df['PMI'] = np.log2(df['bi_gram_freq'] / (df['word_0_freq'] * df['word_1_freq']))
+df['log(bi_gram_freq)'] = np.log2(df['bi_gram_freq'])
+df.sort_values(by='PMI', ascending=False, inplace=True)
+print(df)
+```
+Respuesta esperada:
+```commandline
+                        bi_gram    word_0  ...        PMI  log(bi_gram_freq)
+20874         (balmy, autumnal)     balmy  ...   0.000000                0.0
+10699     (corporal, animosity)  corporal  ...   0.000000                0.0
+48366    (minor, contingencies)     minor  ...   0.000000                0.0
+62833           (WAS, ATTACKED)       WAS  ...   0.000000                0.0
+56515  (seemly, correspondence)    seemly  ...   0.000000                0.0
+...                         ...       ...  ...        ...                ...
+47831                (man, the)       man  ... -22.732783                0.0
+11090               (some, the)      some  ... -22.919024                0.0
+30770                (one, the)       one  ... -23.540138                0.0
+26085                (the, not)       the  ... -23.851315                0.0
+64019                (the, but)       the  ... -23.864336                0.0
+
+[67942 rows x 8 columns]
+```
+
+Ahora vamos a graficar esta distribución (se ve mucho mejor en el navegador)
+
+```python
+# Finalmente, hacemos un scatter de la distrbiución de los bigramas
+fig = px.scatter(x=df['PMI'].values, y=df['log(bi_gram_freq)'].values, color=df['PMI'] + df['log(bi_gram_freq)'],
+                 size=(df['PMI'] + df['log(bi_gram_freq)']).apply(lambda x: 1 / (1 + abs(x))).values,
+                 hover_name=df['bi_gram'].values, width=600, height=600,
+                 labels={'x': 'PMI', 'y': 'Log(Bigram Frequency)'})
+fig.show()
+```
+Respuesta esperada:
+
+![i5.png](scripts%2Fi5.png)
 
 ## 2.10 Colocaciones en gráficos de dispersión
 
