@@ -1204,9 +1204,132 @@ Los recursos léxicos son de gran utilidad en NLP, ya que proporcionan informaci
 
 ## 2.13 Recursos léxicos en NLTK
 
+Para este momento ya hemos utilizado algunos recursos lexicos, los más simples son el vocabulario y una FreqDist. 
+
+> ## Nota:
+> El código completo esta en: [10_recursos_lexicos.py](scripts%2F10_recursos_lexicos.py)
+
+```python
+from nltk.book import text1
+from nltk.corpus import stopwords
+from nltk import FreqDist
+
+# Vocabularios: palabras únicas en un corpus
+vocab = sorted(set(text1))
+# Esto es un discurso Léxico NO enriquecido
+print(vocab[:10])
+# Distribuciones: frecuencia de aparición
+word_freq = FreqDist(text1)
+print(word_freq)
+# Esto si tiene información enriquecida (la frecuencia de uso de la palabra)
+```
+Respuesta esperada:
+```commandline
+['!', '!"', '!"--', "!'", '!\'"', '!)', '!)"', '!*', '!--', '!--"']
+<FreqDist with 19317 samples and 260819 outcomes>
+```
+Adicionalmente, hemos usado el concepto de stopwords anteriormente pero no se había explicado explícitamente en el curso, 
+en nltk podemos observar algunos stopwords de la siguiente manera:
+
+> Las "stopwords" (palabras vacías o de parada, en español) son palabras comunes y frecuentes que se consideran irrelevantes para el análisis de texto debido a que no aportan un significado sustancial. Estas palabras suelen ser preposiciones, conjunciones, artículos y otros términos muy utilizados en el lenguaje, pero que aportan poco valor semántico en un contexto específico.
+>
+> Ejemplos comunes de stopwords en el idioma inglés incluyen palabras como "a", "the", "is", "and", "in", "of", "to", entre otros. En otros idiomas, las stopwords pueden variar.
+
+```python
+print(stopwords.words('spanish')[:10])
+```
+Respuesta esperada:
+```commandline
+['de', 'la', 'que', 'el', 'en', 'y', 'a', 'los', 'del', 'se']
+```
+Un número que nos ayuda a entender la distribución de stopwords es el porcentaje del mismo, cuantas palabras del total de palabras
+son stopwords, eso lo podemos hacer de la siguiente manera:
+
+```python
+def stopwords_percentage(text):
+    """
+    aqui usamos un recurso léxico (stopwords) para filtrar un corpus
+    """
+    stopwd = stopwords.words('english')
+    content = [w for w in text if w.lower() in stopwd]
+    return len(content) / len(text)
+
+
+swp = stopwords_percentage(text1)
+print(swp)
+```
+Respuesta esperada:
+```commandline
+0.4137045230600531
+```
+Poco más del 41% de todo el texto de Moby Dick son Stopwords.
+
 ## 2.14 NLTK para traducción de palabras
 
+Una de las herramientas que nos proporciona nltk es:  `swadesh` una clase que nos permite hacer traducción simple entre palabras
+de diferentes idiomas, primero veamos los idiomas disponibles:
+
+> ## Nota:
+> El código completo esta en: [11_traduccion_palabras.py](scripts%2F11_traduccion_palabras.py)
+
+```python
+from nltk.corpus import swadesh
+
+# idiomas disponibles
+print(swadesh.fileids())
+```
+Respuesta esperada:
+```commandline
+['be', 'bg', 'bs', 'ca', 'cs', 'cu', 'de', 'en', 'es', 'fr', 'hr', 'it', 'la', 'mk', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'sw', 'uk']
+```
+Perfecto, son varios, veamos algunas de las palabras disponible que tiene en Inglés:
+```python
+print(swadesh.words('en'))
+```
+Respuesta esperada:
+```commandline
+['I', 'you (singular), thou', 'he', 'we', 'you (plural)', 'they', 'this', 'that', 'here', 'there', 'who', 'what', 'where', 'when', 'how', 'not', 'all', 'many', 'some', 'few', 'other', 'one', 'two', 'three', 'four', 'five', 'big', 'long', 'wide', 'thick', 'heavy', 'small', 'short', 'narrow', 'thin', 'woman', 'man (adult male)', 'man (human being)', 'child', 'wife', 'husband', 'mother', 'father', 'animal', 'fish', 'bird', 'dog', 'louse', 'snake', 'worm', 'tree', 'forest', 'stick', 'fruit', 'seed', 'leaf', 'root', 'bark (from tree)', 'flower', 'grass', 'rope', 'skin', 'meat', 'blood', 'bone', 'fat (noun)', 'egg', 'horn', 'tail', 'feather', 'hair', 'head', 'ear', 'eye', 'nose', 'mouth', 'tooth', 'tongue', 'fingernail', 'foot', 'leg', 'knee', 'hand', 'wing', 'belly', 'guts', 'neck', 'back', 'breast', 'heart', 'liver', 'drink', 'eat', 'bite', 'suck', 'spit', 'vomit', 'blow', 'breathe', 'laugh', 'see', 'hear', 'know (a fact)', 'think', 'smell', 'fear', 'sleep', 'live', 'die', 'kill', 'fight', 'hunt', 'hit', 'cut', 'split', 'stab', 'scratch', 'dig', 'swim', 'fly (verb)', 'walk', 'come', 'lie', 'sit', 'stand', 'turn', 'fall', 'give', 'hold', 'squeeze', 'rub', 'wash', 'wipe', 'pull', 'push', 'throw', 'tie', 'sew', 'count', 'say', 'sing', 'play', 'float', 'flow', 'freeze', 'swell', 'sun', 'moon', 'star', 'water', 'rain', 'river', 'lake', 'sea', 'salt', 'stone', 'sand', 'dust', 'earth', 'cloud', 'fog', 'sky', 'wind', 'snow', 'ice', 'smoke', 'fire', 'ashes', 'burn', 'road', 'mountain', 'red', 'green', 'yellow', 'white', 'black', 'night', 'day', 'year', 'warm', 'cold', 'full', 'new', 'old', 'good', 'bad', 'rotten', 'dirty', 'straight', 'round', 'sharp', 'dull', 'smooth', 'wet', 'dry', 'correct', 'near', 'far', 'right', 'left', 'at', 'in', 'with', 'and', 'if', 'because', 'name']
+```
+Ahora vamos a crear un traductor de palabras entre Francés y Español:
+
+```python
+fr2es = swadesh.entries(['fr', 'es'])
+print(fr2es)
+```
+Respuesta esperada:
+```commandline
+[('je', 'yo'), ('tu, vous', 'tú, usted'), ('il', 'él'), ('nous', 'nosotros'), ('vous', 'vosotros, ustedes'), ('ils, elles', 'ellos, ellas'), ('ceci', 'este'), ('cela', 'ese, aquel'), ('ici', 'aquí, acá'), ('là', 'ahí, allí, allá'), ('qui', 'quien'), ('quoi', 'que'), ('où', 'donde'), ('quand', 'cuando'), ('comment', 'como'), ('ne...pas', 'no'), ('tout', 'todo'), ('plusieurs', 'muchos'), ('quelques', 'algunos, unos'), ('peu', 'poco'), ('autre', 'otro'), ('un', 'uno'), ('deux', 'dos'), ('trois', 'tres'), ('quatre', 'cuatro'), ('cinq', 'cinco'), ('grand', 'grande'), ('long', 'largo'), ('large', 'ancho'), ('épais', 'gordo'), ('lourd', 'pesado'), ('petit', 'pequeño'), ('court', 'corto'), ('étroit', 'estrecho, angosto'), ('mince', 'delgado, flaco'), ('femme', 'mujer'), ('homme', 'hombre'), ('homme', 'hombre'), ('enfant', 'niño'), ('femme, épouse', 'esposa, mujer'), ('mari, époux', 'esposo, marido'), ('mère', 'madre'), ('père', 'padre'), ('animal', 'animal'), ('poisson', 'pez, pescado'), ('oiseau', 'ave, pájaro'), ('chien', 'perro'), ('pou', 'piojo'), ('serpent', 'serpiente, culebra'), ('ver', 'gusano'), ('arbre', 'árbol'), ('forêt', 'bosque'), ('bâton', 'palo'), ('fruit', 'fruta'), ('graine', 'semilla'), ('feuille', 'hoja'), ('racine', 'raíz'), ('écorce', 'corteza'), ('fleur', 'flor'), ('herbe', 'hierba, pasto'), ('corde', 'cuerda'), ('peau', 'piel'), ('viande', 'carne'), ('sang', 'sangre'), ('os', 'hueso'), ('graisse', 'grasa'), ('œuf', 'huevo'), ('corne', 'cuerno'), ('queue', 'cola'), ('plume', 'pluma'), ('cheveu', 'cabello, pelo'), ('tête', 'cabeza'), ('oreille', 'oreja'), ('œil', 'ojo'), ('nez', 'nariz'), ('bouche', 'boca'), ('dent', 'diente'), ('langue', 'lengua'), ('ongle', 'uña'), ('pied', 'pie'), ('jambe', 'pierna'), ('genou', 'rodilla'), ('main', 'mano'), ('aile', 'ala'), ('ventre', 'barriga, vientre, panza'), ('entrailles', 'entrañas, tripas'), ('cou', 'cuello'), ('dos', 'espalda'), ('sein, poitrine', 'pecho, seno'), ('cœur', 'corazón'), ('foie', 'hígado'), ('boire', 'beber, tomar'), ('manger', 'comer'), ('mordre', 'morder'), ('sucer', 'chupar'), ('cracher', 'escupir'), ('vomir', 'vomitar'), ('souffler', 'soplar'), ('respirer', 'respirar'), ('rire', 'reír'), ('voir', 'ver'), ('entendre', 'oír'), ('savoir', 'saber'), ('penser', 'pensar'), ('sentir', 'oler'), ('craindre, avoir peur', 'temer'), ('dormir', 'dormir'), ('vivre', 'vivir'), ('mourir', 'morir'), ('tuer', 'matar'), ('se battre', 'pelear'), ('chasser', 'cazar'), ('frapper', 'golpear'), ('couper', 'cortar'), ('fendre', 'partir'), ('poignarder', 'apuñalar'), ('gratter', 'arañar, rascar'), ('creuser', 'cavar'), ('nager', 'nadar'), ('voler', 'volar'), ('marcher', 'caminar'), ('venir', 'venir'), ("s'étendre", 'echarse, acostarse, tenderse'), ("s'asseoir", 'sentarse'), ('se lever', 'estar de pie'), ('tourner', 'voltear'), ('tomber', 'caer'), ('donner', 'dar'), ('tenir', 'sostener'), ('serrer', 'apretar'), ('frotter', 'frotar'), ('laver', 'lavar'), ('essuyer', 'limpiar'), ('tirer', 'tirar'), ('pousser', 'empujar'), ('jeter', 'tirar'), ('lier', 'atar'), ('coudre', 'coser'), ('compter', 'contar'), ('dire', 'decir'), ('chanter', 'cantar'), ('jouer', 'jugar'), ('flotter', 'flotar'), ('couler', 'fluir'), ('geler', 'helar'), ('gonfler', 'hincharse'), ('soleil', 'sol'), ('lune', 'luna'), ('étoile', 'estrella'), ('eau', 'agua'), ('pluie', 'lluvia'), ('rivière', 'río'), ('lac', 'lago'), ('mer', 'mar'), ('sel', 'sal'), ('pierre', 'piedra'), ('sable', 'arena'), ('poussière', 'polvo'), ('terre', 'tierra'), ('nuage', 'nube'), ('brouillard', 'niebla'), ('ciel', 'cielo'), ('vent', 'viento'), ('neige', 'nieve'), ('glace', 'hielo'), ('fumée', 'humo'), ('feu', 'fuego'), ('cendres', 'cenizas'), ('brûler', 'quemar'), ('route', 'camino'), ('montagne', 'montaña'), ('rouge', 'rojo'), ('vert', 'verde'), ('jaune', 'amarillo'), ('blanc', 'blanco'), ('noir', 'negro'), ('nuit', 'noche'), ('jour', 'día'), ('an, année', 'año'), ('chaud', 'cálido, tibio'), ('froid', 'frío'), ('plein', 'lleno'), ('nouveau', 'nuevo'), ('vieux', 'viejo'), ('bon', 'bueno'), ('mauvais', 'malo'), ('pourri', 'podrido'), ('sale', 'sucio'), ('droit', 'recto'), ('rond', 'redondo'), ('tranchant, pointu, aigu', 'afilado'), ('émoussé', 'desafilado'), ('lisse', 'suave, liso'), ('mouillé', 'mojado'), ('sec', 'seco'), ('juste, correct', 'correcto'), ('proche', 'cerca'), ('loin', 'lejos'), ('à droite', 'derecha'), ('à gauche', 'izquierda'), ('à', 'a, en, ante'), ('dans', 'en'), ('avec', 'con'), ('et', 'y'), ('si', 'si'), ('parce que', 'porque'), ('nom', 'nombre')]
+```
+Pongamos a prueba el traductor:
+
+```python
+translate = dict(fr2es)
+print(translate['chien'])
+
+print(translate['jeter'])
+```
+Respuesta esperada:
+```commandline
+perro
+tirar
+```
+
 ## 2.15 Introducción a WordNet
+
+![10.png](ims%2F2%2F10.png)
+
+WordNet: WordNet es una base de datos léxica y un recurso léxico ampliamente utilizado en el campo del procesamiento del lenguaje natural (NLP). Proporciona un conjunto organizado de palabras en inglés agrupadas en conjuntos de sinónimos, conocidos como "synsets" (conjuntos de sinónimos). WordNet agrupa las palabras en categorías semánticas y establece relaciones entre ellas, lo que permite explorar y comprender las relaciones entre las palabras.
+
+![11.png](ims%2F2%2F11.png)
+
+Synset: Un synset (conjunto de sinónimos) en WordNet es un conjunto de palabras que tienen un significado semántico similar o relacionado. Cada synset está asociado con una palabra clave o "lemmainform" y contiene sinónimos (palabras que comparten un significado similar), definiciones, ejemplos de uso y otras relaciones semánticas. Por ejemplo, el synset para el término "car" (automóvil) en WordNet incluye palabras como "automobile", "motorcar", "machine", etc.
+
+![12.png](ims%2F2%2F12.png)
+
+
+Hiperónimos e Hipónimos: En WordNet, las relaciones hiperónimo-hipónimo (también conocidas como relaciones de "es un") establecen la jerarquía semántica entre los synsets. Un hiperónimo es un término más general o una categoría que engloba a otros términos más específicos llamados hipónimos. Por ejemplo, en el synset "automobile" (automóvil), "vehicle" (vehículo) es su hiperónimo, ya que un automóvil es un tipo de vehículo. A su vez, "sedan" (sedán) podría ser un hipónimo de "automobile", ya que un sedán es un tipo específico de automóvil.
+
+Estas relaciones jerárquicas de hiperónimos e hipónimos en WordNet permiten organizar y estructurar el vocabulario en niveles de generalidad y especificidad, lo que facilita la comprensión de las relaciones semánticas entre las palabras y su uso en diversas aplicaciones de procesamiento del lenguaje natural, como la búsqueda de información, el análisis de sentimientos, la desambiguación léxica, entre otros.
 
 ## 2.16 Explorando WordNet
 
