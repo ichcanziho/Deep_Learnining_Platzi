@@ -1333,14 +1333,519 @@ Estas relaciones jerárquicas de hiperónimos e hipónimos en WordNet permiten o
 
 ## 2.16 Explorando WordNet
 
+En esta sección vamos a ver ejemplos de Synsets y sus Hiperónimos e Hipónimos.
+
+> ## Nota: 
+> El código de esta sección está en: [12_explorando_wordnet.py](scripts%2F12_explorando_wordnet.py)
+
+Importamos las bibliotecas necesarias:
+```python
+import nltk
+nltk.download('omw-1.4')
+from nltk.corpus import wordnet as wn
+from pprint import pprint
+
+```
+
+Escribamos una palabra de ejemplo y veamos sus synsets:
+
+```python
+ss = wn.synsets('carro', lang='spa')
+pprint(ss)
+```
+Respuesta esperada:
+```commandline
+[Synset('car.n.01'),
+ Synset('carriage.n.04'),
+ Synset('carrier.n.02'),
+ Synset('cart.n.01'),
+ Synset('chariot.n.02'),
+ Synset('cartload.n.01')]
+```
+Para cada synset de la palabra Carro podemos observar cuál es su nombre, definición y al mismo tiempo las palabras asociadas al mismo:
+
+```python
+# Explorando los synsets
+for syn in ss:
+    print(syn.name(), ': ', syn.definition())
+    for name in syn.lemma_names():
+        print(' * ', name)
+```
+Respuesta esperada:
+```commandline
+car.n.01 :  a motor vehicle with four wheels; usually propelled by an internal combustion engine
+ *  car
+ *  auto
+ *  automobile
+ *  machine
+ *  motorcar
+carriage.n.04 :  a machine part that carries something else
+ *  carriage
+carrier.n.02 :  a self-propelled wheeled vehicle designed specifically to carry something
+ *  carrier
+cart.n.01 :  a heavy open wagon usually having two wheels and drawn by an animal
+ *  cart
+chariot.n.02 :  a two-wheeled horse-drawn battle vehicle; used in war and races in ancient Egypt and Greece and Rome
+ *  chariot
+cartload.n.01 :  the quantity that a cart holds
+ *  cartload
+```
+Ahora veamos ejemplos de `Hipónimos` e `Hiperónimos`:
+```python
+# Palabras más específicas
+pprint(ss[0].hyponyms())
+
+# Palabras más generales
+pprint(ss[0].hypernyms())
+```
+Respuesta esperada:
+```commandline
+[Synset('ambulance.n.01'),
+ Synset('beach_wagon.n.01'),
+ Synset('bus.n.04'),
+ Synset('cab.n.03'),
+ Synset('compact.n.03'),
+ Synset('convertible.n.01'),
+ Synset('coupe.n.01'),
+ Synset('cruiser.n.01'),
+ Synset('electric.n.01'),
+ Synset('gas_guzzler.n.01'),
+ Synset('hardtop.n.01'),
+ Synset('hatchback.n.01'),
+ Synset('horseless_carriage.n.01'),
+ Synset('hot_rod.n.01'),
+ Synset('jeep.n.01'),
+ Synset('limousine.n.01'),
+ Synset('loaner.n.02'),
+ Synset('minicar.n.01'),
+ Synset('minivan.n.01'),
+ Synset('model_t.n.01'),
+ Synset('pace_car.n.01'),
+ Synset('racer.n.02'),
+ Synset('roadster.n.01'),
+ Synset('sedan.n.01'),
+ Synset('sport_utility.n.01'),
+ Synset('sports_car.n.01'),
+ Synset('stanley_steamer.n.01'),
+ Synset('stock_car.n.01'),
+ Synset('subcompact.n.01'),
+ Synset('touring_car.n.01'),
+ Synset('used-car.n.01')]
+```
+```commandline
+[Synset('motor_vehicle.n.01')]
+```
+
+Ahora vamos a graficar esta información. Creamos un par de funciones que dejare comentadas con Docstrings:
+
+```python
+import networkx as nx
+import matplotlib.pyplot as plt
+
+
+def closure_graph(synset, fn):
+    """
+       Crea un grafo de cierre a partir de un synset dado y una función.
+
+       Args:
+           synset (nltk.corpus.reader.wordnet.Synset): Synset de inicio.
+           fn (function): Función que toma un Synset y devuelve una lista de Synsets.
+
+       Returns:
+           tuple: Tupla que contiene el grafo y un diccionario de etiquetas.
+       """
+    seen = set()
+    graph = nx.DiGraph()
+    labels = {}
+
+    def recurse(s):
+        """
+                Función recursiva para construir el grafo de cierre.
+
+                Args:
+                    s (nltk.corpus.reader.wordnet.Synset): Synset actual.
+                """
+        if not s in seen:
+            seen.add(s)
+            labels[s.name] = s.name().split('.')[0]
+            graph.add_node(s.name)
+            for s1 in fn(s):
+                graph.add_node(s1.name)
+                graph.add_edge(s.name, s1.name)
+                recurse(s1)
+
+    recurse(synset)
+    return graph, labels
+
+
+def draw_text_graph(G, labels, filename):
+    """
+        Dibuja un grafo de texto utilizando NetworkX y Matplotlib.
+
+        Args:
+            G (networkx.DiGraph): Grafo dirigido.
+            labels (dict): Diccionario de etiquetas de nodos.
+            filename (str): Nombre del archivo a guardar
+        """
+    plt.figure(figsize=(18, 12))
+    pos = nx.planar_layout(G, scale=18)
+    nx.draw_networkx_nodes(G, pos, node_color="red", linewidths=0, node_size=500)
+    nx.draw_networkx_labels(G, pos, font_size=20, labels=labels)
+    nx.draw_networkx_edges(G, pos)
+    plt.xticks([])
+    plt.yticks([])
+    plt.savefig(filename)
+    plt.close()
+```
+
+Ahora podemos graficar un par de ejemplos:
+```python
+# Conceptos que son más específicos que la palabra raíz de la cual derivan.
+print(ss[0].name())
+G, labels = closure_graph(ss[0], fn=lambda s: s.hyponyms())
+draw_text_graph(G, labels, "carro_hypo.png")
+```
+Respuesta esperada:
+![carro_hypo.png](scripts%2Fcarro_hypo.png)
+
+```python
+# Conceptos que son más generales.
+print(ss[0].name())
+G, labels = closure_graph(ss[0], fn=lambda s: s.hypernyms())
+draw_text_graph(G, labels, "carro_hyper.png")
+```
+Respuesta esperada:
+![carro_hyper.png](scripts%2Fcarro_hyper.png)
+
+
 ## 2.17 Similitud Semántica con WordNet
+
+Podemos utilizar la estructura de nodos para saber cuál es la distancia semántica entre dos palabras, la cuál puede ser medida
+como la cantidad de nodos que separa a dos palabras, pero el propio wordnet ya incluye una función llamada:
+`path_similarity` que nos ayuda con este trabajo:
+
+> ## Nota:
+> El código de está sección lo puedes encontrar en: [13_similitud_semantica.py](scripts%2F13_similitud_semantica.py)
+
+Este código lo vimos en la sección pasada, ahora lo pondremos en forma de función:
+
+```python
+from nltk.corpus import wordnet as wn
+
+
+def show_syns(word):
+    # Obtener los synsets (conjunto de sinónimos) para la palabra proporcionada
+    ss = wn.synsets(word, lang='spa')
+
+    for syn in ss:
+        # Imprimir el nombre del synset y su definición
+        print(syn.name(), ': ', syn.definition())
+
+        for name in syn.lemma_names():
+            # Imprimir cada nombre de lema (sinónimo)
+            print(' * ', name)
+
+    return ss
+```
+
+Obtenemos un par de synsets para algunas palabras:
+```python
+# Obtener los synsets para la palabra 'perro' y mostrarlos
+ss = show_syns('perro')
+```
+Respuesta esperada:
+```commandline
+dog.n.01 :  a member of the genus Canis (probably descended from the common wolf) that has been domesticated by man since prehistoric times; occurs in many breeds
+ *  dog
+ *  domestic_dog
+ *  Canis_familiaris
+rotter.n.01 :  a person who is deemed to be despicable or contemptible
+ *  rotter
+ *  dirty_dog
+ *  rat
+ *  skunk
+ *  stinker
+ *  stinkpot
+ *  bum
+ *  puke
+ *  crumb
+ *  lowlife
+ *  scum_bag
+ *  so-and-so
+ *  git
+```
+Synsets de Gato
+```python
+# Obtener los synsets para la palabra 'gato' y mostrarlos
+ss2 = show_syns('gato')
+```
+Respuesta esperada:
+```commandline
+cat.n.01 :  feline mammal usually having thick soft fur and no ability to roar: domestic cats; wildcats
+ *  cat
+ *  true_cat
+tom.n.02 :  male cat
+ *  tom
+ *  tomcat
+dodger.n.01 :  a shifty deceptive person
+ *  dodger
+ *  fox
+ *  slyboots
+```
+Synsets de Animal:
+```python
+# Obtener los synsets para la palabra 'animal' y mostrarlos
+ss3 = show_syns('animal')
+```
+Respuesta esperada:
+```commandline
+animal.n.01 :  a living organism characterized by voluntary movement
+ *  animal
+ *  animate_being
+ *  beast
+ *  brute
+ *  creature
+ *  fauna
+beast.n.02 :  a cruelly rapacious person
+ *  beast
+ *  wolf
+ *  savage
+ *  brute
+ *  wildcat
+dunce.n.01 :  a stupid person; these words are used to express a low opinion of someone's intelligence
+ *  dunce
+ *  dunderhead
+ *  numskull
+ *  blockhead
+ *  bonehead
+ *  lunkhead
+ *  hammerhead
+ *  knucklehead
+ *  loggerhead
+ *  muttonhead
+ *  shithead
+ *  dumbass
+ *  fuckhead
+```
+
+Comparación entre palabras (distancia semántica):
+
+```python
+# Obtener el primer synset de 'perro'
+perro = ss[0]
+
+# Obtener el primer synset de 'gato'
+gato = ss2[0]
+
+# Obtener el primer synset de 'animal'
+animal = ss3[0]
+
+# Calcular y mostrar la similitud de ruta entre 'animal' y 'perro'
+print(animal.path_similarity(perro))  # 0.3333333333333333
+
+# Calcular y mostrar la similitud de ruta entre 'animal' y 'gato'
+print(animal.path_similarity(gato))  # 0.125
+
+# Calcular y mostrar la similitud de ruta entre 'perro' y 'gato'
+print(perro.path_similarity(gato))  # 0.2
+
+# Calcular y mostrar la similitud de ruta entre 'perro' y 'perro' (misma palabra)
+print(perro.path_similarity(perro))  # 1.0
+```
+Respuesta esperada:
+```commandline
+0.3333333333333333
+0.125
+0.2
+1.0
+```
 
 ## 2.18 Procesamiento de texto plano desde Web
 
+En esa clase vamos a ver como podemos acceder fácilmente a texto plano de páginas web descargando a través de `urllib` 
+y como incluso podemos descargar el texto plano de una página web utilizando `BeautifulSoup`para después limpiarlo.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [14_procesamiento_texto_web.py](scripts%2F14_procesamiento_texto_web.py) 
+
+Importamos las bibliotecas necesarias:
+```python
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+from nltk import word_tokenize
+from urllib import request
+```
+Empecemos con algo muy simple, acceder a texto plano de una página web:
+
+```python
+# Texto plano desde web
+url = "http://www.gutenberg.org/files/2554/2554-0.txt"
+response = request.urlopen(url)
+raw = response.read().decode('utf8')
+
+print(raw[:200])
+```
+Respuesta esperada:
+```commandline
+﻿The Project Gutenberg eBook of Crime and Punishment, by Fyodor Dostoevsky
+
+This eBook is for the use of anyone anywhere in the United States and
+most other parts of the world at no cost and with a ..
+```
+Observamos como la página contiene el libro de `Crimen y Castigo` de `Fyodor Dostoevsky`.
+Ahora podemos tokenizar las palabras con `word_tokenize`
+
+```python
+tokens = word_tokenize(raw)
+print(tokens[:20])
+```
+Respuesta esperada:
+```commandline
+['\ufeffThe', 'Project', 'Gutenberg', 'eBook', 'of', 'Crime', 'and', 'Punishment', ',', 'by', 'Fyodor', 'Dostoevsky', 'This', 'eBook', 'is', 'for', 'the', 'use', 'of', 'anyone']
+```
+Podemos transformar este lista de palabras en un `Text` de `NLTK`con el fin de acceder a otros métodos interesantes como lo son
+las colocaciones.
+
+```python
+text = nltk.Text(tokens)
+a = text.collocations()
+print(a)
+```
+Respuesta esperada:
+```commandline
+Katerina Ivanovna; Pyotr Petrovitch; Pulcheria Alexandrovna; Avdotya
+Romanovna; Rodion Romanovitch; Marfa Petrovna; Sofya Semyonovna; old
+woman; Project Gutenberg-tm; Porfiry Petrovitch; Amalia Ivanovna;
+great deal; young man; Nikodim Fomitch; Project Gutenberg; Ilya
+Petrovitch; Andrey Semyonovitch; Hay Market; Dmitri Prokofitch; Good
+heavens
+```
+Es fácil observar que varias de las colocaciones son nombres propios de los personajes de la obra.
+
+Ahora veamos como podemos obtener el texto de una página HTML y después limpiarlo para proceder a tokenizarlo.
+Importamos bibliotecas:
+```python
+# Procesar HTML
+import requests
+from bs4 import BeautifulSoup
+import re
+from nltk.tokenize import RegexpTokenizer
+```
+Hacemos un request a una página web para obtener todo su código HTML:
+```python
+url = 'https://www.gutenberg.org/files/2701/2701-h/2701-h.htm'
+r = requests.get(url)
+
+html = r.text
+print(html[:200])
+```
+Respuesta esperada:
+```commandline
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-
+```
+Ahora debemos hacer un `parse` de este texto html con Beautiful soup y después podemos tokenizar las palabras:
+```python
+soup = BeautifulSoup(html, 'html.parser')
+# print(soup)
+
+text = soup.get_text()
+tokens = re.findall('\w+', text)
+print(tokens[:10])
+```
+Respuesta esperada:
+```commandline
+['The', 'Project', 'Gutenberg', 'eBook', 'of', 'Moby', 'Dick', 'Or', 'the', 'Whale']
+```
+El tokenizador empleado fue sumamente sencillo simplemente fue quedarse con los caracteres de palabra.
+Una alternativa sería:
+```python
+tokenizer = RegexpTokenizer('\w+')
+tokens = tokenizer.tokenize(text)
+tokens = [token.lower() for token in tokens]
+print(tokens[:10])
+```
+Respuesta esperada:
+```commandline
+['the', 'project', 'gutenberg', 'ebook', 'of', 'moby', 'dick', 'or', 'the', 'whale']
+```
+De igual forma podemos transformar los tokens a un `Text`:
+```python
+text = nltk.Text(tokens)
+a = text.collocations()
+print(a)
+```
+Respuesta esperada:
+```commandline
+sperm whale; moby dick; project gutenberg; white whale; old man; mast
+head; mast heads; captain ahab; right whale; quarter deck; united
+states; aye aye; captain peleg; new bedford; literary archive; mrs
+hussey; dough boy; chief mate; gutenberg electronic; try works
+None
+```
+
 ## 2.19 Usando código estructurado: conexión de Drive a Google Colab
 
+Esta clase solo introdujo como se puede acceder a Drive desde Colab. Realmente por como tengo estructurado 
+este repositorio tiene poco sentido que lo explique, sin embargo, te comparto el código por si no sabes cómo hacer eso:
+
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+filepath = '/content/drive/My Drive/Colab Notebooks/NLP_course_resources/'
+```
+Cuando corras el código desde Google Colab te va a pedir que ingreses una contraseña, pero esta se va a generar directamente
+desde el navegador.
+
+
 ## 2.20 Usando código estructurado: Funciones externas
+
+De nuevo esta clase no tiene mucho sentido si no se ejecuta desde Colab, pero el objetivo de la misma fue hacer códigos python (.py)
+e importarlos desde Colab para usarlos como si de librerías se trataran.
+
+En colab la forma de permitirle a python acceder a archivos .py ya que han sido montados en drive es la siguiente:
+
+Supongamos la existencia de un archivo `read.py` que se encuentra en la siguiente dirección:
+
+```python
+filepath = '/content/drive/My Drive/Colab Notebooks/NLP_course_resources/'
+```
+
+El archivo `read.py` tiene el siguiente código en su interior:
+```python
+import re
+
+# la funcion la podemos definir en el notebook y usar directamente
+def get_text(file):
+  '''Read Text from file'''
+  text = open(file).read()
+  text = re.sub(r'<.*?>', ' ', text)
+  text = re.sub(r'\s+', ' ', text)
+  return text
+```
+
+Entonces para importarla como un modelo en Colab y poder usar la función `get_text()` podemos hacer:
+
+```python
+import sys
+sys.path.append(filepath)
+import read  # este es el nomber del archivo .py
+read.get_text(filepath+'book.txt')
+```
+Respuesta esperada:
+```commandline
+'\ufeffThe Project Gutenberg EBook of Crime and Punishment, by Fyodor Dostoevsky This eBook is for the use of anyone anywhere at no cost and with almost no restrictions
+```
 
 # 3 Perspectivas de lo que viene
 
 ## 3.1 Continúa con el Curso de Algoritmos de Clasificación de Texto
+
+En los siguientes cursos veremos como usar spaCy, y veremos un poco sobre Como llevar a producción los modelos.
+
+
+
