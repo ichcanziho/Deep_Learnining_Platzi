@@ -67,21 +67,797 @@ algoritmos de clasificación de texto desde cero usando Python yNLTK.
 
 ## 1.1 Introducción a la desambiguación
 
+La desambiguación de palabras es una tarea desafiante en el procesamiento del lenguaje natural (NLP, por sus siglas en inglés) que implica identificar el significado correcto de una palabra o frase en un determinado contexto. 
+
+![1.png](imgs%2F1%2F1.png)
+
+En la primera oración, "Debo ir al banco para retirar dinero", la palabra "banco" se refiere a una institución financiera 
+donde las personas pueden realizar transacciones bancarias, como depositar, retirar o transferir dinero. Sin embargo, en 
+la segunda oración, "Te puedes sentar en ese banco para descansar", "banco" se refiere a un asiento o superficie para sentarse.
+
+La desambiguación léxica es un problema importante en el NLP porque las palabras a menudo tienen múltiples significados y el contexto circundante es crucial para determinar cuál es el significado correcto en un contexto dado. La tarea de desambiguación léxica puede abordarse de diferentes formas.
+
+**Algunos ejemplos de ambigüedad:**
+
+![3.png](imgs%2F1%2F3.png)
+
+![4.png](imgs%2F1%2F4.png)
+
+Este ejemplo es particularmente complejo porque en este escenario el texto es idéntico en ambas partes, sin embargo, la primera
+oración hace referencia a que el animal está a punto de comer mientras que la segunda hace referencia a que está a punto de ser comido.
+
+![5.png](imgs%2F1%2F5.png)
+
+Algunas de las formas de lidiar con la desambiguación léxica son:
+
+Basado en reglas: En este enfoque, se utilizan reglas lingüísticas predefinidas para determinar el significado de una palabra en función de su contexto. Estas reglas pueden ser diseñadas manualmente o aprenderse automáticamente a partir de un corpus de texto anotado. Por ejemplo, una regla podría establecer que si la palabra "banco" aparece junto a palabras como "retirar", "depositar" o "transacciones", probablemente se refiere a una institución financiera.
+
+Basado en aprendizaje automático: En este enfoque, se utilizan técnicas de aprendizaje automático para entrenar modelos que puedan predecir el significado de una palabra en función de su contexto. Estos modelos se entrenan utilizando grandes conjuntos de datos anotados, donde se especifica el significado correcto de las palabras en diferentes oraciones. El modelo aprende patrones y relaciones entre las palabras y sus contextos y luego puede aplicarse para desambiguar nuevas oraciones. En este caso, el modelo podría aprender que en la primera oración, "banco" se refiere a una institución financiera porque se encuentra junto a palabras relacionadas con transacciones bancarias.
+
+En este curso vamos a empezar por entender cómo debe ser etiquetada una palabra de forma correcta.
+
+Conozcamos un ejemplo de google: https://cloud.google.com/natural-language?hl=es
+
+![6.png](imgs%2F1%2F6.png)
+
+Nos permite extraer información sobre cada una de las palabras que componen una oración tomando en consideración el contexto
+que rodea a la palabra.
+
+**Algunas de las aplicaciones del NLP hoy en día son:**
+
+- Mejoras en motores de búsqueda, e-commerce y web.
+- Automatización en manejo de CRMs.
+- Censura en redes sociales.
+-Orden de datos no-estructurados.
+
 ## 1.2 Etiquetado rápido en Python: español e inglés
 
+En esta clase veremos como podemos etiquetar cada una de las palabras de una oración y entender su significado de acuerdo
+al contexto de la palabra, de una forma similar a como lo hizo el ejemplo de Google.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [1_etiquetado_rapido.py](scripts%2F1_etiquetado_rapido.py)
+
+Primero importamos las bibliotecas necesarias:
+```python
+# Dependencias previas
+import nltk
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+from nltk import word_tokenize
+nltk.download('cess_esp')
+from nltk.corpus import cess_esp as cess
+from nltk import UnigramTagger as ut
+from nltk import BigramTagger as bt
+```
+Este código importa las bibliotecas necesarias para realizar el etiquetado gramatical. NLTK (Natural Language Toolkit) es una biblioteca popular para el procesamiento del lenguaje natural en Python. Aquí, se descargan los recursos necesarios, como los modelos de etiquetado y los datos de entrenamiento.
+
+El siguiente fragmento muestra un ejemplo sencillo de etiquetado gramatical utilizando NLTK. La función word_tokenize se utiliza para dividir el texto en palabras individuales. Luego, pos_tag se aplica a la lista de palabras para etiquetar cada una con su categoría gramatical.
+```python
+# Etiquetado en una línea
+text = word_tokenize("And now here I am enjoying today")
+print(nltk.pos_tag(text))
+```
+Respuesta esperada:
+```commandline
+[('And', 'CC'), ('now', 'RB'), ('here', 'RB'), ('I', 'PRP'), ('am', 'VBP'), ('enjoying', 'VBG'), ('today', 'NN')]
+```
+
+En este código, se descargan los conjuntos de etiquetas gramaticales definidos por el proyecto Penn Treebank. Luego, se itera sobre las etiquetas gramaticales generadas anteriormente por pos_tag. Para cada etiqueta, se utiliza la función help.upenn_tagset para obtener una descripción de la etiqueta gramatical correspondiente. Esto ayuda a comprender el significado de cada etiqueta.
+```python
+# Categoria gramatical de cada etiqueta
+nltk.download('tagsets')
+for _, tag in nltk.pos_tag(text):
+    print(nltk.help.upenn_tagset(tag))
+```
+Respuesta esperada:
+```commandline
+CC: conjunction, coordinating
+    & 'n and both but either et for less minus neither nor or plus so
+    therefore times v. versus vs. whether yet
+None
+RB: adverb
+    occasionally unabatingly maddeningly adventurously professedly
+    stirringly prominently technologically magisterially predominately
+    swiftly fiscally pitilessly ...
+None
+RB: adverb
+    occasionally unabatingly maddeningly adventurously professedly
+    stirringly prominently technologically magisterially predominately
+    swiftly fiscally pitilessly ...
+None
+PRP: pronoun, personal
+    hers herself him himself hisself it itself me myself one oneself ours
+    ourselves ownself self she thee theirs them themselves they thou thy us
+None
+VBP: verb, present tense, not 3rd person singular
+    predominate wrap resort sue twist spill cure lengthen brush terminate
+    appear tend stray glisten obtain comprise detest tease attract
+    emphasize mold postpone sever return wag ...
+None
+VBG: verb, present participle or gerund
+    telegraphing stirring focusing angering judging stalling lactating
+    hankerin' alleging veering capping approaching traveling besieging
+    encrypting interrupting erasing wincing ...
+None
+NN: noun, common, singular or mass
+    common-carrier cabbage knuckle-duster Casino afghan shed thermostat
+    investment slide humour falloff slick wind hyena override subhumanity
+    machinist ...
+None
+```
+Este fragmento muestra otro ejemplo de etiquetado gramatical utilizando NLTK. Aquí se etiquetan las palabras de una oración y se imprime el resultado en la consola. Es interesante observar cómo NLTK maneja las palabras homónimas en función del contexto.
+```python
+# Palabras homónimas
+text = word_tokenize("They do not permit other people to get residence permit")
+print(nltk.pos_tag(text))
+```
+Respuesta esperada:
+```commandline
+[('They', 'PRP'), ('do', 'VBP'), ('not', 'RB'), ('permit', 'VB'), ('other', 'JJ'), ('people', 'NNS'), ('to', 'TO'), ('get', 'VB'), ('residence', 'NN'), ('permit', 'NN')]
+```
+Este código muestra el etiquetado gramatical en español utilizando un enfoque basado en unigramas. Los datos etiquetados en español se cargan desde el corpus "cess_esp". Luego, se divide el corpus en un conjunto de entrenamiento y un conjunto de prueba. Se entrena el etiquetador unigrama utilizando el conjunto de entrenamiento y se evalúa su rendimiento en el conjunto de prueba. Finalmente, se muestra el rendimiento del etiquetador y se etiqueta una frase en español utilizando el modelo entrenado.
+```python
+# Etiquetado en Español
+# Entrenamiendo del tagger por unigramas
+cess_sents = cess.tagged_sents()
+fraction = int(len(cess_sents)*90/100)
+uni_tagger = ut(cess_sents[:fraction])
+p = uni_tagger.evaluate(cess_sents[fraction+1:])
+print(p)
+print(uni_tagger.tag("Yo soy una persona muy amable".split(" ")))
+```
+Respuesta esperada:
+```commandline
+0.8069484240687679
+[('Yo', 'pp1csn00'), ('soy', 'vsip1s0'), ('una', 'di0fs0'), ('persona', 'ncfs000'), ('muy', 'rg'), ('amable', None)]
+```
+Este fragmento de código es similar al anterior, pero utiliza un etiquetador basado en bigramas en lugar de unigramas. Se realiza el entrenamiento del etiquetador bigrama y se evalúa su rendimiento en el conjunto de prueba. Luego, se muestra el rendimiento del etiquetador y se etiqueta una frase en español utilizando el modelo entrenado.
+```python
+fraction = int(len(cess_sents)*90/100)
+bi_tagger = bt(cess_sents[:fraction])
+p = bi_tagger.evaluate(cess_sents[fraction+1:])
+print(p)
+
+print(bi_tagger.tag("Yo soy una persona muy amable".split(" ")))
+```
+Respuesta esperada:
+```commandline
+0.1095272206303725
+[('Yo', 'pp1csn00'), ('soy', 'vsip1s0'), ('una', None), ('persona', None), ('muy', None), ('amable', None)]
+```
+
+
 ## 1.3 Etiquetado rápido en Python: Stanza (Stanford NLP)
+
+Stanza, anteriormente conocido como Stanford NLP, es una biblioteca de procesamiento del lenguaje natural (NLP, por sus siglas en inglés) desarrollada por el Grupo de Procesamiento del Lenguaje Natural de la Universidad de Stanford. Proporciona una amplia gama de herramientas y modelos para tareas de procesamiento del lenguaje natural, como el etiquetado gramatical, el análisis sintáctico, el reconocimiento de entidades nombradas, el análisis de sentimientos, la desambiguación del sentido de las palabras y mucho más.
+
+A continuación algunos aspectos destacados y características clave de Stanza:
+
+- **Procesamiento en varios idiomas:** Stanza admite una amplia variedad de idiomas y proporciona modelos y recursos preentrenados para más de 70 idiomas diferentes, lo que permite el procesamiento del lenguaje natural en un contexto multilingüe.
+
+- **Pipeline de procesamiento:** Stanza sigue un enfoque de pipeline modular, donde cada tarea de procesamiento, como el tokenizado, el etiquetado gramatical y el análisis sintáctico, se realiza de manera secuencial. Esto permite un flujo de trabajo flexible y la posibilidad de personalizar el pipeline según las necesidades del proyecto.
+
+- **Modelos de aprendizaje automático:** Stanza utiliza técnicas de aprendizaje automático y modelos neuronales para realizar diversas tareas de procesamiento del lenguaje natural. Estos modelos se han entrenado en grandes conjuntos de datos anotados y proporcionan un rendimiento preciso y robusto en las tareas de NLP.
+
+- **Integración con Python:** Stanza está diseñado para ser utilizado con Python, lo que facilita la integración en proyectos de NLP existentes. Proporciona una API intuitiva y de fácil uso para acceder a las funcionalidades de procesamiento del lenguaje natural.
+
+- **Recursos lingüísticos:** Stanza incluye recursos lingüísticos, como modelos de lenguaje, etiquetas gramaticales y datos anotados, que se pueden descargar y utilizar para entrenar y aplicar modelos de procesamiento del lenguaje natural.
+
+Stanza es una biblioteca muy popular y ampliamente utilizada en la comunidad de procesamiento del lenguaje natural debido a su precisión, rendimiento y soporte multilingüe. Puede ser utilizado para una variedad de aplicaciones, como análisis de texto, extracción de información, traducción automática, generación de resúmenes y más.
+
+Conociendo un poco sobre lo que es Stanza veamos un sencillo ejemplo en código:
+
+Antes de empezar necesitamos instalar Stanza:
+```bash
+pip install stanza
+```
+
+> ## Nota:
+> El código completo está en: [2_etiquerado_stanza.py](scripts%2F2_etiquerado_stanza.py)
+
+Ahora sí, empezamos con el código:
+```python
+import stanza
+stanza.download('es')
+```
+Respuesta esperada:
+```commandline
+Downloading https://raw.githubusercontent.com/stanfordnlp/stanza-resources/master/resources_1.0.0.json: 115kB [00:00, 10.1MB/s]
+2020-07-13 01:50:46 INFO: Downloading default packages for language: es (Spanish)...
+Downloading http://nlp.stanford.edu/software/stanza/1.0.0/es/default.zip: 100%|██████████| 583M/583M [01:48<00:00, 5.36MB/s]
+2020-07-13 01:52:48 INFO: Finished downloading models and saved to /root/stanza_resources.
+```
+El código anterior importa la biblioteca Stanza y descarga los modelos pre-entrenados para el procesamiento del lenguaje natural en español. Se utiliza la función stanza.download('es') para descargar los recursos necesarios.
+```python
+nlp = stanza.Pipeline('es', processors='tokenize,pos')
+doc = nlp('yo soy una persona muy amable')
+print(doc)
+```
+Respuesta esperada:
+```commandline
+2020-07-13 01:53:05 INFO: Loading these models for language: es (Spanish):
+=======================
+| Processor | Package |
+-----------------------
+| tokenize  | ancora  |
+| pos       | ancora  |
+=======================
+
+2020-07-13 01:53:06 INFO: Use device: cpu
+2020-07-13 01:53:06 INFO: Loading: tokenize
+2020-07-13 01:53:06 INFO: Loading: pos
+2020-07-13 01:53:07 INFO: Done loading processors!
+```
+El código anterior inicializa un objeto nlp que representa el pipeline de procesamiento de texto en Stanza. Se utiliza el modelo en español ('es') y se especifican los procesadores necesarios, en este caso, la tokenización y el etiquetado gramatical ('tokenize,pos'). Luego, se procesa el texto "yo soy una persona muy amable" utilizando el objeto nlp y se guarda el resultado en la variable doc. Por último, se imprime el contenido de doc
+
+```python
+for sentence in doc.sentences:
+  for word in sentence.words:
+    print(word.text, word.pos)
+```
+Respuesta esperada:
+```commandline
+yo PRON
+soy AUX
+una DET
+persona NOUN
+muy ADV
+amable ADJ
+```
+El fragmento de código anterior muestra cómo acceder a las palabras etiquetadas gramaticalmente en el documento procesado por Stanza. Se itera sobre las oraciones (sentence) en doc.sentences y luego se itera sobre las palabras (word) en cada oración. Se imprime el texto de cada palabra (word.text) y su etiqueta gramatical (word.pos).
 
 # 2 Modelos Markovianos Latentes (HMM)
 
 ## 2.1 Cadenas de Markov
 
+En clases pasadas observamos que al utilizar nltk teníamos que descargar un par de cosas:
+
+![1.png](imgs%2F2%2F1.png)
+
+**PUNKT** es un módulo y una clase en NLTK que se utiliza para el tokenizado de texto. El tokenizado es el proceso de dividir un texto en unidades más pequeñas, como palabras o frases, llamadas "tokens". PUNKT es un tokenizador no supervisado que implementa un algoritmo para dividir el texto en oraciones y palabras. Utiliza modelos previamente entrenados para identificar los límites de las oraciones y las palabras en un texto en inglés.
+
+**AVERAGED_PERCEPTRON**, por otro lado, es un algoritmo de aprendizaje automático utilizado en NLTK para el etiquetado gramatical o etiquetado POS (part-of-speech). El etiquetado gramatical es el proceso de asignar etiquetas de partes del discurso a cada palabra en un texto. AVERAGED_PERCEPTRON es un clasificador basado en perceptrón promediado, que se entrena utilizando un conjunto de características extraídas del texto para predecir las etiquetas gramaticales de las palabras.
+
+Con base en ello podemos definir una escalera de modelos, donde los modelos markovianos latentes serán nuestra base para entender los siguientes.
+
+![2.png](imgs%2F2%2F2.png)
+
+HMM está basado en el concepto de cadenas de Markov
+
+![3.png](imgs%2F2%2F3.png)
+
+Las cadenas de Markov son un tipo de modelo estadístico que se utiliza para describir la evolución de un sistema en el tiempo, donde el sistema puede estar en diferentes estados discretos. Estos modelos se basan en la propiedad de Markov, que establece que la probabilidad de que el sistema pase a un estado futuro depende únicamente del estado actual y no de los estados anteriores.
+
+Piensa en un sistema con un conjunto finito de estados (conjunto determinado de categorías que puedes contar, como el clima en un dia).
+
+![4.png](imgs%2F2%2F4.png)
+
+El diagrama mide la probabilidad de que a un dia frio le siga otro dia frio, o que de un dia frio le siga un dia caliente, etc.
+
+Todas las flechas definen una transición, en conjunto definen todas las transiciones.
+
+Una `cadena de Markov` define la `probabilidad de transición` entre los posibles estados que un sistema puede tener.
+
+Haciendo la lógica para las posibles transiciones obtenemos la matriz de transición.
+
+![5.png](imgs%2F2%2F5.png)
+
+En el caso de nuestro ejemplo, consideraremos tres estados climáticos: "frío", "caliente" y "tibio". Una cadena de Markov para este sistema implicaría definir las probabilidades de transición entre estos estados. Por ejemplo, supongamos que tenemos las siguientes probabilidades de transición:
+
+- Si hoy es "frío", la probabilidad de que mañana sea "frío" es del 40%, la probabilidad de que sea "caliente" es del 30% y la probabilidad de que sea "tibio" es del 30%.
+- Si hoy es "caliente", la probabilidad de que mañana sea "frío" es del 20%, la probabilidad de que sea "caliente" es del 50% y la probabilidad de que sea "tibio" es del 30%.
+- Si hoy es "tibio", la probabilidad de que mañana sea "frío" es del 50%, la probabilidad de que sea "caliente" es del 10% y la probabilidad de que sea "tibio" es del 40%.
+
+|          | Frio | Caliente | Tibio |
+|----------|------|----------|-------|
+| Frio     | 0.4  | 0.3      | 0.3   |
+| Caliente | 0.2  | 0.5      | 0.3   |
+| Tibio    | 0.5  | 0.1      | 0.4   |
+
+
+En esta matriz, cada fila de la matriz representa un estado inicial y cada columna representa un estado terminal. Los valores en la matriz representan las probabilidades de transición entre los estados. Por ejemplo, el valor en la fila "Frío" y la columna "Caliente" es 0.3, lo que significa que hay una probabilidad del 30% de pasar del estado "frío" al estado "caliente".
+
+Otro componente importante es la distribución inicial de estados (letra PI).
+
+![6.png](imgs%2F2%2F6.png)
+
+PI tiene 3 componentes, que definen la probabilidad inicial de que un dia sea frio o caliente o tibio.
+
+Lo que sucede es que nosotros multiplicamos nuestra matriz de transición por nuestro estado inicial PI(0), ese resultado nos dará el siguiente vector de estados PI(1). Eso nos indica la manera en que las probabilidades van cambiando a medida que el sistema evoluciona.
+
+
 ## 2.2 Modelos Markovianos latentes (HMM)
+
+Las cadenas de markov son la base para entender como funcionan los etiquetadores de palabras.
+
+En una cadena de markov tenemos dos ingredientes principales:
+
+- `Matriz de transición` (cada elemento representa la probabilidad de transición al siguiente estado)
+
+- `Distribución de estados`
+
+![7.png](imgs%2F2%2F7.png)
+
+Tomemos un ejemplo sencillo, queremos calcular cuál es la probabilidad de que el día de mañana haya cierta temperatura
+tomando como base la temperatura del día de hoy. Como tal las variables de las cadenas de Markov DEBEN ser `discretas` esto
+quiere decir que son clases no variables continuas o numéricas. Entonces en lugar de definir a la temperatura como una
+variable continua vamos a proponer 3 clases: 1 Frío, 2 Caliente, 3 Tibio.
+
+Primero vamos a definir un par de cosas, debemos haber muestreado el comportamiento del cambio de temperatura en un intervalo
+por ejemplo 5 días:
+
+{d1, d2, d3, d4, d5, d6} -> {f, f, t, c, c, c}
+
+Excelente ahora ya tenemos una pequeña muestra del comportamiento de la temperatura a lo largo del tiempo, vamos a normalizar
+la temperatura con su variable numérica en lugar de su letra representativa.
+
+{d1, d2, d3, d4, d5, d6} -> {1, 1, 3, 2, 2, 2}
+
+Ahora, nos podemos hacer una pregunta de probabilidad condicional, dado que yo sé que hoy la temperatura es Tibia (3) cuál
+es la probabilidad de que el día de mañana la temperatura sea caliente (2)? Antes de continuar repasemos rápidamente los conceptos
+de probabilidad condicional:
+
+La probabilidad condicional es una medida de la probabilidad de que ocurra un evento A, dado que otro evento B ha ocurrido. Se representa como P(A|B), donde "|" denota "dado" o "sujeto a". En otras palabras, la probabilidad condicional se refiere a la probabilidad de que ocurra A, dado que ya sabemos que B ha ocurrido.
+
+La fórmula general para la probabilidad condicional es:
+
+P(A|B) = P(A ∩ B) / P(B)
+
+Donde:
+
+- `P(A|B)` es la probabilidad condicional de A dado B.
+- `P(A ∩ B)` es la probabilidad de que ocurran tanto A como B (intersección de A y B).
+- `P(B)` es la probabilidad de que ocurra B.
+
+Teniendo todo esto en cuenta podemos empezar a obtener la probabilidad de que mañana sea caliente dado que hoy es tibio.
+
+Primero planteamos la ecuación que queremos resolver:
+
+P(2|3) = P(2 ∩ 3) / P(3)
+
+Busquemos entonces primero a: P(2 ∩ 3), podemos notar que en nuestras observaciones de tiempo: {1, 1, 3, 2, 2, 2}
+tenemos 5 transiciones (1 -> 1, 1 -> 3, 3 -> 2, 2 -> 2, 2 -> 2) (no contamos el día 6 porque ese no provoco una transición)
+de nuestro total de observaciones vemos como hay 1 en la que se cumple la transición (3 -> 2) que es la que buscamos, de un total
+de 5 transiciones, entonces:
+
+P(2 ∩ 3) = 1/5
+
+Ahora busquemos a P(3) este es más fácil es contar cuantos días han sido tibios del total de observaciones y vemos que a pesar
+de tener 6 observaciones vamos a contar 5 porque son las que generan transición, entonces un día ha sido tibio de 5 días vistos:
+
+P(3) = 1/5
+
+Finalmente, entonces: P(2|3) = (1/5) / (1/5) = 1.
+
+![8.png](imgs%2F2%2F8.png)
+
+Ahora podemos repetir este pensamiento para las demas combinaciones de tal manera que hacemos nuestra matriz de transición:
+
+![9.png](imgs%2F2%2F9.png)
+
+Nota dado que nuestra busqueda fue cuál es la probabilidad de que mañana sea caliente dado que HOY es tibio, entonces la variable
+tibio es la variable que representa una fila en la matriz de transición y la variable caliente representa una columna, esto
+se puede denotar de la siguiente manera C32 (Probabilidad de mañana caliente dado hoy tibio).
+
+Podemos seguir construyendo la matriz y hay algunas observaciones que son muy obvias por ejemplo cuál es la probabilidad de que
+el día de mañana sea tibio dado que hoy es tibio C33 sería 0 porque en nuestras muestras nunca vimos ese caso entonces
+P(3 ∩ 3) = 0 y, por tanto, P(3|3) también sería 0.
+
+Ahora con toda la explicación anterior hemos construido la `matriz de transición` pero nos falta un elemento más nos falta
+la `Distribución de estados`, que de forma sencilla puede ser explicada como las condiciones iniciales. Supongamos que 
+para el día de hoy las probabilidades son 40% frío, 20% caliente y 40% tibio, a esto lo llamamos (PI)
+
+Ahora solo falta multiplicar la matriz de transición por el vector de distribución de estados y tenemos la fórmula general de una cadena de Markov.
+
+![10.png](imgs%2F2%2F10.png)
+
+Los resultados de las probabilidades de clima de mañana son entonces:
+
+![11.png](imgs%2F2%2F11.png)
+
+20% frio, 60% caliente y 20% tibio.
+
+Ahora que vimos las bases de una cadena de markov y sus ingredientes esenciales veamos de manera rápida com se expande esto a una la HMM o Modelo Markoviano Latente (Hidden Markov Model).
+Pensemos ahora que queremos descubrir la secuencia de etiquetas de una palabra dada la secuencia de palabras:
+
+![12.png](imgs%2F2%2F12.png)
+
+Pensemos en secuencia de palabras y secuencia de etiquetas de cada una de esas palabras.
+
+(pedro, es, ingeniero) | (sustantivo, Verbo, Sustantivo)
+
+Esto es una cadena latente (oculta)y el propósito del modelo es descubrir o encontrar cuál es esa cadena.
 
 ## 2.3 Entrenando un HMM
 
+> El objetivo de una cadena de markov latente es encontrar dada una secuencia de palabras cuál es la secuencia de etiquetas que le corresponde con mayor probabilidad
+> 
+
+La idea en un HMM es la siguiente.
+
+![13.png](imgs%2F2%2F13.png)
+
+Dado que ahora tenemos tenemos una cadena de markov sobre unos estados, que aunque son latentes son estados, sobre ellos podemos definir probabilidades de transición, los cuales están en el recuadro verde Cij los cuales serán la probabilidad de cambiar de una categoría gramatical a que en la siguiente palabra haya otra categoría gramatical.
+
+Ahora las probabilidades serán, **dada una categoría gramatical cuál es la probabilidad de que esa categoría le corresponda a una cierta palabra** como en el ejemplo en el recuadro blanco.
+
+El nodo 1 que es sustantivo puede corresponder a varias palabras, puede ser "pedro", puede ser "es", o en algunos casos no aplica, pero entonces ahí las probabilidades son cero, y eso se calcula con un corpus de palabras, 
+**esas probabilidades que son dadas una categoría gramatical cuál es la probabilidad de que le corresponda una cierta palabra las 
+llamamos probabilidades de emisión** y podemos calcular un conjunto de probabilidades de emisión para cada uno de los nodos 
+del mapa de cadena markoviana y eso junto todo corresponde a un **modelo markoviano latente** de manera que ahora tenemos 3
+ingredientes para un HMM:
+
+- Matriz de transición
+- Distribución inicial de estados
+- Probabilidades de emisión.
+
+![14.png](imgs%2F2%2F14.png)
+
+Con estos tres ingredientes el objetivo de una cadena de markov latente es encontrar **dada una secuencia de palabras cuál es la secuencia de etiquetas que le corresponde por mayor probabilidad**.
+
+Ejemplo:
+
+Tenemos un modelo caracterizado por dos objetos, una matriz de transiciones (A) y otro elemento que contiene las probabilidades de emisión (B).
+
+La entrada de un modelo serán observaciones (O), secuencias de palabras observadas (q).
+
+Cuál es la probabilidad (P) de que dada una secuencia de palabras (w^n) cuál será la probabilidad de que una secuencia de 
+etiquetas o tags (t^n) le sea asignada, nuestro objetivo es encontrar la cantidad maxima t~^n
+
+![15.png](imgs%2F2%2F15.png)
+
+Para calcular esta probabilidad usaremos la regla de Bayes.
+
+La probabilidad de tener una etiqueta dada una palabra (por teorema de bayes) es igual a la probabilidad de tener una
+palabra dada una etiqueta por la probabilidad de la etiqueta entre la probabilidad de la palabra.
+
+![16.png](imgs%2F2%2F16.png)
+
+Sin embargo, vamos a tomar un leve atajo matemático, y es que si nos damos cuenta estamos calculando multiples veces las
+probabilidades de obtener una etiqueta dada una palabra para secuencias de texto y cada vez que lo hago siempre termino
+dividiendo entre la probabilidad de aparición de dicha palabra P(w) sin embargo, esta probabilidad se obtiene para un corpus de texto
+y no se modifica una vez calculada, entonces podemos quitar el denominador en todas las operaciones de tal manera de reducir
+la cantidad de operaciones. Esto NO nos genera tal cual la probabildiad pero como la relación matemática se sigue manteniendo
+es algo que podemos hacer.
+
+![17.png](imgs%2F2%2F17.png)
+
+En resumen:
+
+![18.png](imgs%2F2%2F18.png)
+
+El máximo de la probabilidad a la izquierda se traduce en el producto de las dos probabilidades de la derecha. Para ello ahora es necesario introducir dos hipótesis
+
+La **hipótesis de independencia y la hipótesis markoviana**
+
+- **En la hipótesis de independencia**, quiere decir que las probabilidades de palabras a etiquetas solamente dependen de la 
+misma posición de la palabra en cuestión.
+- **En la hipótesis Markoviana** el estado actual (etiqueta de la palabra) depende del estado inmediato anterior (la etiqueta de la que viene)
+
+![19.png](imgs%2F2%2F19.png)
+
+Con esto la fórmula que sigue un HMM es:
+
+![20.png](imgs%2F2%2F20.png)
+
+Entonces ¿Qué significa entrenar a un HMM? Pues básicamente se resume en aprender las probabilidades de (A) la matriz de transición
+y las (B) probabilidades de emisión. Esto lo podemos hacer mediante la frecuencia de distribución de palabras y bi-gramas
+cosas que ya hemos visto en el curso anterior de NLP.
+
+
 ## 2.4 Fases de entrenamiento de un HMM
 
+Para estas próximas 2 clases vamos a utilizar una base de datos en español que contiene oraciones y cada palabra su respectivo POS
+esto con el objetivo de poner en práctica todo lo que hemos visto sobre HMM. Para eso vamos a utilizar base de datos [AnCora](https://github.com/UniversalDependencies/UD_Spanish-AnCora)
+
+> UD_Spanish-AnCora es un corpus anotado en el marco Universal Dependencies (UD) que se centra en el idioma español. El proyecto Universal Dependencies tiene como objetivo establecer una representación gramatical consistente y universalmente aplicable para diferentes idiomas. El corpus UD_Spanish-AnCora sigue estas directrices y proporciona un conjunto de anotaciones gramaticales coherentes para el análisis sintáctico del español.
+
+> El corpus UD_Spanish-AnCora está compuesto por oraciones en español extraídas de diferentes fuentes, como periódicos, revistas y textos literarios. Cada oración del corpus se ha anotado manualmente con información gramatical y estructural, lo que incluye etiquetas de partes del discurso, relaciones sintácticas, dependencias entre palabras y otras características lingüísticas relevantes.
+
+Es importante tomar en cuenta que AnCora es una base de datos en formato `Conllu`
+
+> En cuanto a Conllu, es un formato de archivo utilizado para representar y almacenar datos anotados en el marco Universal Dependencies. Conllu significa "Universal Dependencies in CoNLL-U format". CoNLL-U se refiere a la Conferencia sobre Aprendizaje Computacional y Lenguaje Natural (Conference on Computational Natural Language Learning) y al formato Unversal (Universal), que fue adoptado por el proyecto Universal Dependencies.
+
+> El formato Conllu es un formato de archivo de texto tabular que organiza las anotaciones gramaticales en columnas. Cada palabra de una oración se representa en una línea separada, y las diferentes propiedades de la palabra, como la forma, el lema, la etiqueta de parte del discurso y las dependencias sintácticas, se representan en diferentes columnas. Esto permite una representación estructurada y legible por máquina de las anotaciones gramaticales en el contexto del marco Universal Dependencies.
+
+## Corpus de español: 
+
+* AnCora | Github: https://github.com/UniversalDependencies/UD_Spanish-AnCora
+
+* usamos el conllu parser para leer el corpus: https://pypi.org/project/conllu/
+
+* Etiquetas Universal POS (Documentación): https://universaldependencies.org/u/pos/
+
+Vamos a empezar instalando Conllu en Python
+
+```bash
+pip install conllu
+```
+Respuesta esperada:
+```commandline
+Collecting conllu
+  Downloading conllu-4.5.3-py2.py3-none-any.whl (16 kB)
+Installing collected packages: conllu
+Successfully installed conllu-4.5.3
+```
+
+Ahora clonamos el repositorio de AnCora
+```bash
+git clone https://github.com/UniversalDependencies/UD_Spanish-AnCora.git
+```
+Respuesta esperada:
+```commandline
+Clonando en 'UD_Spanish-AnCora'...
+remote: Enumerating objects: 1262, done.
+remote: Counting objects: 100% (278/278), done.
+remote: Compressing objects: 100% (68/68), done.
+remote: Total 1262 (delta 219), reused 269 (delta 210), pack-reused 984
+Recibiendo objetos: 100% (1262/1262), 420.44 MiB | 7.22 MiB/s, listo.
+Resolviendo deltas: 100% (912/912), listo.
+```
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [3_fases_entrenamiento.py](scripts%2F3_fases_entrenamiento.py)
+
+Ahora vamos a conocer brevemente a AnCora y el formato Conllu:
+
+Importamos bibliotecas necesarias:
+```python
+from conllu import parse_incr
+from pprint import pprint
+```
+Y ahora vamos a abrir el archivo es_ancora-ud-dev.conllu y observar como luce por dentro:
+
+```python
+data_file = open("../data/UD_Spanish-AnCora/es_ancora-ud-dev.conllu", "r", encoding="utf-8")
+for tokenlist in parse_incr(data_file):
+    print(tokenlist.serialize())
+    break
+```
+Respuesta esperada:
+```commandline
+ global.Entity = eid-etype-head-other
+# newdoc id = 3LB-CAST-111_C-2
+# sent_id = 3LB-CAST-111_C-2-s1
+# text = El gobernante, con ganada fama desde que llegó hace 16 meses al poder de explotar al máximo su oratoria y acusado por sus detractores de incontinencia verbal, enmudeció desde el momento en el que el Tribunal Supremo de Justicia (TSJ) decidió suspender temporalmente los comicios múltiples ante la imposibilidad "técnica" de celebrarlos el 28 de mayo.
+1	El	el	DET	da0ms0	Definite=Def|Gender=Masc|Number=Sing|PronType=Art	2	det	2:det	_
+2	gobernante	gobernante	NOUN	ncms000	Gender=Masc|Number=Sing	32	nsubj	32:nsubj	SpaceAfter=No|ArgTem=arg1:tem
+3	,	,	PUNCT	fc	PunctType=Comm	6	punct	6:punct	_
+4	con	con	ADP	sps00	_	6	case	6:case	_
+5	ganada	ganado	ADJ	aq0fsp	Gender=Fem|Number=Sing|VerbForm=Part	6	amod	6:amod	_
+6	fama	fama	NOUN	ncfs000	Gender=Fem|Number=Sing	2	nmod	2:nmod	_
+7	desde	desde	ADP	sps00	_	9	mark	9:mark	_
+8	que	que	SCONJ	cs	_	9	mark	9:mark	_
+...
+60	celebrar	celebrar	VERB	vmn0000	VerbForm=Inf	55	acl	55:acl	_
+61	los	él	PRON	_	Case=Acc|Gender=Masc|Number=Plur|Person=3|PrepCase=Npr|PronType=Prs	60	obj	60:obj	_
+62	el	el	DET	da0ms0	Definite=Def|Gender=Masc|Number=Sing|PronType=Art	63	det	63:det	Entity=(NOCOREF:Spec.date-time-2-gstype:spec
+63	28	28	NUM	_	NumForm=Digit|NumType=Card	60	obl	60:obl	MWE=28_de_mayo|MWEPOS=NOUN|ArgTem=argM:tmp
+64	de	de	ADP	_	_	65	case	65:case	_
+65	mayo	mayo	NOUN	_	_	63	compound	63:compound	SpaceAfter=No|Entity=NOCOREF:Spec.date)
+66	.	.	PUNCT	fp	PunctType=Peri	32	punct	32:punct	_
+```
+Podemos observar como a una oración nos otorga cada palabra y mucha información de la misma y lo que nos importa a nosotros
+nos devuelve su POS.
+
+Veamos la información correspondiente a la palabra [1] de la oración 1 correspondiente a la "gobernante":
+
+```python
+pprint(tokenlist[1])
+```
+Respuesta esperada:
+```commandline
+{'deprel': 'nsubj',
+ 'deps': [('nsubj', 32)],
+ 'feats': {'Gender': 'Masc', 'Number': 'Sing'},
+ 'form': 'gobernante',
+ 'head': 32,
+ 'id': 2,
+ 'lemma': 'gobernante',
+ 'misc': {'ArgTem': 'arg1:tem', 'SpaceAfter': 'No'},
+ 'upos': 'NOUN',
+ 'xpos': 'ncms000'}
+```
+Podemos observar toda la información relacionada a la palabra `gobernante` y vemos como lo que nos importa está en las claves:
+`form` (refiriendose a la palabra) y `upos` relacionado al POS.
+
+Para acceder a esta información es tan fácil como:
+```python
+print(tokenlist[1]['form']+'|'+tokenlist[1]['upos'])
+```
+Respuesta esperada:
+```commandline
+gobernante|NOUN
+```
+De esta manera vamos a ser capaces de construir nuestro HMM contando frecuencias de tags dadas palabras, de tags, y de tags dados tags anteriores.
+
+
 ## 2.5 Entrenando un HMM en Python
+
+> ## Nota: 
+> El código de esta sección lo puedes encontrar en: [4_entrenando_hmm.py](scripts%2F4_entrenando_hmm.py)
+
+Empezamos importando bibliotecas:
+
+```python
+from conllu import parse_incr
+import numpy as np
+# esta solo será para imprimir un diccionario de forma más estética
+import itertools
+```
+Leemos los datos de entrada
+```python
+data_file = open("../data/UD_Spanish-AnCora/es_ancora-ud-dev.conllu", "r", encoding="utf-8")
+```
+Obtenemos los contadores necesarios para crear las matrices de emsion y transicion:
+
+```python
+def get_dicts(data):
+    tagCountDict = {}
+    emissionDict = {}
+    transitionDict = {}
+
+    for sentence in parse_incr(data):
+        prev_tag = None
+        for word in sentence:
+            # Esto representa la etiqueta asociada a la palabra
+            current_tag = word['upos']
+            # Si la etiqueta no existe aun en el diccionario de etiquetas
+            if current_tag not in tagCountDict:
+                # Quiere decir que es la primera vez que la vemos, entonces le ponemos un contador de 1
+                tagCountDict[current_tag] = 1
+            else:
+                # Si ya existía significa que entonces al menos tiene un 1 y puedo actualizar su valor con += 1
+                tagCountDict[current_tag] += 1
+```
+
+Hasta aquí ya he construido mi diccionario que cuenta cuantas veces ha aparecido cada TAG
+
+Ahora vamos a repetir el proceso pero para las probabilidades de emision
+
+Recordemos que la emisión es: Dada una palabra que probabilidad tiene de que tenga cierto tag
+            
+```python
+            current_word = word['form'].lower()
+
+            # De forma simple es adjuntar la etiqueta de la palabra a la palabra
+            emission = current_word + "|" + current_tag
+            # Esto como en un ejemplo pasado podría devolver "gobernante|NOUN"
+
+            # Esta técnica de contador es la misma que en el ejemplo anterior
+            if emission not in emissionDict:
+                emissionDict[emission] = 1
+            else:
+                emissionDict[emission] += 1
+```
+
+Con esto ya tenemos el diccionario que cuenta cuantas veces se ha asignado una etiqueta a una palabra.
+
+Ahora vamos a continuar calculando la probabilidad de transición.
+
+Recordemos que la probabilidad de transición es: Dada una etiqueta que probablilidad tiene de que tenga otra eitiqueta seguida.
+
+Esto básicamente quiere decir, si yo soy NOUN cuál es la etiqueta más probable que pueda tener a continuación.
+
+Específicamente para este diccionario se necesita comparar la etiqueta actual y la anterior, entonces debo pasar
+al menos una iteración para que en la segunda vuelta ya exista mi primer etiqueta anterior
+
+
+```python
+            if prev_tag is None:
+                # si la etiqueta anterior no ha sido asignada significa que estoy en la primera vuelta
+                # por ende la etiqueta anterior será la actual
+                prev_tag = current_tag
+                # y utilizo continue para saltarme la siguiente parte de código y continuar con la iteración
+                continue
+
+            # si llegamos a esta parte es porque forzosamente estamos al menos en la segunda palabra, lo cual significa
+            # que ya existe una prev_tag, por ende ya podemos hacer la transition.
+            transition = current_tag + "|" + prev_tag
+
+            # Misma técnica del contador en diccionario
+            if transition not in transitionDict:
+                transitionDict[transition] = 1
+            else:
+                transitionDict[transition] += 1
+            # Como ya hemos terminado un ciclo ahora podemos decir que la etiqueta anterior fue la actual del inicio
+            prev_tag = current_tag
+```
+Finalmente regresamos los contadores:
+```python
+    return tagCountDict, emissionDict, transitionDict
+```
+
+Continuando con nuestro código principal:
+
+```python
+    # Leemos los datos de entrada
+    data_file = open("../data/UD_Spanish-AnCora/es_ancora-ud-dev.conllu", "r", encoding="utf-8")
+    # Obtenemos los contadores necesarios
+    tags, emissions, transitions = get_dicts(data_file)
+    # Por fines estéticos solo imprimimos parte de los diccionarios.
+    print(tags)
+    print(dict(itertools.islice(emissions.items(), 5)))
+    print(dict(itertools.islice(transitions.items(), 5)))
+```
+Respuesta esperada:
+```commandline
+Ejemplo de contador de TAGS: {'DET': 8057, 'NOUN': 9596, 'PUNCT': 6303, 'ADP': 8523, 'ADJ': 3541, 'SCONJ': 1136, 'VERB': 4563, 'NUM': 875, '_': 1262, 'CCONJ': 1454, 'PRON': 3154, 'PROPN': 4048, 'ADV': 1710, 'AUX': 1200, 'INTJ': 10, 'PART': 14, 'SYM': 36}
+Ejemplo de contador de EMISIONES: {'el|DET': 2763, 'gobernante|NOUN': 2, ',|PUNCT': 2845, 'con|ADP': 443, 'ganada|ADJ': 1}
+Ejemplo de contador de TRANSICIONES: {'NOUN|DET': 5683, 'PUNCT|NOUN': 2086, 'ADP|PUNCT': 636, 'ADJ|ADP': 106, 'NOUN|ADJ': 764}
+```
+
+Ahora como ya tenemos todos los contadores podemos utilizar las siguientes fórmulas para obtener las matrices correspondientes
+de emisión y transición:
+
+![21.png](imgs%2F2%2F21.png)
+
+```python
+def get_matrices(tagCountDict, emissionDict, transitionDict):
+    transitionProbDict = {}  # matriz A
+    emissionProbDict = {}  # matriz B
+
+    # Recordemos que transition es TAG | TAG
+    for key in transitionDict.keys():
+        # Cada Key de mi transitionDict tiene 2 elementos que puedo separar por |
+        tag, prevtag = key.split('|')
+        if tagCountDict[prevtag] > 0:
+            # esta es la formula que básicamente es la cantidad de aparición de Ambos TAG juntos entre la cantidad de aparición del TAG anterior
+            transitionProbDict[key] = transitionDict[key] / (tagCountDict[prevtag])
+
+    # La lógica en la matriz de emisión es muy similar
+    for key in emissionDict.keys():
+        word, tag = key.split('|')
+        if emissionDict[key] > 0:
+            # La fórmula es: la cantidad de apariciones de una palabra dado un tag entre las apariciones de dicho Tag
+            emissionProbDict[key] = emissionDict[key] / tagCountDict[tag]
+    # Regresamos las matrices
+    return transitionProbDict, emissionProbDict
+```
+
+Volvemos a nuestro código principal y llamamos la función que acabamos de crear:
+
+```python
+    # Dado los contadores, podemos obtener las matrices de transición y emisión
+    transition_matrix, emission_matrix = get_matrices(tags, emissions, transitions)
+    print(dict(itertools.islice(transition_matrix.items(), 5)))
+    print(dict(itertools.islice(emission_matrix.items(), 5)))
+```
+Respuesta esperada:
+```commandline
+Ejemplo de matriz de transicion: {'NOUN|DET': 0.7053493856274048, 'PUNCT|NOUN': 0.2173822426010838, 'ADP|PUNCT': 0.10090433127082342, 'ADJ|ADP': 0.012436935351402088, 'NOUN|ADJ': 0.21575826037842416}
+Ejemplo de matriz de emision: {'el|DET': 0.34293161226262875, 'gobernante|NOUN': 0.00020842017507294707, ',|PUNCT': 0.45137236236712674, 'con|ADP': 0.051977003402557787, 'ganada|ADJ': 0.0002824060999717594}
+```
+
+Finalmente vamos a crear 2 funciones que nos ayuden a guardar y cargar estas matrices que acabamos de crear:
+
+```python
+def save_matrices(transitionProbDict, emissionProbDict):
+    np.save('outputs/transitionHMM.npy', transitionProbDict)
+    np.save('outputs/emissionHMM.npy', emissionProbDict)
+
+
+def load_matrices(transition_file, emission_file):
+    a = np.load(transition_file, allow_pickle='TRUE').item()
+    b = np.load(emission_file, allow_pickle='TRUE').item()
+    return a, b
+```
+
+Regresamos a nuestro código principal y podemos utilizar estas funciones para comprobar la persistencia de nuestro modelo:
+```python
+ # Utilizamos numpy para guardar las matrices en formato npu
+    save_matrices(transition_matrix, emission_matrix)
+    # Cargamos las matrices que habiamos guardado
+    transition_load, emission_load = load_matrices('outputs/transitionHMM.npy', 'outputs/emissionHMM.npy')
+    # Predecimos por ejemplo la probabilidad de la transición ADJ dado ADJ
+    prob = transition_load['ADJ|ADJ']
+    print(prob)
+```
+Respuesta esperada:
+```commandline
+0.030217452696978255
+```
 
 # 3 Algoritmo de Viterbi
 

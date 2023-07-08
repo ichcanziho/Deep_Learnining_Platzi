@@ -11,7 +11,7 @@
 - ![](https://geps.dev/progress/85) [7. Curso de detección y segmentación de objetos con TensorFlow](7%20Curso%20profesional%20de%20Computer%20Vision%20con%20TensorFlow)
 - ![](https://geps.dev/progress/0) [8. Curso de generación de imágenes](8%20Curso%20de%20generación%20de%20imágenes)
 - ![](https://geps.dev/progress/100) [9. Curso de Fundamentos de NLP](9%20Curso%20de%20Fundamentos%20de%20NLP)
-- ![](https://geps.dev/progress/0) [10. Curso de Algoritmos de Clasificación de Texto](10%20Curso%20de%20Algoritmos%20de%20Clasificación%20de%20Texto)
+- ![](https://geps.dev/progress/31) [10. Curso de Algoritmos de Clasificación de Texto](10%20Curso%20de%20Algoritmos%20de%20Clasificación%20de%20Texto)
 - ![](https://geps.dev/progress/95) [11. Curso de Redes Neuronales con PyTorch](11%20Curso%20de%20Redes%20Neuronales%20con%20PyTorch%20)
 
 
