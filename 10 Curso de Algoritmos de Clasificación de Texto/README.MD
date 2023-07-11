@@ -863,13 +863,447 @@ Respuesta esperada:
 
 ## 3.1 El algoritmo de Viterbi
 
+En la clase pasada entrenamos un modelo Markoviano latente calculando las probabilidades de transición y emisión a partir de un corpus de textos en español, la idea es ahora entender como podemos usar este modelo para hacer predicciones.
+
+La pregunta es ¿qué tipo de predicciones hace un modelo markoviano latente HMM)?
+
+![1.png](imgs%2F3%2F1.png)
+
+Una vez entrenado, el proceso que denominaremos **Decodificación** consiste en que dada una secuencia de palabras podamos identificar la secuencia de etiquetas gramaticales mas probable que le corresponda, y esto se hace mediante el algoritmo de **Viterbi**.
+
+Hay otras alternativas, pero primero enfoquemos en este.
+
+La parte de entrenamiento que programamos consiste en encontrar la **matriz A** con sus **coeficientes C** y luego las **probabilidades Emisión** que son los **B** dados las probabilidades  condicionales (word | tag), luego viene el **algoritmo de Viterbi** que **se va a encargar de encontrar de entre un montón de  secuencias la secuencia mas probable** esto lo hace asignándole una probabilidad a cada secuencia que llamaremos **probabilidad de Viterbi**, luego dentro de ese espacio de probabilidades escogemos la mayor y esa seria la que el algoritmo va a retornar como la mas probable y por lo tanto la que debería ser las etiquetas correctas de la secuencia de palabras.
+
+El algoritmo de Viterbi funciona de la siguiente manera.
+
+![2.png](imgs%2F3%2F2.png)
+
+Cada columna son todas las posibles etiquetas que una palabra va a tener, castillo es una persona no un edificio un sustantivo, cada circulo corresponde a una posible categoría gramatical, los círculos en gris tienen una probabilidad cero.
+
+¿Cómo esto nos ayuda a entender el algoritmo de Viterbi? De la siguiente manera.
+
+![3.png](imgs%2F3%2F3.png)
+
+Considerando todas las posibles categorías gramaticales de cada palabra vamos creando caminos creando las etiquetas posteriores, cada camino es recorrer la primer etiqueta posible hasta la siguiente posible  y asi hasta llegar a la ultima palabra que contiene la secuencia. De todos esos caminos hay que calcular el mas probable, eso lo hacemos calculando un numero probabilistico que me diga que tan probable es que sea uno de esos caminos y escoger el mayor, eso lo hacemos de la siguiente manera.
+
+![4.png](imgs%2F3%2F4.png)
+
+El círculo de sustantivo propio está en color verde, significa que vamos a analizar lo que sucede en este nodo en particular, vamos a denotar con la letra griega NU, que parece una letra *V* paréntesis prop estilizada probabilidad de viterbi de que la categoría gramatical de castillo sea  "PROP" y eso es igual al "producto de la probabilidad inicial" este multiplicado por una "probabilidad condicional" de que ya que la categoría Inicial es PROP la palabra que este ubicada ahi es castillo, ese calculo lo hacemos para cada una de las celdas de esta columna, de esta manera calculamos la probabilidad de Viterbi para cada uno de los nodos de la primera columna.
+
+![5.png](imgs%2F3%2F5.png)
+
+Luego vamos a la segunda columna
+
+![6.png](imgs%2F3%2F6.png)
+
+El único nodo que tiene probabilidad no nula en la segunda columna es  el de categoría determinante **(DET)**, para calcular la probabilidad de este nodo lo que vamos a hacer es considerar todos los posibles caminos que pasan por ese nodo, vemos que son dos NOUN-DET Y PROP-DET, cada uno de los números tiene una probabilidad asignada que consiste en tomar la probabilidad del estado anterior (*V1*(PROP)), multiplicar por la probabilidad condicional de la etiqueta anterior y cual sera la etiqueta siguiente que en este caso sera de que dado prop la siguiente sea *DET* y esto multiplicado por una probabilidad de emisión, que dado que la categoría es **DET** cual sera la palabra el, y que tan probable es eso, aplicamos lo mismo a otra ruta con NOUN, y de esos dos números calculamos la probabilidad y tomamos esa  como la nueva probabilidad de Viterbi del nodo que esta en verde en este momento, y asi subsecuentemente para todos los nodos en la columna, el proceso estará completo cuando hayamos calculado las probabilidades de  cada uno de los elementos de esta matriz.
+
 ## 3.2 Cálculo de las probabilidades de Viterbi
+
+En la clase anterior vimos como funciona el algoritmo de Viterbi, este **asigna probabilidades a cada elemento en una matriz que combina filas de categorías gramaticales y columnas de palabras en una secuencia**, la idea es que con este algoritmo que con estas probabilidades el puede determinar cual es la secuencia de etiquetas mas probable para esa secuencia que nosotros le estamos dando al modelo como entrada. Veamos ahora como en profundidad son estos cálculos de probabilidades y entender la matriz mencionada.
+
+Retomamos el ejemplo anterior donde castillo es el apellido de una persona, donde los nodos contienen las etiquetas gramaticales, pero solo los azules tienen probabilidad **no nula**, de esta manera en la primer columna solo vamos a calcular 2 probabilidades que corresponden con los nodos que indican la categoría de sustantivo (noun) o sustantivo propio (prop).
+
+![7.png](imgs%2F3%2F7.png)
+
+Una vez calculadas las probabilidades de cada columna, podemos empezar a visualizar la matriz, donde cada palabra de la frase sea una columna, y las filas serán las etiquetas gramaticales.
+> En la imagen siguiente solo se muestra las etiquetas de ADJ, PRON, DET, NOUN, PROP para simplificar, porque en la imagen anterior
+> vimos que hay etiquetas que no aparecen en ninguna palabra (VERB, ADV, ADP)
+
+![8.png](imgs%2F3%2F8.png)
+
+El siguiente paso es asignar las probabilidades a la columna 2 primer elemento en sus dos caminos para llegar al nodo
+
+![9.png](imgs%2F3%2F9.png)
+
+La probabilidad **a** sería igual a Probabilidad de viterbi de la etiqueta por la probabilidad de transición, por la probabilidad de emisión.
+
+![10.png](imgs%2F3%2F10.png)
+
+Mientras que la probabilidad de Viterbi *V2* será la mayor entre a1 y a2, lo siguiente es aplicar el mismo concepto al nodo **PRON**, hecho esto asignamos los valores a la matriz
+
+![11.png](imgs%2F3%2F11.png)
+
+El algoritmo de viterbi termina cuando hemos calculado las probabilidades de todos los elementos de esta matriz.
+
+En resumen el algoritmo de Viterbi mediante la búsqueda de posibles caminos de etiquetas calcula una probabilidad a cada elemento de una matriz donde esas probabilidades las llamamos probabilidades de Viterbi, el objetivo de encontrar la secuencia mas probable consiste en encontrar el camino cuyas probabilidades de Viterbi son mas grandes.
+
+![12.png](imgs%2F3%2F12.png)
+
+Una vez calculadas todas las probabilidades de viterbi de todas las etiquetas posibles la matriz nos queda de la siguiente manera.
+
+![13.png](imgs%2F3%2F13.png)
+
+
+![14.png](imgs%2F3%2F14.png)
 
 ## 3.3 Carga del modelo HMM y distribución inicial
 
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [5_carga_hmm.py](scripts%2F5_carga_hmm.py)
+
+Para empezar, vamos a cargar nuestras matrices de transición y emisión pre-entrenadas
+
+```python
+import numpy as np
+
+transitionProbdict = np.load('outputs/transitionHMM.npy', allow_pickle='TRUE').item()
+emissionProbdict = np.load('outputs/emissionHMM.npy', allow_pickle='TRUE').item()
+```
+
+Vamos a necesitar conocer, y tener enumeradas las diferentes etiquetas (TAG) que puede tener cada palabra.
+Empecemos creando un set de las etiquetas únicas
+
+```python
+stateSet = set([w.split('|')[1] for w in list(emissionProbdict.keys())])
+print(stateSet)
+```
+Respuesta esperada:
+```commandline
+{'ADV', 'CCONJ', 'AUX', 'NOUN', '_', 'DET', 'SCONJ', 'PROPN', 'INTJ', 'PART', 'ADP', 'SYM', 'PUNCT', 'NUM', 'ADJ', 'VERB', 'PRON'}
+```
+
+Ahora vamos a asignarles un ID a cada TAG (esto nos servirá más adelante para identificar con mayor facilidad a los
+tag como columnas de un frame)
+
+```python
+tagStateDict = {state: i for i, state in enumerate(stateSet)}
+print(tagStateDict)
+```
+Respuesta esperada:
+```commandline
+{'ADV': 0, 'CCONJ': 1, 'AUX': 2, 'NOUN': 3, '_': 4, 'DET': 5, 'SCONJ': 6, 'PROPN': 7, 'INTJ': 8, 'PART': 9, 'ADP': 10, 'SYM': 11, 'PUNCT': 12, 'NUM': 13, 'ADJ': 14, 'VERB': 15, 'PRON': 16}
+```
+
+### Distribución inicial de estados latentes.
+
+En este punto lo que nos interesa comprobar es, cuál es la probabilidad de que un TAG sea el inicial de una oración.
+Para resolver esta tarea es relativamente sencillo. Con en dataset Ancora vamos a recorrer cada oración del mismo.
+Apuntamos a la primera palabra y obtenemos su tag (UPOS) creamos un diccionario que cuente la frecuencia de a cada TAG
+cuantas veces fue asignado como inicio de oración. Finalmente, como es una probabilidad, debemos dividir entre el
+total de apariciones, que corresponde con el total de oraciones disponibles en AnCora.
+
+```python
+from conllu import parse_incr
+
+data_file = open("../data/UD_Spanish-AnCora/es_ancora-ud-dev.conllu", "r", encoding="utf-8")
+data = parse_incr(data_file)
+len_sentences = 0
+initTagStateProb = {}  # \rho_i^{(0)}
+# primero creamos el contador
+for token_list in data:
+    len_sentences += 1
+    tag = token_list[0]['upos']
+    if tag in initTagStateProb.keys():
+        initTagStateProb[tag] += 1
+    else:
+        initTagStateProb[tag] = 1
+# Ahora noramlizamos dividiendo entre el total de oraciones
+for key in initTagStateProb.keys():
+    initTagStateProb[key] /= len_sentences
+
+print(initTagStateProb)
+```
+Respuesta esperada:
+```commandline
+{'DET': 0.36275695284159615, 'PROPN': 0.1124546553808948, 'ADP': 0.15538089480048367, 'PRON': 0.06348246674727932, 'SCONJ': 0.02418379685610641, 'ADV': 0.056831922611850064, 'PUNCT': 0.08222490931076179, 'VERB': 0.02418379685610641, 'ADJ': 0.010882708585247884, 'CCONJ': 0.032648125755743655, 'NOUN': 0.02720677146311971, '_': 0.009068923821039904, 'INTJ': 0.0006045949214026602, 'AUX': 0.016324062877871828, 'NUM': 0.01995163240628779, 'PART': 0.0018137847642079807}
+```
+Finalmente, vamos a corroborar que la suma de probabilidades de cada etiqueta sea 1
+```python
+print(sum(initTagStateProb.values()))
+```
+Respuesta esperada:
+```commandline
+0.9999999999999999
+```
+
+Finalmente, guardamos las nuevas matrices:
+```python
+def save_matrices(initTagStateProb, tagStateDict):
+    np.save('outputs/initTagStateProbHMM.npy', initTagStateProb)
+    np.save('outputs/tagStateDictHMM.npy', tagStateDict)
+
+
+save_matrices(initTagStateProb, tagStateDict)
+```
+
+
 ## 3.4 Implementación de algoritmo de Viterbi en Python
 
+En esta clase vamos a ver la implementación en código del algoritmo de Viterbi:
+
+![1.png](imgs%2F4%2F1.png)
+
+Aclaramos que esta implementación es meramente académica y NO tiene propósito alguno de ser llevada a un entorno de producción.
+Es simplemente para entender conceptualmente al algoritmo de Viterbi.
+
+> ## Nota:
+> El código de esta sección lo puedes encontrar en: [6_viterbi_1.py](scripts%2F6_viterbi_1.py)
+
+Importamos el módulo nltk y descargamos el tokenizador punkt para utilizar la función word_tokenize más adelante.
+
+```python
+import numpy as np
+from nltk import word_tokenize
+```
+
+Creamos una función para cargar las matrices previamente generadas:
+```python
+def load_matrices(transition_file, emission_file, tag_state_file, init_tag_state_file):
+    a = np.load(transition_file, allow_pickle='TRUE').item()
+    b = np.load(emission_file, allow_pickle='TRUE').item()
+    c = np.load(tag_state_file, allow_pickle='TRUE').item()
+    d = np.load(init_tag_state_file, allow_pickle='TRUE').item()
+    return a, b, c, d
+```
+Cargamos los datos necesarios:
+```python
+# Cargamos los datos necesarios
+    a = 'outputs/transitionHMM.npy'
+    b = 'outputs/emissionHMM.npy'
+    c = 'outputs/tagStateDictHMM.npy'
+    d = 'outputs/initTagStateProbHMM.npy'
+    transitionProbdict, emissionProbdict, tagStateDict, initTagStateProb = load_matrices(a, b, c, d)
+```
+Definimos la función ViterbiMatrix que implementa el algoritmo de Viterbi. Los parámetros transitionProbdict,
+emissionProbdict, tagStateDict e initTagStateProb son diccionarios que contienen las probabilidades de
+transición, las probabilidades de emisión, los estados de etiquetas y las probabilidades iniciales de los
+estados de etiquetas, respectivamente.
+```python
+def viterbi_matrix(secuencia, transitionProbdict, emissionProbdict,
+                  tagStateDict, initTagStateProb):
+```
+
+Tokenizamos la secuencia de entrada utilizando word_tokenize y almacenamos los tokens en la variable seq.
+
+```python
+def viterbi_matrix(secuencia, transitionProbdict, emissionProbdict,
+                  tagStateDict, initTagStateProb):
+    seq = word_tokenize(secuencia)
+```
+Creamos una matriz viterbiProb de dimensiones (17, len(seq)) para almacenar las probabilidades del algoritmo de
+Viterbi. El número 17 representa las categorías posibles para las etiquetas (upos).
+```python
+def viterbi_matrix(secuencia, transitionProbdict, emissionProbdict,
+                  tagStateDict, initTagStateProb):
+    seq = word_tokenize(secuencia)
+    viterbiProb = np.zeros((len(tagStateDict), len(seq)))  # upos tiene 17 categorias
+```
+
+Inicializamos la primera columna de la matriz viterbiProb. Para cada etiqueta en tagStateDict, calculamos la
+etiqueta de la palabra (word_tag) y verificamos si existe una probabilidad de emisión para esa etiqueta de palabra
+en emissionProbdict. Si existe, multiplicamos la probabilidad inicial de la etiqueta (initTagStateProb[key]) por
+la probabilidad de emisión y la asignamos a viterbiProb[tag_row, 0].
+
+```python
+def viterbi_matrix(secuencia, transitionProbdict, emissionProbdict,
+                  tagStateDict, initTagStateProb):
+    seq = word_tokenize(secuencia)
+    viterbiProb = np.zeros((len(tagStateDict), len(seq)))  # upos tiene 17 categorias
+    for key in tagStateDict.keys():
+        tag_row = tagStateDict[key]
+        word_tag = seq[0].lower() + '|' + key
+        if word_tag in emissionProbdict.keys():
+            viterbiProb[tag_row, 0] = initTagStateProb[key] * emissionProbdict[word_tag]
+```
+
+Calculamos las siguientes columnas de la matriz viterbiProb. Para cada columna (col) a partir de la segunda
+columna, y para cada etiqueta en tagStateDict, calculamos la etiqueta de la palabra (word_tag) y verificamos si
+existe una probabilidad de emisión para esa etiqueta de palabra en emissionProbdict. Si existe, recorremos todas
+las etiquetas en tagStateDict para obtener las probabilidades posibles en la columna anterior. Si hay una
+probabilidad mayor a cero en la columna anterior (viterbiProb[tag_row2, col-1] > 0), multiplicamos esa
+probabilidad por la probabilidad de transición y la probabilidad de emisión, y las agregamos a la lista
+possible_probs. Finalmente, asignamos a viterbiProb[tag_row, col] el máximo valor de possible_probs.
+
+```python
+def viterbi_matrix(secuencia, transitionProbdict, emissionProbdict,
+                  tagStateDict, initTagStateProb):
+    seq = word_tokenize(secuencia)
+    viterbiProb = np.zeros((len(tagStateDict), len(seq)))  # upos tiene 17 categorias
+    for key in tagStateDict.keys():
+        tag_row = tagStateDict[key]
+        word_tag = seq[0].lower() + '|' + key
+        if word_tag in emissionProbdict.keys():
+            viterbiProb[tag_row, 0] = initTagStateProb[key] * emissionProbdict[word_tag]
+    
+    for col in range(1, len(seq)):
+          for key in tagStateDict.keys():
+              tag_row = tagStateDict[key]
+              word_tag = seq[col].lower() + '|' + key
+              if word_tag in emissionProbdict.keys():
+                  # Miramos los estados de la columna anterior
+                  possible_probs = []
+                  for key2 in tagStateDict.keys():
+                      tag_row2 = tagStateDict[key2]
+                      tag_prevtag = key + '|' + key2
+                      if tag_prevtag in transitionProbdict.keys():
+                          if viterbiProb[tag_row2, col - 1] > 0:
+                              possible_probs.append(
+                                  viterbiProb[tag_row2, col - 1] * transitionProbdict[tag_prevtag] * emissionProbdict[
+                                      word_tag])
+                  viterbiProb[tag_row, col] = max(possible_probs)
+    # Devolvemos la matriz viterbiProb.
+    return viterbiProb
+```
+
+Usaremos de ejemplo la oración `el mundo es pequeño`:
+
+```python
+matrix = viterbi_matrix('el mundo es pequeño', transitionProbdict, emissionProbdict, tagStateDict, initTagStateProb)
+print(matrix)
+```
+Respuesta esperada:
+```commandline
+[[0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 1.48925188e-10]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 6.86297327e-09 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 2.01168511e-04 3.97604151e-10 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [1.24400827e-01 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 6.76082166e-07 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 3.71508159e-05 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]
+ [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00]]
+```
+
 ## 3.5 Entrenamiento directo de HMM con NLTK
+
+Para termina esta sección, lo único que necesitamos es convertir la matriz anterior en una lista que contenga el nombre 
+de los TAGS asignados a cada palabra. Cada una de las columnas de la matriz representa una palabra, y cada una de las filas
+representa un TAG diferente, entonces lo único que debemos hacer es obtener el `argmax` de cada columna y con base en ello
+guardamos la palabra y su TAG.
+
+> ## Nota:
+> El código los puedes encontrar en: [7_viterbi_tags.py](scripts%2F7_viterbi_tags.py)
+
+Básicamente lo único que vamos a hacer es agregar una nueva función al código que vimos la clase pasada.
+
+```python
+def get_viterbi_tags(seq, transitionProbdict, emissionProbdict,
+                  tagStateDict, initTagStateProb):
+
+    viterbi_prob, seq = viterbi_matrix(seq, transitionProbdict, emissionProbdict,
+                  tagStateDict, initTagStateProb)
+    res = []
+    # enumeramos cada palabra de la oración y recorremos todas ellas
+    for i, p in enumerate(seq):
+        # empezamos a recorrer todos los tags disponibles
+        for tag in tagStateDict.keys():
+            # si la probabilidad actual de este tag es ARGMAX de la columna,
+            if tagStateDict[tag] == np.argmax(viterbi_prob[:, i]):
+                # entonces en el resultado, adjunto la palabra y el tag
+                res.append((p, tag))
+
+    return res
+```
+
+De esta simple manera, ya tenemos nuestro código completo, y podemos hacer pruebas con él para obtener el UPOS de cada palabra
+dentro de una oración:
+
+```python
+    msg = "el mundo es muy pequeño"
+    response = get_viterbi_tags(msg, transitionProbdict, emissionProbdict, tagStateDict, initTagStateProb)
+    pprint(response)
+    print()
+    msg = "estos instrumentos han de rasgar"
+    response = get_viterbi_tags(msg, transitionProbdict, emissionProbdict, tagStateDict, initTagStateProb)
+    pprint(response)
+```
+Respuesta esperada:
+
+```commandline
+[('el', 'DET'),
+ ('mundo', 'NOUN'),
+ ('es', 'AUX'),
+ ('muy', 'ADV'),
+ ('pequeño', 'ADJ')]
+
+[('estos', 'DET'),
+ ('instrumentos', 'NOUN'),
+ ('han', 'AUX'),
+ ('de', 'ADP'),
+ ('rasgar', 'VERB')]
+```
+
+Ahora, como es de esperarse este algoritmo tiene una implementación en NLTK más robusta y menos académica que si podríamos 
+poner en un ambiente de producción. Vamos a conocer como podemos resolver este mismo problema utilizando NLTK.
+
+> ## Nota:
+> El código lo puedes encontrar en: [8_viterbi_nltk.py](scripts%2F8_viterbi_nltk.py)
+
+Empecemos importando un par de bibliotecas, parse_incr que ya conocemos para leer archivos conllu y adicionalmente vamos a usar
+train_test_split de sklearn para crear nuestros conjuntos de train y test y tambien vamos a importar `hmm` de nltk.
+
+```python
+from sklearn.model_selection import train_test_split
+from conllu import parse_incr
+from nltk.tag import hmm
+```
+Creamos nuestra lista de oraciones, en donde cada oración es a su vez una lista de palabras etiquetadas con su TAG:
+
+```python
+data_file = open("../data/UD_Spanish-AnCora/es_ancora-ud-train.conllu", "r", encoding="utf-8")
+data_array = []
+for tokenlist in parse_incr(data_file):
+    tokenized_text = []
+    for token in tokenlist:
+        tokenized_text.append((token['form'], token['upos']))
+    data_array.append(tokenized_text)
+
+print(data_array[:10])
+print(len(data_array))
+```
+Respuesta esperada:
+```commandline
+[[('Las', 'DET'), ('reservas', 'NOUN'), ('de', 'ADP'), ('oro', 'NOUN'), ('y', 'CCONJ'), ('divisas', 'NOUN'), ('de', 'ADP'), ('Rusia', 'PROPN'), ('subieron', 'VERB'), ('800', 'NUM'), ('millones', 'NOUN'), ('de', 'ADP'), ('dólares', 'NOUN'), ('y', 'CCONJ'), ('el', 'DET'), ('26', 'NUM'), ('de', 'ADP'), ('mayo', 'NOUN'), ('equivalían', 'VERB'), ('a', 'ADP'), ('19.100', 'NUM'), ('millones', 'NOUN'), ('de', 'ADP'), ('dólares', 'NOUN'), (',', 'PUNCT'), ('informó', 'VERB'), ('hoy', 'ADV'), ('un', 'DET'), ('comunicado', 'NOUN'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('Banco', 'PROPN'), ('Central', 'PROPN'), ('.', 'PUNCT')], [('Según', 'ADP'), ('el', 'DET'), ('informe', 'NOUN'), (',', 'PUNCT'), ('el', 'DET'), ('19', 'NUM'), ('de', 'ADP'), ('mayo', 'NOUN'), ('las', 'DET'), ('reservas', 'NOUN'), ('de', 'ADP'), ('oro', 'NOUN'), ('y', 'CCONJ'), ('divisas', 'NOUN'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('Banco', 'PROPN'), ('Central', 'PROPN'), ('eran', 'AUX'), ('de', 'ADP'), ('18.300', 'NUM'), ('millones', 'NOUN'), ('de', 'ADP'), ('dólares', 'NOUN'), ('.', 'PUNCT')], [('Los', 'DET'), ('activos', 'NOUN'), ('en', 'ADP'), ('divisas', 'NOUN'), ('en', 'ADP'), ('poder', 'NOUN'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('Banco', 'PROPN'), ('Central', 'PROPN'), ('y', 'CCONJ'), ('el', 'DET'), ('Ministerio', 'PROPN'), ('de', 'ADP'), ('Finanzas', 'PROPN'), ('se', 'PRON'), ('calculan', 'VERB'), ('en', 'ADP'), ('dólares', 'NOUN'), ('estadounidenses', 'ADJ'), ('y', 'CCONJ'), ('su', 'DET'), ('valor', 'NOUN'), ('depende', 'VERB'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('cambio', 'NOUN'), ('oficial', 'ADJ'), ('rublo-dólar', 'NOUN'), ('que', 'PRON'), ('establece', 'VERB'), ('el', 'DET'), ('Banco', 'PROPN'), ('Central', 'PROPN'), ('.', 'PUNCT')], [('Las', 'DET'), ('reservas', 'NOUN'), ('en', 'ADP'), ('oro', 'NOUN'), ('se', 'PRON'), ('valoran', 'VERB'), ('en', 'ADP'), ('base', 'NOUN'), ('a', 'ADP'), ('300', 'NUM'), ('dólares', 'NOUN'), ('estadounidenses', 'ADJ'), ('por', 'ADP'), ('cada', 'DET'), ('onza', 'NOUN'), ('troy', 'NOUN'), ('de', 'ADP'), ('oro', 'NOUN'), ('.', 'PUNCT')], [('El', 'DET'), ('presidente', 'NOUN'), ('de', 'ADP'), ('la', 'DET'), ('Generalitat', 'PROPN'), (',', 'PUNCT'), ('Jordi', 'PROPN'), ('Pujol', 'PROPN'), (',', 'PUNCT'), ('cree', 'VERB'), ('necesario', 'ADJ'), ('que', 'SCONJ'), ('el', 'DET'), ('Gobierno', 'PROPN'), ('agilice', 'VERB'), ('los', 'DET'), ('permisos', 'NOUN'), ('de', 'ADP'), ('residencia', 'NOUN'), ('a', 'ADP'), ('los', 'DET'), ('inmigrantes', 'NOUN'), ('para', 'ADP'), ('poder', 'AUX'), ('responder', 'VERB'), ('a', 'ADP'), ('la', 'DET'), ('falta', 'NOUN'), ('de', 'ADP'), ('mano', 'NOUN'), ('de', 'ADP'), ('obra', 'NOUN'), ('en', 'ADP'), ('Cataluña', 'PROPN'), ('que', 'PRON'), (',', 'PUNCT'), ('según', 'ADP'), ('cálculos', 'NOUN'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('Departamento', 'PROPN'), ('de', 'ADP'), ('Trabajo', 'PROPN'), (',', 'PUNCT'), ('impide', 'VERB'), ('cubrir', 'VERB'), ('unos', 'PRON'), ('23.000', 'NUM'), ('empleos', 'NOUN'), ('en', 'ADP'), ('diversos', 'DET'), ('sectores', 'NOUN'), ('.', 'PUNCT')], [('Pujol', 'PROPN'), ('urgió', 'VERB'), ('la', 'DET'), ('necesidad', 'NOUN'), ('de', 'ADP'), ('esta', 'DET'), ('medida', 'NOUN'), ('legal', 'ADJ'), ('durante', 'ADP'), ('una', 'DET'), ('cena', 'NOUN'), ('organizada', 'ADJ'), ('anoche', 'ADV'), ('por', 'ADP'), ('la', 'DET'), ('patronal', 'NOUN'), ('de', 'ADP'), ('la', 'DET'), ('pequeña', 'ADJ'), ('y', 'CCONJ'), ('mediana', 'ADJ'), ('empresa', 'NOUN'), (',', 'PUNCT'), ('Pimec-Sefes', 'PROPN'), (',', 'PUNCT'), ('en', 'ADP'), ('la', 'DET'), ('que', 'PRON'), ('también', 'ADV'), ('advirtió', 'VERB'), ('a', 'ADP'), ('los', 'DET'), ('empresarios', 'NOUN'), (',', 'PUNCT'), ('sindicatos', 'NOUN'), ('y', 'CCONJ'), ('administraciones', 'NOUN'), ('a', 'ADP'), ('que', 'SCONJ'), ('cumplan', 'VERB'), ('con', 'ADP'), ('la', 'DET'), ('normativa', 'NOUN'), ('laboral', 'ADJ'), ('en', 'ADP'), ('materia', 'NOUN'), ('de', 'ADP'), ('prevención', 'NOUN'), ('de', 'ADP'), ('la', 'DET'), ('siniestralidad', 'NOUN'), ('.', 'PUNCT')], [('Según', 'ADP'), ('Pujol', 'PROPN'), (',', 'PUNCT'), ('"', 'PUNCT'), ('no', 'ADV'), ('puede', 'AUX'), ('ser', 'AUX'), ('que', 'SCONJ'), ('se', 'PRON'), ('tarde', 'VERB'), ('ocho', 'NUM'), ('meses', 'NOUN'), ('para', 'ADP'), ('dar', 'VERB'), ('un', 'DET'), ('permiso', 'NOUN'), ('de', 'ADP'), ('residencia', 'NOUN'), ('de', 'ADP'), ('trabajo', 'NOUN'), ('a', 'ADP'), ('un', 'DET'), ('ciudadano', 'NOUN'), ('polaco', 'ADJ'), ('"', 'PUNCT'), (',', 'PUNCT'), ('en', 'ADP'), ('un', 'DET'), ('momento', 'NOUN'), ('de', 'ADP'), ('falta', 'NOUN'), ('de', 'ADP'), ('mano', 'NOUN'), ('de', 'ADP'), ('obra', 'NOUN'), ('que', 'PRON'), ('actúa', 'VERB'), (',', 'PUNCT'), ('en', 'ADP'), ('su', 'DET'), ('opinión', 'NOUN'), (',', 'PUNCT'), ('como', 'SCONJ'), ('freno', 'NOUN'), ('al', '_'), ('a', 'ADP'), ('el', 'DET'), ('crecimiento', 'NOUN'), ('económico', 'ADJ'), ('.', 'PUNCT')], [('Esta', 'DET'), ('opinión', 'NOUN'), ('fue', 'AUX'), ('corroborada', 'VERB'), ('por', 'ADP'), ('el', 'DET'), ('presidente', 'NOUN'), ('de', 'ADP'), ('Pimec-Sefes', 'PROPN'), (',', 'PUNCT'), ('Josep', 'PROPN'), ('González', 'PROPN'), (',', 'PUNCT'), ('quien', 'PRON'), ('subrayó', 'VERB'), ('que', 'SCONJ'), ('esta', 'DET'), ('falta', 'NOUN'), ('de', 'ADP'), ('mano', 'NOUN'), ('de', 'ADP'), ('obra', 'NOUN'), (',', 'PUNCT'), ('tanto', 'ADV'), ('cualificada', 'ADJ'), ('como', 'SCONJ'), ('no', 'ADV'), (',', 'PUNCT'), ('comenzó', 'VERB'), ('en', 'ADP'), ('las', 'DET'), ('comarcas', 'NOUN'), ('de', 'ADP'), ('Lérida', 'PROPN'), ('pero', 'CCONJ'), ('ya', 'ADV'), ('ha', 'AUX'), ('llegado', 'VERB'), ('a', 'ADP'), ('todas', 'DET'), ('las', 'DET'), ('provincias', 'NOUN'), ('catalanas', 'ADJ'), ('.', 'PUNCT')], [('Por', 'ADP'), ('ello', 'PRON'), (',', 'PUNCT'), ('González', 'PROPN'), ('pidió', 'VERB'), ('una', 'DET'), ('reforma', 'NOUN'), ('"', 'PUNCT'), ('urgente', 'ADJ'), ('"', 'PUNCT'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('sistema', 'NOUN'), ('de', 'ADP'), ('contratación', 'NOUN'), ('de', 'ADP'), ('extranjeros', 'NOUN'), ('que', 'PRON'), ('permita', 'VERB'), ('un', 'DET'), ('sistema', 'NOUN'), ('"', 'PUNCT'), ('ágil', 'ADJ'), ('y', 'CCONJ'), ('rápido', 'ADJ'), ('"', 'PUNCT'), ('para', 'ADP'), ('insertar', 'VERB'), ('a', 'ADP'), ('los', 'DET'), ('inmigrantes', 'NOUN'), ('en', 'ADP'), ('el', 'DET'), ('mercado', 'NOUN'), ('laboral', 'ADJ'), ('.', 'PUNCT')], [('Ante', 'ADP'), ('unas', 'DET'), ('mil', 'NUM'), ('personas', 'NOUN'), (',', 'PUNCT'), ('entre', 'ADP'), ('ellas', 'PRON'), ('la', 'DET'), ('ministra', 'NOUN'), ('de', 'ADP'), ('Ciencia', 'PROPN'), ('y', 'CCONJ'), ('Tecnología', 'PROPN'), (',', 'PUNCT'), ('Anna', 'PROPN'), ('Birulés', 'PROPN'), (',', 'PUNCT'), ('el', 'DET'), ('alcalde', 'NOUN'), ('de', 'ADP'), ('Barcelona', 'PROPN'), (',', 'PUNCT'), ('Joan', 'PROPN'), ('Clos', 'PROPN'), (',', 'PUNCT'), ('la', 'DET'), ('Delegada', 'PROPN'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('Gobierno', 'PROPN'), (',', 'PUNCT'), ('Julia', 'PROPN'), ('García', 'PROPN'), ('Valdecasas', 'PROPN'), (',', 'PUNCT'), ('y', 'CCONJ'), ('una', 'DET'), ('nutrida', 'ADJ'), ('representación', 'NOUN'), ('del', '_'), ('de', 'ADP'), ('el', 'DET'), ('gobierno', 'NOUN'), ('catalán', 'ADJ'), (',', 'PUNCT'), ('Pujol', 'PROPN'), ('dio', 'VERB'), ('un', 'DET'), ('toque', 'NOUN'), ('de', 'ADP'), ('alerta', 'NOUN'), ('sobre', 'ADP'), ('el', 'DET'), ('aumento', 'NOUN'), ('de', 'ADP'), ('los', 'DET'), ('accidentes', 'NOUN'), ('laborales', 'ADJ'), ('.', 'PUNCT')]]
+14287
+```
+Tenemos más de 14 mil oraciones, cada una con una cantidad de palabras etiquetadas
+Ahora creamos 2 particiones para entrenar y probar a nuestro HMM:
+
+```python
+train_data, test_data = train_test_split(data_array, test_size=0.2, random_state=42)
+print(len(train_data))
+print(len(test_data))
+```
+Respuesta esperada:
+```python
+11429
+2858
+```
+
+Ahora instanciamos el modelo y empezamos a entrenarlo en el conjunto de entrenamiento:
+```python
+tagger = hmm.HiddenMarkovModelTrainer().train_supervised(train_data)
+print(tagger)
+```
+Respuesta esperada:
+```commandline
+<HiddenMarkovModelTagger 18 states and 34366 output symbols>
+```
+Finalmente, podemos poner a prueba el modelo en ambos conjuntos y conocer su precisión:
+```python
+train_acc = tagger.evaluate(train_data)
+print("Accuracy over Train's partition:", train_acc)
+
+
+test_acc = tagger.evaluate(test_data)
+print("Accuracy over Test's partition:", test_acc)
+```
+Respuesta esperada:
+```commandline
+Accuracy over Train's partition: 0.9795440204266921
+Accuracy over Test's partition: 0.5277194254577251
+```
+Es importante tener en cuenta que el modelo bajo datos no vistos obtuvo más del 50% de accuracy para un problema de más de 15 clases.
 
 # 4 Modelos Markovianos de máxima entropía (MEMM)
 
