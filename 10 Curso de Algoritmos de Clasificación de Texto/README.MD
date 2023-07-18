@@ -1309,7 +1309,68 @@ Es importante tener en cuenta que el modelo bajo datos no vistos obtuvo más del
 
 ## 4.1 Modelos Markovianos de máxima entropia (MEMM)
 
+En este punto tenemos los conocimientos suficientes para entender diversos algoritmos de clasificación, específicamente de etiquetado  que tienen cierta afinidad o similitud con los modelos  markovianos latentes, la idea de esta sección es que el profesor propone un reto en el cual tendrás que usar todo lo aprendido hasta este momento pero desarrollando codigo basado en un nuevo modelo propuesto en esta clase, derivado de los HMM.
+
+![2.png](imgs%2F4%2F2.png)
+
+En un modelo Markoviano latente ya conocemos la fórmula, la secuencia más probable de etiquetas se calcula como aquella donde dada una secuencia de palabras cual es la secuencia de etiquetas mas probable, usábamos bayes para convertir probabilidad condicional en el producto de dos probabilidades que llamábamos probabilidades de transición y  probabilidades de emisión representados con flechas rojas en HMM
+
+![3.png](imgs%2F4%2F3.png)
+
+El nuevo modelo hace una diferencia, las etiquetas siguen teniendo flechas que van dirigidas desde la etiqueta anterior a la posterior, pero las flechas que conectan palabras y etiquetas van hacia arriba (de la palabra a la etiqueta).
+
+![4.png](imgs%2F4%2F4.png)
+
+En resumen un Modelo Markoviano de Maxima Entropia se define como idéntico a HMM, pero no usamos la regla de bayes para convertir esto en probabilidades de transición y emisión, sino que la probabilidad inicial es la única que vamos a  considerar directamente y vamos a crear nuevas dependencias.
+
+En la formula inferior estamos calculando la probabilidad de que dada una palabra en la posición i, y una etiqueta en la posición i-1, cual sera la etiqueta en la posición i, sin embargo esta probabilidad no se descompone en transición - emisión como en el HMM, esta es una sutil pero gran diferencia, el performance del modelo sera distinto.
+
+En el siguiente diagrama vemos la forma en que funciona un Modelo Markoviano de Maxima Entropia con dependencias tan arbitrarias como se desee.
+
+![5.png](imgs%2F4%2F5.png)
+
+En un MEMM estamos calculando la probabilidad de que dada una palabra le corresponda una cierta etiqueta (probabilidades posteriores en bayes) y esto lo descomponíamos en la probabilidad de transición (dada una etiqueta, cual sera la que le corresponde en la siguiente posición) y la probabilidad de emisión (dada una etiqueta cual sera la palabra que el corresponda), aquí debemos pensar de forma distinta con probabilidades posteriores, la probabilidad seria la siguiente:
+
+>Dado un contexto al rededor de una etiqueta particular que yo quiero calcular o determinar cuál será la probabilidad de que esa categoría sea un verbo/sustantivo/etc.
+
+Esto quiere decir que tomaremos información de las etiquetas anterior y posterior con las palabras que están antes, y después, con esto caemos en el concepto de las redes neuronales donde tenemos muchas entradas y la red debe inferir una salida, haciendo uso de modelos de clasificación.
+
+La fórmula nos indica que la secuencia de palabras a la cual le vamos a asignar una secuencia de etiquetas donde la probabilidad dea maxima esta dado solo por esa probabilidad, donde dada una palabra actual, palabra posterior y palabra anterior, etiqueta posterior, y etiqueta anterior quiero saber la etiqueta actual, lo cual es un contexto completo.
+
+#### Comparacion entre modelos
+
+CASO HMM
+
+![6.png](imgs%2F4%2F6.png)
+
+Caso MEMM
+
+![7.png](imgs%2F4%2F7.png)
+
+Cuál es la probabilidad de que dada una palabra, y una etiqueta anterior, cuál es la probabilidad de que corresponda una etiqueta en la posición actual, deberá ser un conteo donde observo la palabra y las dos etiquetas consecutivas,  dividido entre el numero de veces que veo la palabra  junto con la etiqueta en la posición inmediatamente anterior.
+
+Esa es la forma en que deberíamos calcular matemáticamente las probabilidades para el MEMM
+
+
 ## 4.2 Algoritmo de Viterbi para MEMM
+
+En este slide vimos como construir un MEMM
+
+![5.png](imgs%2F4%2F5.png)
+
+Donde yo puedo predecir la categoría a la que pertenece cierta palabra considerando todo el contexto que rodea a esa categoría en términos de las categorías y palabras que se encuentran a los costados,y la palabra que corresponde a esa categoría.
+
+Aquí el algoritmo de Viterbi se calcula con una pequeña modificación.
+
+![8.png](imgs%2F4%2F8.png)
+
+Teniendo en cuenta que solo calculamos probabilidades posteriores, dado un contexto de palabras y etiquetas cuál  es la probabilidad de que le corresponda una cierta etiqueta. Ya no utilizamos probabilidades de transición ni emisión solo una probabilidad posterior, y el algoritmo de Viterbi tiene que adaptarse a esa filosofía, la formula debajo del slide indica como seria: "la probabilidad de Viterbi para la columna *t*  para una categoría *j* es igual al máximo de todas las posibles probabilidades donde cada una de esas probabilidades es el producto de la probabilidad de Viterbi de la columna anterior *t-1* de una categoría *i* multiplicado por la probabilidad posterior, que dado ese contexto cual debe ser la categoría *j* que debería corresponder  a la palabra.
+
+Veamos en el tablero las diferencias de HMM y MEMM
+
+![9.png](imgs%2F4%2F9.png)
+
+Si observas todo es muy similar al algoritmo y código anterior, donde eliminamos la probabilidad de transición y en lugar de la probabilidad de emisión calculamos la **probabilidad posterior de dado un contexto nos de la categoría**
 
 ## 4.3 Reto: construye un MEMM en Python
 
@@ -1317,7 +1378,50 @@ Es importante tener en cuenta que el modelo bajo datos no vistos obtuvo más del
 
 ## 5.1 El problema general de la clasificación de texto
 
+En general el ciclo básico de clasificación de texto, es poder convertir estas palabras en atributos, a través de un
+extractor de características y con estas entrenar a un algoritmo de ML. Una vez se tiene entrenado al extractor de características
+y al algoritmo de ML se puede predecir un nuevo documento.
+![10.png](imgs%2F4%2F10.png)
+
+A continuación en listo a mayor profundidad los pasos que componen un problema básico de clasificación de texto:
+
+1. **Recopilación y preprocesamiento de datos:** El primer paso es recopilar un conjunto de datos etiquetados que contengan ejemplos de texto clasificados en categorías específicas. Estos datos pueden ser obtenidos de diversas fuentes, como bases de datos, redes sociales, páginas web, etc. Una vez que se tiene el conjunto de datos, se realiza un preprocesamiento para limpiar y normalizar el texto, lo cual puede incluir la eliminación de caracteres especiales, convertir el texto a minúsculas, eliminar palabras irrelevantes (stop words) y aplicar técnicas de lematización o stemming.
+
+2. **División de datos en conjuntos de entrenamiento y prueba:** El conjunto de datos se divide en dos partes: uno para entrenamiento y otro para evaluar el rendimiento del modelo. Esto se hace para evitar el sobreajuste (overfitting) y tener una evaluación imparcial del modelo. Por lo general, se reserva un porcentaje (por ejemplo, 70-80%) de los datos para el entrenamiento y el resto se utiliza para la prueba.
+
+3. **Extracción de características:** Antes de entrenar un modelo de clasificación, es necesario representar los textos como características numéricas que puedan ser utilizadas por el algoritmo de aprendizaje. Esto implica la extracción de características relevantes del texto, como la frecuencia de las palabras (TF-IDF), n-gramas, características semánticas, etc. Esta etapa convierte el texto en un formato que el modelo pueda entender.
+
+4. **Elección y entrenamiento del modelo:** A continuación, se selecciona un modelo de clasificación adecuado para el problema de texto. Algunos de los modelos comúnmente utilizados son Naive Bayes, Support Vector Machines (SVM), Árboles de decisión, Redes Neuronales, entre otros. El modelo se entrena utilizando el conjunto de entrenamiento y las características extraídas. Durante el entrenamiento, el modelo aprende los patrones y características que ayudan a distinguir las diferentes clases de texto.
+
+5. **Ajuste de hiperparámetros:** Muchos modelos de clasificación tienen hiperparámetros que deben ser ajustados para obtener un mejor rendimiento. Estos hiperparámetros controlan aspectos como la complejidad del modelo, la regularización, el tamaño de la ventana de contexto, etc. Es importante ajustar estos hiperparámetros de manera adecuada utilizando técnicas como la validación cruzada para evitar el sobreajuste y mejorar la generalización del modelo.
+
+6. **Evaluación del modelo:** Una vez que el modelo ha sido entrenado y ajustado, se evalúa utilizando el conjunto de prueba que se reservó anteriormente. Se calculan métricas de evaluación, como la precisión, el recall, la puntuación F1, la matriz de confusión, entre otras, para medir el rendimiento del modelo en la clasificación de texto. Estas métricas ayudan a comprender la efectividad del modelo y su capacidad para generalizar a nuevos datos.
+
+7. **Predicción de nuevas muestras:** Después de evaluar el modelo, se puede utilizar para realizar predicciones en nuevos textos sin etiquetar. El modelo aplicará las características aprendidas durante el entrenamiento para asignar una clase o categoría a cada texto nuevo basándose en su contenido.
+
+Cuando hablamos de técnicas de clasificación podemos pensar en 3 principales vertientes:
+
+1. **Basadas en teoría de la probabilidad:** Estas técnicas se basan en la teoría de la probabilidad y asumen que los textos pertenecen a diferentes clases con ciertas probabilidades. Un ejemplo común es el clasificador Naive Bayes, que utiliza el teorema de Bayes para calcular la probabilidad de que un documento pertenezca a una determinada clase dada su característica. El clasificador Naive Bayes asume independencia condicional entre las características (palabras) del documento, lo que hace que el cálculo de la probabilidad sea más eficiente. Esta técnica es fácil de implementar y suele funcionar bien en conjuntos de datos de texto de tamaño moderado.
+
+2. **Basadas en teoría de la Información:** Estas técnicas se basan en la teoría de la información y utilizan medidas como la entropía y la ganancia de información para tomar decisiones de clasificación. Un ejemplo común es el algoritmo de árbol de decisión, que construye un árbol en el que cada nodo representa una característica y cada rama representa una posible clasificación basada en esa característica. El árbol de decisión elige la característica que proporciona la mayor ganancia de información para dividir los datos y realizar la clasificación. Esta técnica es interpretable y puede manejar tanto características categóricas como numéricas, pero puede ser propensa al sobreajuste si el árbol se construye de manera demasiado compleja.
+
+3. **Basadas en espacios Vectoriales:** Estas técnicas representan los textos y las categorías como vectores en un espacio multidimensional. La representación más común es la frecuencia de términos (TF-IDF), que mide la importancia relativa de una palabra en un documento. Con estas técnicas, los documentos se representan como vectores TF-IDF y luego se utilizan algoritmos de aprendizaje automático, como Support Vector Machines (SVM) o clasificadores lineales, para encontrar fronteras de decisión que separen las diferentes categorías. Estas técnicas pueden manejar grandes conjuntos de datos y funcionar bien en problemas de clasificación de texto de alta dimensionalidad.
+
+Cuando hablamos de palabras, podemos clasificar cada una de ellas en, por ejemplo:
+
+- Asignar categorías. 
+- Clasificarlas por genero.
+- Etiquetas gramaticales
+
+Y cuando hablamos de documentos:
+
+- Análisis de sentimientos.
+- Respecto al tópico, o tema de conversación.
+- Priorización (spam no spam).
+
 ## 5.2 Tareas de clasificación con NLTK
+
+
 
 ## 5.3 Modelos de clasificación en Python: nombres
 
