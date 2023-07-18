@@ -19,8 +19,8 @@ Aprende a usar la API de OpenAI para desarrollar un chatbot con identidad propia
 > - [8: Curso de generación de imágenes](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/8%20Curso%20de%20generaci%C3%B3n%20de%20im%C3%A1genes)
 > - [9: Cursos de Fundamentos de NLP](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/9%20Curso%20de%20Fundamentos%20de%20NLP)
 > - [10: Curso de Fundamentos de Procesamiento de Lenguaje Natural con Python y NLTK](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/10%20Curso%20de%20Algoritmos%20de%20Clasificaci%C3%B3n%20de%20Texto)
-> - [11: Curso de redes Neuronales con PyTorch]
-> - 
+> - [11: Curso de redes Neuronales con PyTorch](https://github.com/ichcanziho/Deep_Learnining_Platzi/tree/master/11%20Curso%20de%20Redes%20Neuronales%20con%20PyTorch%20)
+> 
 > Este Curso es el Número 12 de una ruta de Deep Learning, quizá algunos conceptos no vuelvan a ser definidos en este repositorio,
 > por eso es indispensable que antes de empezar a leer esta guía hayas comprendido los temas vistos anteriormente.
 > 
@@ -162,9 +162,32 @@ Excelente, en esta clase hemos aprendido a conectarnos al API de OpenAI a travé
 un archivo .env para almacenar nuestra API KEY y hemos conocido algunos de los parámetros básicos que tiene el método
 `Completion.create` y hemos logrado hacer un clasificador de sentimientos de tweets.
 
-
-
 ## 1.2 Conociendo la documentación de la API de OpenAI
+
+Es indispensable que tengamos muy presente en todo momento la Documentación de OpenAI: https://platform.openai.com/docs/introduction/overview
+
+![3.png](ims%2F1%2F3.png)
+
+Este sitio será nuestro mejor aliado para conocer a profundidad las características de los modelos y servicios que nos puede
+ofrecer OpenAI. 
+
+Algunos de los enlaces más interesantes a los que debemos prestar atención son:
+
+- [Models](https://platform.openai.com/docs/models)
+  ![4.png](ims%2F1%2F4.png)
+- [Fine-tuning](https://platform.openai.com/docs/guides/fine-tuning)
+  ![5.png](ims%2F1%2F5.png)
+- [Chat Completions](https://platform.openai.com/docs/guides/gpt/chat-completions-api)
+  ![6.png](ims%2F1%2F6.png)
+
+Cada uno de estos elementos los estaremos visitando a lo largo del curso, sin embargo, es importante tener en cuenta que hay
+mucho más que explorar en la documentación y que la misma tiene tutoriales que nos pueden enseñar a como utilizarla.
+
+Finalmente, también podemos leer su [API REFERENCE](https://platform.openai.com/docs/api-reference)
+
+![7.png](ims%2F1%2F7.png)
+
+Es similar a la documentación, pero está más orientada en como consumir sus servicios desde el API y sus tutoriales son a menor profundidad.
 
 ## 1.3 Cargar modelo de la API de OpenAI con Python
 

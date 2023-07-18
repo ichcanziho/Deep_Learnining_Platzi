@@ -13,6 +13,7 @@
 - ![](https://geps.dev/progress/100) [9. Curso de Fundamentos de NLP](9%20Curso%20de%20Fundamentos%20de%20NLP)
 - ![](https://geps.dev/progress/50) [10. Curso de Algoritmos de Clasificación de Texto](10%20Curso%20de%20Algoritmos%20de%20Clasificación%20de%20Texto)
 - ![](https://geps.dev/progress/95) [11. Curso de Redes Neuronales con PyTorch](11%20Curso%20de%20Redes%20Neuronales%20con%20PyTorch%20)
+- ![](https://geps.dev/progress/5) [12. Curso de Desarrollo de Chatbots con OpenAI](12%20Desarrollo%20ChatBot)
 
 
 ## Características de mi entorno de trabajo:
