@@ -304,7 +304,79 @@ Excelente, ya hemos desarrollado un minijuego con ayuda del API de OpenAI.
 
 ## 1.5 Parámetros de Text Completion: temperature, top_p y n
 
+Pese a que esta clase sí tiene código, es básicamente el mismo que ya hemos visto en: [2_cargar_modelo.py](scripts%2F2_cargar_modelo.py)
+Así que en realidad solo vamos a repasar una breve explicación de los parámetros que dispone `Completion`
+
+Para obtener la información directamente desde su Api Reference https://platform.openai.com/docs/api-reference/completions/create
+
+**Parámetros de Text Completion**
+
+- **model**: ID del modelo a utilizar.
+- **prompt**: Las solicitudes para generar finalizaciones, codificadas como una cadena, una matriz de cadenas, una matriz de tokens o una matriz de matrices de tokens.
+- **suffix**:Predeterminado a nulo
+El sufijo que viene después de completar el texto insertado.
+- **max_tokens**: Predeterminado a 16
+El número máximo de tokens a generar en la finalización.
+- **temperature**: Predeterminado a 1
+Qué temperatura de muestreo usar, entre 0 y 2. Los valores más altos, como 0,8, harán que la salida sea más aleatoria, mientras que los valores más bajos, como 0,2, la harán más enfocada y determinista.
+Usa esto o top_p pero no ambos.
+- **top_p**: Predeterminado a 1
+Una alternativa al muestreo con temperatura, llamado muestreo de núcleo, donde el modelo considera los resultados de los tokens con masa de probabilidad top_p. Por lo tanto, 0.1 significa que solo se consideran las fichas que comprenden el 10 % de la masa de probabilidad superior.
+- **n**: Predeterminado a 1
+Cuántas completions generar para cada prompt.
+>Nota: debido a que este parámetro genera muchas finalizaciones, puede consumir rápidamente su cuota de token. Úselo con cuidado y asegúrese de tener configuraciones razonables para max_tokens y stop.
+- **stream**: Predeterminado a falso
+Ya sea para transmitir el progreso parcial. Si se establece, los tokens se enviarán como eventos enviados por el servidor solo de datos a medida que estén disponibles, y la secuencia terminará con un mensaje de data: [DONE]. [Ejemplo en python](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_stream_completions.ipynb)
+- **logprobs**: Si logprobs es 5, la API devolverá una lista de los 5 tokens más probables. La API siempre devolverá el logprob del token muestreado, por lo que puede haber hasta logprobs+1 elementos en la respuesta.
+- **echo**: Repita el prompt además de la finalización(Predeterm: Falso)
+stop: Hasta 4 secuencias donde la API dejará de generar más tokens. El texto devuelto no contendrá la secuencia de parada.
+- **best_of**: Predeterminado a 1
+Genera el mejor de completions del lado del servidor y devuelve el “mejor” (el que tiene la mayor probabilidad de registro por token). Los resultados no se pueden transmitir(stream).
+- **user**: Un identificador único que representa a su usuario final, que puede ayudar a OpenAI a monitorear y detectar abusos. Aprende más.
+
 ## 1.6 Buenas prácticas al usar modelos de OpenAI
+
+Es necesario tener en cuenta el costo del servicio del API de OpenAI
+
+https://platform.openai.com/account/usage
+
+![8.png](ims%2F1%2F8.png)
+Aquí podemos ver el consumo de dinero que hemos tenido por cada día. Pero también estamos limitados no solamente en términos 
+de efectivo, sino también en términos de: `Tokens Per Minute TPM` y `Request Per Minute` de acuerdo al modelo y acción que estemos haciendo:
+
+https://platform.openai.com/account/rate-limits
+![9.png](ims%2F1%2F9.png)
+
+Diferentes miembros tienen diferentes roles, y solamente los miembros `owner` tienen acceso al `billing` o facturación.
+Lo más importante a destacar es que existen dos conceptos:
+
+> Nota, la siguiente imagen es tomada directo de la clase:
+
+![10.png](ims%2F1%2F10.png)
+
+Podemos definir un `soft limit` que es una Advertencia, OpenAI nos avisará por correo que ya hemos alcanzado este límite pero
+no nos va a poner restricciones para seguir utilizándolo.
+
+Mientras que si llegamos al `hard limit` entonces ahí se detendrán operaciones. 
+También podemos pedir un `Request Increase` para aumentar nuestro límite mensual.
+
+**Buenas prácticas al usar modelos de OpenAI**
+
+- Uso:
+  - Especifica claramente tu solicitud. Mayor contexto.
+  - Utiliza la instrucción inicial
+  - Controla la longitud de la respuesta.
+  - Experimenta con la temperatura
+- Facturación (Billing):
+  - Consumo de usuarios y facturación.
+  - Soft Limit y hard Limit:
+  - Pedir si queremos aumentar límites.
+  - Precios de Fine tuning models: https://openai.com/pricing
+- Seguridad:
+  - Gestión y solución de problemas.
+  - Ética y consideraciones legales.
+  - Privacidad de los datos.
+  - Control de users(Owner y Reader).
 
 ## 1.7 Chat Completions
 

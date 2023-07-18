@@ -21,14 +21,15 @@ def get_new_clue(animal):
 
 def play_game():
     # Empezamos con nuestro animal aleatorio y primer pista genérica
-    prompt, real_animal = get_base_clue()
-    print(prompt)
+    first_clue, real_animal = get_base_clue()
+    print(first_clue)
     # Mientras la respuesta del usuario sea diferente al verdadero animal
     while (user_input := input("Ingresa tu respuesta: ")) != real_animal:
         # Le decimos que se equivocó
         print('Respuesta incorrecta. Intentalo de nuevo')
         # Y le damos una nueva pista
-        print(get_new_clue(real_animal))
+        new_clue = get_new_clue(real_animal)
+        print(new_clue)
     # Si salimos del ciclo while es porque el usuario ha acertado
     print('Correcto! La respuesta era:', real_animal)
 
