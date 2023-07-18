@@ -191,6 +191,35 @@ Es similar a la documentación, pero está más orientada en como consumir sus s
 
 ## 1.3 Cargar modelo de la API de OpenAI con Python
 
+Esta clase será un repaso de la primer clase en donde veremos como fácilmente cargar nuestra API KEY, seleccionar un modelo y finlamente
+enviar una prompt a chat GPT desde código:
+
+> ## Nota:
+> Puedes encontrar el código en: [2_cargar_modelo.py](scripts%2F2_cargar_modelo.py)
+
+```python
+import os
+from dotenv import load_dotenv
+import openai
+
+load_dotenv("../envs/ap.env")
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+response = openai.Completion.create(
+    model="text-davinci-003",
+    prompt="¿Quién descubrió América?",
+    max_tokens=100
+)
+
+print(response.choices[0].text)
+```
+
+Respuesta esperada:
+```commandline
+Ninguna persona descubrió América, ya que el continente ya estaba habitado por pueblos indígenas cuando los europeos llegaron. El navegante generalmente atribuido como el descubridor de América es Cristóbal Colón, quien realizó su primera expedición en 1492.
+```
+Aclaración, es probable que tu respuesta sea diferente a la que yo he conseguido. ChatGPT no necesariamente va a responder exactamente igual a la misma pregunta.
+
 ## 1.4 Creación de ejemplo utilizando la API de OpenAI
 
 ## 1.5 Parámetros de Text Completion: temperature, top_p y n
