@@ -222,6 +222,86 @@ Aclaración, es probable que tu respuesta sea diferente a la que yo he conseguid
 
 ## 1.4 Creación de ejemplo utilizando la API de OpenAI
 
+En este ejercicio vamos a crear un pequeño juego de `adivina el animal`. Primero dado una lista de animales seleccionaremos
+uno de ellos al azar y vamos a dar una pista genérica al usuario. Su trabajo es intentar adivinar el animal. En cada itento
+cuando el usuario falle, vamos a hacer que ChatGPT generé una nueva pista que mencione atributos del animal en cuestión, evitando
+mencionar el nombre del animal, esto será indefinido hasta que el usuario adivine el animal.
+
+> ## Nota:
+> El código lo puedes encontrar en: [3_adivina_animal.py](scripts%2F3_adivina_animal.py)
+
+Empezamos importando las bibliotecas necesarias:
+
+```python
+from dotenv import load_dotenv
+import random
+import openai
+import os
+```
+
+Creamos nuestra función que elige un animal al azar y brinda la primera pista:
+
+```python
+def get_base_clue():
+    words = ['elefante', 'león', 'jirafa', 'hipopótamo', 'mono']
+    random_word = random.choice(words)
+    prompt = 'Adivina la palabra que estoy pensando. Es un animal que vive en la selva.'
+    return prompt, random_word
+```
+
+Ahora crearemos nuestro código de generación de nuevas pistas, que utiliza a ChatGPT para que dado un prompt me pueda regresar
+características de cierto animal.
+
+```python
+def get_new_clue(animal):
+    response = openai.Completion.create(
+        engine='text-davinci-003',
+        prompt='Dame una caracteristica del tipo animal' + animal + ', pero jamás digas el nombre del animal',
+        max_tokens=100)
+    return response.choices[0].text
+```
+
+A continuación vamos a programar la mecánica principal del juego:
+
+```python
+def play_game():
+    # Empezamos con nuestro animal aleatorio y primer pista genérica
+    prompt, real_animal = get_base_clue()
+    print(prompt)
+    # Mientras la respuesta del usuario sea diferente al verdadero animal
+    while (user_input := input("Ingresa tu respuesta: ")) != real_animal:
+        # Le decimos que se equivocó
+        print('Respuesta incorrecta. Intentalo de nuevo')
+        # Y le damos una nueva pista
+        print(get_new_clue(real_animal))
+    # Si salimos del ciclo while es porque el usuario ha acertado
+    print('Correcto! La respuesta era:', real_animal)
+```
+Y finalmente como ya tenemos todos los ingredientes, vamos a crear nuestro punto de acceso:
+```python
+if __name__ == '__main__':
+    load_dotenv("../envs/ap.env")
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    play_game()
+```
+Respuesta esperada:
+```commandline
+Adivina la palabra que estoy pensando. Es un animal que vive en la selva.
+Ingresa tu respuesta: gato
+Respuesta incorrecta. Intentalo de nuevo
+
+
+Cuerpo voluminoso con piel áspera.
+Ingresa tu respuesta: elefante
+Respuesta incorrecta. Intentalo de nuevo
+
+
+Tiene una piel gruesa y desagradable al tacto.
+Ingresa tu respuesta: hipopótamo
+Correcto! La respuesta era: hipopótamo
+```
+Excelente, ya hemos desarrollado un minijuego con ayuda del API de OpenAI.
+
 ## 1.5 Parámetros de Text Completion: temperature, top_p y n
 
 ## 1.6 Buenas prácticas al usar modelos de OpenAI
