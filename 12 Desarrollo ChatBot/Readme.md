@@ -380,9 +380,130 @@ También podemos pedir un `Request Increase` para aumentar nuestro límite mensu
 
 ## 1.7 Chat Completions
 
+En esta clase vamos a ver ejemplos simples de como utilizar [Chat Completions API](https://platform.openai.com/docs/guides/gpt/chat-completions-api)
+Es similar al método pasado, pero permite brindar mayor contexto al modelo.
+
+También puedes ver más información en [Create Chat Completion](https://platform.openai.com/docs/api-reference/chat/create)
+
+> ## Nota:
+> Puedes ver el código de en: [4_chat_completion.py](scripts%2F4_chat_completion.py)
+
+Partimos de la misma base que hemos estado utilizando en los otros ejemplos:
+
+```python
+import os
+from dotenv import load_dotenv
+import openai
+
+load_dotenv("../envs/ap.env")
+openai.api_key = os.getenv("OPENAI_API_KEY")
+```
+Sin embargo, aquí viene el primer cambio. Ahora vamos a utilizar `openai.ChatCompletion.create`
+y veremos que la estructura es ligeramente diferente, en lugar de enviar simplemente un `prompt` sencillo vamos a enviar
+una lista de diccionarios en `messages`:
+
+```python
+response = openai.ChatCompletion.create(
+    model='gpt-3.5-turbo',
+    messages=[
+        {"role": "system", "content": "Eres un asistente que da informacion sobre deportes"},
+        {"role": "user", "content": "¿Quién ganó el mundial de fútbol?"},
+        {"role": "assistant", "content": "El mundial de 2022 lo ganó Argentina"},
+        {"role": "user", "content": "¿Dónde se jugó?"}
+    ],
+    temperature=1,  # Este es el valor default
+    max_tokens=60
+
+)
+print(response['choices'][0]['message']['content'])
+print("*"*64)
+```
+Respuesta esperada:
+```commandline
+El Mundial de fútbol de 2022 se jugó en Qatar.
+```
+
+Podemos observar como para utilizar `ChatCompletion` debemos empezar dandole al modelo un `contexto` general al modelo. 
+
+- Eres un asistente ...
+
+Después, podemos darle un ejemplo de la posible entrada que tendría un usuario:
+
+- ¿Quién gano el mundial de futbol?
+
+Y finalmente, podemos darle un ejemplo de la respuesta que va a dar el modelo siendo él el `assistant`:
+
+- El mundial de 2022 lo ganó Argentina.
+
+Adicionalmente, podemos leer la documentación del API [Create Chat Completion](https://platform.openai.com/docs/api-reference/chat/create)
+para leer los demás parámetros del modelo. Aunque muchos son los mismos que ya hemos visto anteriormente.
+Como resumen presentamos la siguiente diapositiva.
+
+![12.png](ims%2F1%2F12.png)
+
+Y finalmente, si te preguntas cuando debo usar Completion vs ChatCompletion
+![11.png](ims%2F1%2F11.png)
+
+Podemos ver que en general Completion sirve con todos los modelos, pero solamente está esperando generar
+una sola `completion` no tener un diálogo profundo o conversación de multiples turno.
+
+Adicionalmente, utilizar `ChatCompletion` nos permite dar un formato de Contexto, Entrada, Respuesta esperada, lo cuál es 
+muy útil para un sin fin de aplicaciones. 
+
+
 ## 1.8 Actualizaciones de la API de OpenAI: GPT-4 disponible y modelos deprecados
 
+OpenAI y su API es un producto que está en constante actualización por la rápida innovación que actualmente tienen las tecnologías de IA.
+
+⚠️Recuerda estar al pendiente de este curso porque seguirá actualizándose de acuerdo a los cambios en OpenAI. Cada vez que haya una actualización importante podrás enterarte en tu correo electrónico y en un agregado en esta clase de lectura.
+
+### Disponibilidad general de la API de GPT-4
+
+GPT-4 es el modelo más capaz de OpenAI. En la última actualización de la API, todo mundo puede acceder libremente a la API de GPT-4 con un contexto de 8K. Ya no es necesario estar dentro de alguna beta.
+
+Se planea que este modelo de Chat esté disponible en todas sus versiones completando el mes de julio de 2023 según la disponibilidad de recursos informáticos. Pero es muy posible que ya puedas utilizarlo en el modo ChatCompletion.
+
+📣 Se está trabajando en habilitar de manera segura fine-tuning para GPT-4 y GPT-3.5 Turbo. Se espera que esta función esté disponible más adelante este año.
+
+Fuente: [GPT-4 API general availability and deprecation of older models in the Completions API (openai.com)](https://openai.com/blog/gpt-4-api-general-availability)
+
+### Pasando de text completions a chat completions (modelos deprecados)
+
+La API de Completions fue introducida en junio de 2020 para proporcionar una solicitud de texto de forma libre para interactuar con nuestros modelos de lenguaje. Desde entonces, se ha aprendido que podemos obtener mejores resultados con una interfaz de solicitud más estructurada.
+
+El paradigma basado en chat ha demostrado ser poderoso, manejando la gran mayoría de los casos de uso anteriores y las nuevas necesidades de conversación, al tiempo que brinda una mayor flexibilidad y especificidad. En particular, la interfaz estructurada de la API de Chat Completions y las capacidades de conversación de múltiples turnos permiten crear experiencias conversacionales y una amplia gama de tareas de completado.
+
+OpenAI planea seguir invirtiendo la mayor parte de esfuerzos en Chat Completions, ya que ofrecerá una experiencia cada vez más capaz y fácil de usar. Es por ello que para enero de 2024 retirarán algunos modelos anteriores de Text Completions. **Si bien esta API seguirá siendo accesible, a partir de esta actualización está etiquetada como “legacy” en la plataforma.** No hay planes de lanzar nuevos modelos utilizando la API de Text Completions.
+
+**A partir del 4 de enero de 2024, los modelos antiguos de text completions ya no estarán disponibles y serán reemplazados por los siguientes modelos:**
+
+![13.png](ims%2F1%2F13.png)
+
+⚠️Estos nuevos modelos estarán disponibles en las próximas semanas para pruebas tempranas al especificar los siguientes nombres de modelos en las llamadas a la API:
+
+- ada-002
+- babbage-002
+- curie-002
+- davinci-002
+- gpt-3.5-turbo-instruct
+
+- Te sugerimos usar estos nuevos modelos para aplicarles fine-tuning en las siguientes clases de este curso, si es que ya los tienes disponibles en tu cuenta de OpenAI.
+
+Fuente: [GPT-4 API general availability and deprecation of older models in the Completions API (openai.com)](https://openai.com/blog/gpt-4-api-general-availability)
+
+
 ## Quiz de OpenAI API
+
+![14.png](ims%2F1%2F14.png)
+
+![15.png](ims%2F1%2F15.png)
+
+![16.png](ims%2F1%2F16.png)
+
+![17.png](ims%2F1%2F17.png)
+
+![18.png](ims%2F1%2F18.png)
+
 
 # 2 Fine-tuning de modelos de OpenAI
 
