@@ -543,9 +543,114 @@ Algunos problemas más populares por los cuales decidimos hacer fine-tuning son:
 
 ## 2.2 Costos de uso de OpenAI: tokenización de texto
 
+Uno de los procesos principales que utiliza el API de OpenAI para procesar el texto, es la tokenización del mismo. En el contexto de ChatGPT, los tokens son las unidades más pequeñas en las que el texto se divide para que el modelo pueda procesarlo. Un token puede ser tan corto como un carácter o tan largo como una palabra completa, y el proceso de dividir el texto en estos tokens se conoce como tokenización.
+Sin embargo, la relación Palabra a Token NO es exactamente 1:1 de hecho, una regla de dedo es que aproximadamente 100 tokens representan 75 palabras en el idioma inglés, o 
+también podemos verlo como que la cantidad de palabras multiplicada por 1.33 es aproximadamente igual al número de tokens que se van a utilizar.
+
+Podemos utilizar [Tokenizer](https://platform.openai.com/tokenizer) para darnos una idea de como OpenAI procesa la cantidad de tokens por oración.
+
+![2.png](ims%2F2%2F2.png)
+
+Esta información es indispensable tenerla en cuenta, porque cada modelo tiene un precio diferente tanto por procesar la información de entrada
+como por generar la respuesta de salida.
+
+![3.png](ims%2F2%2F3.png)
+
+Esta información es bastante interesante cuando vamos a la sección de **Fine-tuning models:**
+
+![4.png](ims%2F2%2F4.png)
+
+- Ada-(La más rápida)
+$0.0004 -> $0.0016 / 1K tokens 
+Es el más rápido de los modelos enumerados, es una opción rentable para aplicaciones donde la velocidad es un factor crítico, como en aplicaciones de servicio al cliente o chatbot.
+
+- Babbage
+$0.0006 -> $0.0024 / 1K tokens
+Es un poco más lento que Ada, pero aun así ofrece una opción rápida y eficiente para tareas de procesamiento de lenguaje natural.
+
+- Curie
+$0.0030 -> $0.0120 / 1K tokens
+Es más caro que Ada y Babbage. Sin embargo, ofrece capacidades más avanzadas que los modelos más rápidos, lo que lo convierte en una buena opción para aplicaciones que requieren un procesamiento más complejo.
+
+- Davinci (el más poderoso)
+$0.0300 -> $0.120 / 1K tokens 
+El modelo más poderoso de la lista es Davinci, que ofrece las capacidades más avanzadas para tareas de procesamiento de lenguaje natural. Sin embargo, es la opción más cara de la lista. Es ideal para aplicaciones donde la precisión y las respuestas matizadas son fundamentales, como en escenarios complejos de atención al cliente o proyectos de investigación.
+
 ## 2.3 Configuración de entorno local de OpenAI con Anaconda
 
+Te guiaré a través del proceso de configuración de un entorno local para usar la API de OpenAI con Python. Empecemos con los requisitos previos.
+
+### ✅ Requisitos previos
+Antes de comenzar, asegúrate de tener los siguientes requisitos instalados en tu computadora:
+
+1. Python versión 3.9 o superior: La API de OpenAI se integra estrechamente con Python, por lo que necesitarás tenerlo instalado en tu sistema operativo de preferencia. Puedes descargar la última versión desde su sitio web oficial.
+
+2. VSCode: En este editor de código crearemos los scripts de Python para nuestra aplicación. Puedes descargar la última versión en el sitio oficial de VSCode.
+
+3. Extensión de Python de VSCode: Para facilitar el uso de Python en el editor, instala la extensión desde su sitio oficial en el marketplace .
+
+4. Anaconda: Es una herramienta popular para crear entornos de desarrollo para ciencia de datos y machine learning con Python. Asegúrate de tener la última versión de Anaconda instalada en tu sistema. Puedes descargarla desde el sitio web oficial de Anacondal.
+
+### 🐍 Creación de entorno virtual con Anaconda
+Es una buena práctica utilizar entornos virtuales para aislar tus proyectos y dependencias. Sigue estos pasos para crear un entorno virtual con Anaconda:
+
+1. Abre una terminal en tu computadora.
+
+2. Ejecuta el siguiente comando para crear un nuevo entorno virtual llamado “NAME” (puedes reemplazar “NAME” con el nombre que desees, por ejemplo “curso_openai”):
+
+```commandline
+conda create -n NAME python==3.9
+```
+
+3. Una vez que se haya creado el entorno virtual, actívalo con el siguiente comando:
+
+```commandline
+conda activate NAME
+```
+
+4. Ahora estás trabajando dentro del entorno virtual “NAME” y puedes instalar las bibliotecas necesarias sin afectar tu instalación principal de Python. Instala las librerías necesarias con el siguiente comando*:
+
+```commandline
+conda install numpy pandas openai requests
+```
+
+> *Para instalar las librerías en el entorno “NAME” deberá estar activado con el paso anterior.
+
+5. Cuando hayas terminado de trabajar en tu proyecto, puedes desactivar el entorno virtual con el siguiente comando:
+
+```commandline
+conda deactivate
+```
+
+Si quieres aprender a detalle a usar Anaconda y Jupyter Notebooks, puedes tomar el Curso de Entorno de Trabajo para Ciencia de Datos con Jupyter Notebooks y Anaconda 🐍
+
+### 🔐 Creación de API Key
+Antes de utilizar la API de OpenAI necesitarás una clave de API para acceder a los modelos. Sigue estos pasos para crear tu propia clave:
+
+1. Visita la página de OpenAI para gestionar tus claves de API: https://platform.openai.com/account/api-keys.
+
+2. Si aún no tienes una cuenta de OpenAI, regístrate y crea una nueva cuenta.
+
+3. Una vez que hayas iniciado sesión en tu cuenta de OpenAI, ve a la sección de API Keys y crea una nueva clave.
+
+4. Copia tu API Key e impórtala como variable de entorno de tu sistema operativo. Guárdala como “OPENAI_API_KEY” de forma permanente. Esto ayudará a garantizar la seguridad de tu API Key al utilizarla de esta manera en tu código. Puedes ver esta clase para configurarla en Ubuntu o macOS si no conoces el proceso.
+
+5. Recuerda que para comenzar a utilizar la API, necesitarás tener al menos $5 dólares de crédito en tu tarjeta bancaria para utilizar los modelos y funcionalidades de la API.
+
+### ⚠️💵 Costo del fine-tuning del modelo Davinci y alternativas
+Es importante tener en cuenta que el fine-tuning del modelo Davinci de OpenAI puede tener un costo significativo. La tarifa de uso de Davinci se basa en el número de tokens de entrada y salida utilizados durante el proceso de fine-tuning. Te recomiendo revisar la documentación oficial de OpenAI para obtener información actualizada sobre los precios y las políticas de uso en el siguiente enlace: https://openai.com/pricing
+
+Para el proyecto de este curso el costo estimado por el fine-tuning ronda los $45 dólares, utilizando un dataset con 1800 registros y el modelo Davinci.
+
+Si deseas reducir el costo del fine-tuning, considera las siguientes alternativas:
+
+1.  Reducir el tamaño del dataset: Limitar la cantidad de registros utilizados en el proceso de fine-tuning puede ayudar a reducir los costos. Evalúa la posibilidad de seleccionar una muestra representativa de tus datos en lugar de utilizar todo el dataset.
+
+2. Explorar modelos más accesibles: Además del modelo Davinci, OpenAI ofrece modelos como Ada o Babbage, que son más accesibles en términos de costo. Puedes explorar la opción de utilizar modelos alternativos según tus necesidades y presupuesto.
+
 ## 2.4 Formato de datos para fine-tuning
+
+
 
 ## 2.5 Preparar datos para fine-tuning
 
