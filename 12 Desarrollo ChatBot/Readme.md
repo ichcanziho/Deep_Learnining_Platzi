@@ -509,6 +509,38 @@ Fuente: [GPT-4 API general availability and deprecation of older models in the C
 
 ## 2.1 ¿Por qué hacer fine-tuning a modelos de OpenAI?
 
+Cuando hablamos de fine-tunining nos referimos a refinamiento de un modelo pre-entrenado para poder cumplir con tareas 
+más específicas para las que originalmente no fue necesariamente entrenado.
+
+![1.png](ims%2F2%2F1.png)
+
+Algunos de los beneficios que podemos mencionar sobre hacer fine-tuning a modelos de DL son:
+
+**1. Adaptación a tareas específicas:** El fine-tuning permite ajustar el modelo preentrenado para tareas específicas o dominios particulares. Esto es especialmente útil cuando se necesita que el modelo realice una tarea específica, como la generación de respuestas en un servicio de atención al cliente, la traducción de texto en un idioma particular o la redacción de contenido especializado.
+
+**2. Mejora del rendimiento:** Al ajustar el modelo a una tarea específica, el fine-tuning puede mejorar significativamente su rendimiento y precisión en esa tarea en comparación con usar el modelo preentrenado directamente.
+
+**3. Reducción del tiempo de entrenamiento:** El preentrenamiento inicial de modelos de lenguaje como ChatGPT es una tarea intensiva en recursos y tiempo. Sin embargo, una vez que el modelo está preentrenado, el fine-tuning es un proceso más rápido y eficiente en comparación con el entrenamiento completo desde cero.
+
+**4. Control y personalización:** Fine-tuning permite a los desarrolladores tener un mayor control sobre el modelo, lo que les permite ajustar y personalizar su comportamiento según las necesidades específicas de su aplicación.
+
+**5. Adquisición de conocimiento específico:** Al entrenar el modelo en datos específicos de una tarea, el modelo puede adquirir conocimiento relevante y especializado para esa tarea, lo que lo hace más eficaz en su desempeño.
+
+**6. Adaptación a cambios en datos o requisitos:** Si los datos o las necesidades de una tarea cambian con el tiempo, el modelo puede ser sometido a un nuevo proceso de fine-tuning para adaptarse a esos cambios sin tener que volver a preentrenar desde cero.
+
+Algunos problemas más populares por los cuales decidimos hacer fine-tuning son:
+
+- **Clasificación**:
+  - ¿El Modelo está haciendo declaraciones falsas?
+  - Análisis de sentimientos
+  - Categorización de correo electrónico(clasificación de spam).
+- **Generación condicional**(Crear conocimiento a partir de otro ya creado):
+  - Ejemplo: tomar un texto de wiki y crear uno nuevo a partir de este.
+  - Extracción de entidades(ver contexto del texto).
+  - Chatbot de atención al cliente.
+  - Descripción basada en una lista técnica de propiedades.(Dar descripciones de productos basadas en requermientos)
+
+
 ## 2.2 Costos de uso de OpenAI: tokenización de texto
 
 ## 2.3 Configuración de entorno local de OpenAI con Anaconda
