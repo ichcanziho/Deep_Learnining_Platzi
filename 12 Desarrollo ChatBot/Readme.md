@@ -650,15 +650,217 @@ Si deseas reducir el costo del fine-tuning, considera las siguientes alternativa
 
 ## 2.4 Formato de datos para fine-tuning
 
+El formato de los datos para el entrenamiento del modelo es una de las partes esenciales, que debemos realizar al momento
+de querer hacer fine-tuning, en modelos de OpenAI. A continuación describimos 4 de las reglas básicas que vamos a utilizar
+para llevar a cabo este procedimiento.
+
+1. Cada prompt debe terminar con un separador fijo con esto el modelo entiende donde termina la solicitud \n\n###\n\n.
+2. Cada completion debe comenzar con un espacio en blanco para un correcto proceso de tokenización.
+3. Cada completion debe terminar con una secuencia para que el modelo entienda donde termina o finaliza el proceso \n o ###.
+4. Se debe utilizar la misma estructura de prompt con la que fue entrenado.
+
+Para más información podemos visitar: https://platform.openai.com/docs/guides/fine-tuning/data-formatting
+
+Algo interesante es que no es necesario que uno haga manualmente o con código este tipo de estructurado de los datos, ya que
+OpenAI nos proporciona una herramienta que hace este código por nosotros.
 
 
 ## 2.5 Preparar datos para fine-tuning
 
+Podemos leer más acerca del formato de los datos de entrenamiento en: https://platform.openai.com/docs/guides/fine-tuning/prepare-training-data
+
+![5.png](ims%2F2%2F5.png)
+
+Empecemos con un simple archivo CSV, en este caso voy a hacer una tarea de `clasificación`. Particularmente ya tengo mis archivos de
+train y test y tienen la siguiente estructura:
+
+```commandline
+prompt,completion
+hoy es un día muy bonito para estar vivo,1
+me siento triste :(,0
+```
+
+Entonces vamos a empezar utilizando la herramienta [CLI data preparation tool](https://platform.openai.com/docs/guides/fine-tuning)
+
+```commandline
+openai tools fine_tunes.prepare_data -f train_data.csv
+```
+Respuesta esperada:
+```commandline
+Analyzing...
+
+- Based on your file extension, your file is formatted as a CSV file
+- Your file contains 5666 prompt-completion pairs
+- Based on your data it seems like you're trying to fine-tune a model for classification
+- For classification, we recommend you try one of the faster and cheaper models, such as `ada`
+- For classification, you can estimate the expected model performance by keeping a held out dataset, which is not used for training
+- Your data does not contain a common separator at the end of your prompts. Having a separator string appended to the end of the prompt makes it clearer to the fine-tuned model where the completion should begin. See https://platform.openai.com/docs/guides/fine-tuning/preparing-your-dataset for more detail and examples. If you intend to do open-ended generation, then you should leave the prompts empty
+- The completion should start with a whitespace character (` `). This tends to produce better results due to the tokenization we use. See https://platform.openai.com/docs/guides/fine-tuning/preparing-your-dataset for more details
+
+Based on the analysis we will perform the following actions:
+- [Necessary] Your format `CSV` will be converted to `JSONL`
+- [Recommended] Add a suffix separator ` ->` to all prompts [Y/n]: Y
+- [Recommended] Add a whitespace character to the beginning of the completion [Y/n]: Y
+- [Recommended] Would you like to split into training and validation set? [Y/n]: n
+
+
+Your data will be written to a new JSONL file. Proceed [Y/n]: Y
+
+Wrote modified file to `train_data_prepared.jsonl`
+Feel free to take a look!
+
+Now use that file when fine-tuning:
+> openai api fine_tunes.create -t "train_data_prepared.jsonl"
+
+After you’ve fine-tuned a model, remember that your prompt has to end with the indicator string ` ->` for the model to start generating completions, rather than continuing with the prompt.
+Once your model starts training, it'll approximately take 2.31 hours to train a `curie` model, and less for `ada` and `babbage`. Queue will approximately take half an hour per job ahead of you.
+```
+Algo muy interesante es que el CLI automáticamente detecta el tipo de problema que quiero resolver con base en la estructura de mi archivo CSV.
+Hace las conversiones necesarias, agregando un separador "->" y haciendo que cada completion empiece con un " " white space.
+Adicionalmente, me pregunto si quería particionar estos datos en train y validation, pero he dicho que NO, porque yo tengo los datos
+de validación en otro documento.
+
+Finalmente, me recomienda utilizar el modelo más rápido y económico `ada` y me dice que el proceso va a tomar aproximadamente 2.31 horas.
+
+El archivo que me generó para hacer fine tuning a mis modelos es:
+
+`train_data_prepared.jsonl`
+
+Que luce de la siguiente manera:
+```commandline
+{"prompt":"hoy es un día muy bonito para estar vivo ->","completion":" 1"}
+{"prompt":"me siento triste :( ->","completion":" 0"}
+```
+
+
 ## 2.6 Fine-tuning de modelo de OpenAI
+
+El fine tuning funciona mejor con más ejemplos de alta calidad. Para afinar un modelo que funciona mejor idealmente deben ser examinados por humanos. A partir de ahí, el rendimiento tiende a aumentar linealmente con cada duplicación del número de ejemplos. Aumentar el número de ejemplos suele ser la forma mejor y más fiable de mejorar el performance.
+
+Los clasificadores son los modelos más fáciles para comenzar. Para los problemas de clasificación, se deberia usar ada, que generalmente tiende a funcionar solo un poco peor que los modelos más capaces una vez ajustados, mientras que es significativamente más rápido y más barato.
+
+Si está ajustando un conjunto de datos preexistente en lugar de escribir indicaciones desde cero, asegúrense de revisar manualmente sus datos para datos inexactos.
+
+Dado que en el problema pasado he decidido hacer un problema de `clasificación` vamos a buscar en la documentación cuál es el método
+para crear un fine tuning model, con los datos que ya he creado, vemos que la instrucción genérica es:
+
+Antes, asegurate de setear tu API KEY como variable de entorno:
+
+```commandline
+export OPENAI_API_KEY="sk-mi_api_key"
+```
+
+```commandline
+# For multiclass classification
+openai api fine_tunes.create \
+  -t <TRAIN_FILE_ID_OR_PATH> \
+  -v <VALIDATION_FILE_OR_PATH> \
+  -m <MODEL> \
+  --compute_classification_metrics \
+  --suffix <YOUR_CUSTOM_MODELNAME> \
+  --classification_n_classes <N_CLASSES>
+```
+
+De vez en cuando pueden ocurrir problemas de conectividad y bastará con utilizar el comando:
+
+```commandline
+openai api fine_tunes.follow -i <ft-numero_que_te_genero_openai>
+```
+De esta forma todo continuará en su lugar
+
+Una vez terminado, como una de nuestras opciones fue: `--compute_classification_metrics`:
+Podemos emplear el siguiente comando
+```commandline
+openai api fine_tunes.results -i <YOUR_FINE_TUNE_JOB_ID> > results.csv
+```
+
+Esto generará un informe con las métricas de clasificación de nuestro modelo.
+
 
 ## 2.7 ¿Cómo usar PlayGround de OpenAI para probar modelos?
 
+El Playground de OpenAI es una herramienta en línea que te permite interactuar los diferentes modelos, incluyendo modelos a los que hayas hecho fine-tuning, para explorar su capacidad para generar respuestas.
+
+### Acceder al Playground
+
+Para comenzar, accede al Playground de OpenAI en tu navegador web. Puedes encontrarlo en https://platform.openai.com/playground.
+
+![6.png](ims%2F2%2F6.png)
+
+### Elegir tipo de modelo y modelo a utilizar
+
+Una vez en el Playground, verás un área en la parte derecha donde puedes elegir **Mode** (modo o tipo de modelo) y **Model** (modelo).
+
+- En el **botón desplegable de Mode** encontrarás los tipos de modelos, ya sean chat, completion y edit.
+
+- En el **botón desplegable de Model** encontrarás los modelos disponibles dependiendo del modo seleccionado. En este desplegable también podrás encontrar los modelos con fine-tuning que hayas creado.
+
+![7.png](ims%2F2%2F7.png)
+
+### Interfaz de Chat
+
+En el modo chat podrás utilizar modelos tipo chat como GPT-4. Encontrarás las siguientes secciones para interactuar con el modelo:
+
+- **SYSTEM**: Se ingresa el mensaje que le indica al modelo cómo debería actuar durante la conversación.
+- **USER**: Se ingresan los mensajes de ejemplo que ingresaría el usuario o persona para interactuar con el chat desde una aplicación.
+- **ASSISTANT**: Se ingresan mensajes de ejemplo de cómo el modelo debe responder ante las peticiones del usuario.
+
+![8.png](ims%2F2%2F8.png)
+
+En la barra derecha, en su parte inferior, podrás modificar los hiper parámetros del modelo:
+
+![9.png](ims%2F2%2F9.png)
+
+### Interfaz de Completion
+
+En el **modo complete** podrás utilizar modelos de compleción de texto como Davinci. Encontrarás un cuadro de texto donde podrás hacer consultas al modelo.
+
+Escribe en el cuadro lo que quieras que el modelo complete y te entregue una respuesta.
+
+![10.png](ims%2F2%2F10.png)
+
+También en la sección inferior derecha podrás modificar los hiper parámetros del modelo:
+
+![9.png](ims%2F2%2F9.png)
+
+### Elegir modelos con fine-tuning
+
+Recuerda que en el desplegable de Model, en la parte debajo de los modelos base, podrás encontrar los modelos con fine-tuning que hayas creado:
+
+![11.png](ims%2F2%2F11.png)
+
+Es importante recordar de cuál modo o tipo es el modelo con fine-tuning a buscar, para que selecciones el **Mode** correcto del playground.
+
+### Copiar nombre de modelo fine-tuned
+
+Para poder utilizar un modelo con fine-tuned en el código de la aplicación que estés desarrollando lo puedes obtener desde el playground con estos pasos:
+
+- Elige el modo y modelo con fine-tuned desde el playground como se vio en la sección anterior.
+
+- Da clic en el botón **View Code**
+
+![12.png](ims%2F2%2F12.png)
+
+- Copia el nombre del modelo y pégalo en el código de tu proyecto.
+
+![13.png](ims%2F2%2F13.png)
+
+¡Excelente! Con esta herramienta podrás probar cualquier modelo base y los modelos con fine-tuning que estén dentro de tu organización de OpenAI.
+
+
+
 ## 2.8 Pruebas al modelo con fine-tuning
+
+En esta clase vamos a ver 4 técnicas que podemos utilizar para evaluar el rendimiento de nuestro modelo.
+
+- Métricas automáticas: se utilizarán métricas como BLEU y METEOR.
+- Diversidad y novedad: si tenemos diferentes preguntas y cuando estas respuestas tienen cierta similitud(lo que queremos evitar).
+- Evaluación de dominio específico: Si todas las respuestas pertenecen al mismo contexto con el dataset con el que se entrenó.
+- Evaluación humana: Pedimos a un grupo de personas que evalúen las respuestas generadas en la gramática y si acierta con el contexto.
+
+**BLEU** es una métrica ampliamente utilizada para evaluar la calidad de las traducciones automáticas o generaciones de lenguaje natural en general. Fue propuesta originalmente para evaluar sistemas de traducción automática, pero también ha sido adoptada para evaluar modelos generativos de lenguaje como ChatGPT. BLEU compara las respuestas generadas por el modelo con las respuestas de referencia proporcionadas en el conjunto de datos de prueba. Para calcular BLEU, se mide la coincidencia de palabras y frases entre las respuestas generadas y las respuestas de referencia. Cuanto mayor sea el puntaje de BLEU, mayor será la similitud entre las respuestas generadas y las respuestas de referencia.
+
+**METEOR** es otra métrica automática utilizada para evaluar la calidad de las traducciones o generaciones de lenguaje natural. Al igual que BLEU, METEOR compara las respuestas generadas con las respuestas de referencia, pero utiliza un enfoque diferente. METEOR no se basa únicamente en la coincidencia exacta de palabras, sino que también tiene en cuenta sinónimos y variaciones gramaticales.
 
 ## 2.9 Optimizar el modelo: ajuste de parámetros en Playground
 
