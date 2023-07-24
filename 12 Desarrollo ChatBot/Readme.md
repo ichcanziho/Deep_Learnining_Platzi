@@ -864,9 +864,112 @@ En esta clase vamos a ver 4 técnicas que podemos utilizar para evaluar el rendi
 
 ## 2.9 Optimizar el modelo: ajuste de parámetros en Playground
 
+En esta sección, lo que hemos hecho ha sido jugar con los siguientes hyperparámetros desde el PlayGround para ver como el modelo cambiaba
+las respuestas en función de los mismos.
+
+![9.png](ims%2F2%2F9.png)
+
+Es importante destacar que el curso desarrollo un ChatBot, por lo cual su dataset es diferente y se enfrentaron a otros problemas.
+
+Notas interesantes:
+
+- Cómo el modelo fue entrenado con fine-tunining, los prompts deben terminar en "->" este delimitador fue propuesto cuando sé el dataset se transformó a JSONL.
+Esto es realmente indispensable, pues le indica al modelo que es un prompt para fine tuning.
+- Del mismo modo, hay que indicar si los prompt de respuesta tienen un TOKEN de finalizado, en la clase de platzi, cada respuesta al terminar
+de contestar una pregunta terminaba con la secuencia END indicando que ahí se debe terminar la generación de respuesta.
+- Entre mayor el Maximum length más libertad tiene el modelo de escribir, pero será más costoso su consumo en Tokens.
+- Si la temperatura es muy alta el modelo tendrá tanta libertad que podrá escribir cosas sin sentido, esto podría solucionarse añadiendo más información
+al dataset de entrenamiento. Pero en general es más sencillo disminuir el número.
+- Este método de ajuste es iterativo, y se necesitan hacer varias pruebas manuales para identificar el conjunto de hiperparámetros que más nos funcionen. 
+
+
 ## 2.10 Validación de modelos fine-tuned de OpenAI
 
+Cuando realizamos el fine-tuning de modelos en OpenAI, es crucial analizar y validar el desempeño de nuestro modelo entrenado. OpenAI proporciona herramientas a través de su CLI para analizar y obtener métricas de validación. A continuación, se detallan los comandos de CLI que pueden ser utilizados para este propósito.
+
+### Análisis de resultados de modelo fine-tuned
+
+Ve a tu terminal, activa el entorno de Anaconda creado para el curso, e ingresa el siguiente comando para cargar una lista con todos los modelos con fine-tuning que tengas en tu organización de OpenAI.
+
+```commandline
+openai api fine_tunes.list > openai_models.json
+```
+
+Con este comando podemos obtener nuestro:
+
+```commandline
+"id": "ft-your_model_id",
+"fine_tuned_model": "ada:ft-your_fine_tuned_model",
+```
+
+El fragmento `> openai_models.json` es para guardar el resultado en un json para visualizar mejor el resultado.
+Abre el archivo openai_models.json y busca el fine-tuned model que deseas utilizar. Lo encuentras nombrado como fine_tuned_model.
+
+![14.png](ims%2F2%2F14.png)
+
+Copia el ID del fine-tuned model elegido. Lo encuentras debajo como id.
+
+![15.png](ims%2F2%2F15.png)
+
+### Descargar los resultados del fine-tuning en CSV.
+
+Una vez que el trabajo de fine-tuning ha sido completado, se genera un archivo de resultados asociado a dicho trabajo. Para descargar el archivo de resultados, utiliza el siguiente comando en la CLI:
+
+```commandline
+openai api fine_tunes.results -i <YOUR_FINE_TUNE_JOB_ID> > results.csv
+```
+- Reemplaza <YOUR_FINE_TUNE_JOB_ID> por el id de tu modelo copiado en el paso anterior.
+Esto descargará el archivo results.csv que contiene una fila para cada paso de entrenamiento, con información adicional que nos indica cómo fue el entrenamiento del modelo:
+
+- elapsed_tokens: el número de tokens que el modelo ha visto hasta ahora (incluyendo repeticiones).
+
+- elapsed_examples: el número de ejemplos que el modelo ha visto hasta ahora (incluyendo repeticiones), donde un ejemplo es un elemento en tu lote de datos. Por ejemplo, si el tamaño del lote (batch_size) es 4, cada paso aumentará elapsed_examples en 4.
+
+- training_loss: pérdida en el lote de entrenamiento.
+
+- training_sequence_accuracy: el porcentaje de completados en el lote de entrenamiento para los cuales los tokens predichos por el modelo coincidieron exactamente con los tokens de completado reales. Por ejemplo, con un tamaño de lote (batch_size) de 3, si tus datos contienen los completados [[1, 2], [0, 5], [4, 2]] y el modelo predijo [[1, 1], [0, 5], [4, 2]], esta precisión será de 2/3 = 0.67.
+
+- training_token_accuracy: el porcentaje de tokens en el lote de entrenamiento que fueron predichos correctamente por el modelo. Por ejemplo, con un tamaño de lote (batch_size) de 3, si tus datos contienen los completados [[1, 2], [0, 5], [4, 2]] y el modelo predijo [[1, 1], [0, 5], [4, 2]], esta precisión será de 5/6 = 0.83.
+
+### Validación de modelo con validation dataset
+
+Cuando aplicas fine-tuning a un modelo, puedes reservar un porcentaje de tu dataset para ser usado para la validación del modelo. Dependiendo del tamaño original de tu dataset, este deberá ser de un 20-30% de ese dataset. Entre más pequeño sea tu modelo (cercano a los 1000 registros en el caso de modelos de OpenAI), se recomienda un porcentaje mayor para la validación.
+
+Para el caso de uso del proyecto de PlatziBot, donde tenemos un dataset de entrenamiento de alrededor de 1800 registros, tenemos reservado un dataset que puedes utilizar para validar el modelo, de alrededor de 500 registros. Descárgalo desde este enlace del repositorio de GitHub del proyecto: https://github.com/platzi/curso-openai-api/blob/main/Clase 16 Validación de fine tuned model/validation_dataset.csv 📥
+
+Puedes utilizar este tipo de archivo de validación durante el fine-tuning de cualquier modelo. Para ello deberás crear un nuevo entrenamiento de fine-tuning usando el dataset de entrenamiento y dataset de validación, como se muestra en el siguiente comando en la CLI:
+
+```commandline
+openai api fine_tunes.create -t <TRAIN_FILE_ID_OR_PATH> \
+      -v <VALIDATION_FILE_ID_OR_PATH> \
+      -m <MODEL>
+```
+
+- Recuerda reemplazar los valores entre corchetes < > con tus propios valores de archivos, ruta y modelos.
+
+- 🏅RETO: aplica fine-tuning a un nuevo modelo con el mismo dataset de entrenamiento, pero usando el dataset de validación. Recuerda que debes convertir el dataset de validación al formato que requiere OpenAI de JSONL antes de ejecutar el nuevo proceso de entrenamiento. ⚠️ Toma en cuenta que esto genera un nuevo costo por fine-tuning a un nuevo modelo.
+
+Como resultado tendrás un cálculo de métricas en lotes de datos de validación durante el entrenamiento. Esto proporcionará información adicional en el archivo results.csv que descargaste en la sección Análisis de resultados de modelo fine-tuned:
+
+- validation_loss: pérdida en el lote de validación.
+
+- validation_sequence_accuracy: el porcentaje de completados en el lote de validación para los cuales los tokens predichos por el modelo coincidieron exactamente con los tokens de completado reales. Por ejemplo, con un tamaño de lote (batch_size) de 3, si tus datos contienen el completado [[1, 2], [0, 5], [4, 2]] y el modelo predijo [[1, 1], [0, 5], [4, 2]], esta precisión será de 2/3 = 0.67.
+
+- validation_token_accuracy: el porcentaje de tokens en el lote de validación que fueron predichos correctamente por el modelo. Por ejemplo, con un tamaño de lote (batch_size) de 3, si tus datos contienen el completado [[1, 2], [0, 5], [4, 2]] y el modelo predijo [[1, 1], [0, 5], [4, 2]], esta precisión será de 5/6 = 0.83.
+
+Sigue nuevamente los pasos de la sección Análisis de resultados de modelo fine-tuned para descargar un nuevo archivo results.csv con esta información adicional.
+
 ## Quiz de fine-tuning de modelos de OpenAI
+
+![16.png](ims%2F2%2F16.png)
+
+![17.png](ims%2F2%2F17.png)
+
+![18.png](ims%2F2%2F18.png)
+
+![19.png](ims%2F2%2F19.png)
+
+![20.png](ims%2F2%2F20.png)
 
 # 3 Integración de modelo a aplicación de chat
 
