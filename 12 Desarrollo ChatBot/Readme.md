@@ -975,9 +975,134 @@ Sigue nuevamente los pasos de la sección Análisis de resultados de modelo fine
 
 ## 3.1 ¿Cómo crear un chatbot con Telegram?
 
+Telegram ofrece una plataforma versátil para desarrolladores que deseen crear sus propios chatbots. Para iniciar este proceso, utilizaremos BotFather, una herramienta proporcionada por Telegram que permite la creación y configuración de bots personalizados en unos pocos pasos. ¡Comencemos!
+
+![1.png](ims%2F3%20%2F1.png)
+
+### Paso 1: Acceso a BotFather
+
+Abre la aplicación de Telegram en tu dispositivo o accede a la versión web de Telegram. En la barra de búsqueda, escribe “BotFather” o ve directamente a @BotFather en Telegram. Inicia una conversación con BotFather para comenzar a crear tu bot.
+
+![2.png](ims%2F3%20%2F2.png)
+
+### Paso 2: Creación del Bot
+
+Envía el comando “/newbot” a BotFather para iniciar el proceso de creación de un nuevo bot. Sigue las instrucciones proporcionadas por BotFather para asignar un nombre y un nombre de usuario a tu bot. Recuerda que el nombre de usuario debe terminar con “bot” (por ejemplo, @MiBotTelegram_bot).
+
+![3.png](ims%2F3%20%2F3.png)
+
+### Paso 3: Obtención del token de Acceso
+
+Una vez creado tu bot, BotFather generará un token de acceso único para tu bot. Guarda este token, ya que será necesario para comunicarte con la API de Telegram y controlar tu bot.
+
+Mantén este token en un lugar seguro, ya que brinda acceso y control completo sobre tu bot. Para ello impórtalo como variable de entorno de tu sistema operativo como “TELEGRAM_TOKEN”.
+
+![4.png](ims%2F3%20%2F4.png)
+
+### Paso 4: Personalización de tu Bot
+
+Ahora que tu bot está creado, puedes personalizarlo utilizando los comandos y opciones que ofrece BotFather. Puedes establecer una descripción, una foto de perfil, comandos personalizados y más. Aquí es donde podrías considerar insertar una imagen en la descripción de tu bot.
+
+![5.png](ims%2F3%20%2F5.png)
+
+Con estos pasos ya tienes todo para comenzar a desarrollar un chatbot desde Telegram. Lo siguiente que haremos en clases posteriores será:
+
+- Desarrollar la lógica del bot.
+- Implementar funcionalidades y el modelo con fine-tuning.
+
+¡Avanza a la siguiente clase! ➡️
+
 ## 3.2 Procesando la entrada del usuario para el chatbot
 
+En esta clase veremos el código básico para poder acceder al API de telegram desde python utilizando la librería `requests`
+
+> ## Nota:
+> El código de esta clase lo puedes encontrar en: [5_get_updates.py](scripts%2F5_get_updates.py)
+
+El código es muy simple de entender, se trata de hacer pooling cada 1 segundo y consultar el API de telegram y preguntar si 
+han llegado nuevos mensajes a nuestro bot. En este ejercicio he creado un bot siguiendo las instrucciones de la clase pasada
+llamado: `Gabich_test_bot`.
+
+Empezamos importando bibliotecas básicas:
+```python
+import requests
+import time
+```
+Definimos nuestra función que se va a conectar a Telegram para extraer los datos necesarios:
+
+```python
+def get_updates(token, offset=None):
+    # definimos url
+    url = f"https://api.telegram.org/bot{token}/getUpdates"
+    # asignamos params desde offset
+    params = {"offset": offset} if offset else {}
+    # obtenemos la respuesta http GET
+    response = requests.get(url, params=params)
+    # devolvemos en un JSON
+    return response.json()
+```
+Ahora creamos nuestra función principal que cada 1 segundo va a preguntar a Telegram si ha llegado algún mensaje o mensajes:
+
+```python
+def print_new_messages(token):
+    print("Iniciando Gabich_test_bot")
+    # el siguiente por default no existe
+    offset = None
+    # Para que haga peticiones siempre
+    while True:
+        # obtenemos respuestas
+        updates = get_updates(token, offset)
+        # validamos que haya resultados desde http GET
+        if "result" in updates:
+            # imprimimos todas las respuestas
+            for update in updates["result"]:
+                message = update["message"]
+                u_id = message["from"]["id"]
+                username = message['from']["first_name"]
+                text = message.get("text")
+                print(f"Usuario: {username}({u_id})")
+                print(f"Mensaje: {text}")
+                print("-" * 20)
+                # Pasar al siguiente
+                offset = update["update_id"] + 1
+        time.sleep(1)
+```
+En la siguiente clase vamos a ver nuestra primera conexión con nuestro BOT desde la app de Telegram.
+
 ## 3.3 Prueba de envío de mensajes del chatbot
+
+> ## Nota:
+> El código de esta clase lo puedes encontrar en: [5_get_updates.py](scripts%2F5_get_updates.py)
+
+Vamos a terminar este pequeño código añadiendo lo necesario para acceder a nuestra `API_KEY` de Telegram de forma segura, 
+y vamos a establecer nuestro punto de entrada y ejecutar la función principal:
+Bibliotecas necesarias para leer nuestra API_KEY:
+```python
+import os
+from dotenv import load_dotenv
+```
+Estableciendo token y corriendo código principal
+```python
+if __name__ == '__main__':
+    load_dotenv("../envs/ap.env")
+    token_ = os.getenv("TELEGRAM_API_KEY")
+    print_new_messages(token_)
+```
+Telegram desde la app de celular:
+![6.png](ims%2F3%20%2F6.png)
+
+Resultados desde terminal en python:
+
+```commandline
+Iniciando Gabich_test_bot
+Usuario: Gabriel(59XXXXXXXX)
+Mensaje: Hola Gabich Bot
+--------------------
+Usuario: Gabriel(59XXXXXXXX)
+Mensaje: cómo estás? 😄
+--------------------
+```
+Excelente, ambos corresponden de forma exitosa.
 
 ## 3.4 Función main() del chatbot
 
