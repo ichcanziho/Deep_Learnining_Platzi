@@ -1106,12 +1106,257 @@ Excelente, ambos corresponden de forma exitosa.
 
 ## 3.4 Función main() del chatbot
 
+En este pequeño código veremos cuál es la estructura lógica de la función main() del chatbot. Por libertad creativa la he
+bautizado como `run`. El método `run` será proveniente de una clase `class ChatBotMaker` que explicaré detalladamente en la siguiente clase.
+
+> ## Nota:
+> El código lo puedes encontrar en: [bot.py](scripts%2Ffinal_project%2Fcore%2Fbot.py)
+
+Pero, en este momento, lo más importante es identificar la estructura del código, y encontrar nuestras tres funciones principales:
+
+```python
+    def run(self):
+        """
+        Lógica para mantener corriendo el servicio de escucha de peticiones y generación de respuestas del ChatBot
+        :return:
+        """
+        print("Starting bot...")
+        offset = 0
+        while True:
+            # Escucha los nuevos mensajes
+            updates = self.get_updates(offset)
+            if updates:
+                for update in updates:
+                    offset = update["update_id"] + 1
+                    chat_id = update["message"]["chat"]['id']
+                    user_message = update["message"]["text"]
+                    print(f"Received message: {user_message}")
+                    # Genera una respuesta con ChatGPT
+                    GPT = self.get_openai_response(user_message)
+                    print(f"Answer generated: {GPT}")
+                    # Regresa la respuesta al usuario de Telegram
+                    self.send_messages(chat_id, GPT)
+            else:
+                time.sleep(1)
+```
+
+**1. self.get_updates():** Esta función se encarga de recolectar los datos de Telegram
+**2. self.get_openai_response()** Dado los mensajes de telegram los envía al modelo fine-tuning de ChatGPT para producir una respuesta
+**3. self.send_messages():** Con la respuesta creada, la devuelve al usuario de Telegra,
+
+Vemos como el método `run` es bastante simple de entender, en la siguiente clase, veremos la construcción de la clase y de los métodos restantes.
+
 ## 3.5 Integración del modelo de OpenAI a Telegram
+
+En esta clase veremos la construcción de nuestra clase `ChatBotMaker` y terminaremos de explicar los métodos restantes:
+
+> ## Nota:
+> El código lo puedes encontrar en: [bot.py](scripts%2Ffinal_project%2Fcore%2Fbot.py)
+
+Primero, importamos las bibliotecas necesarias:
+
+```python
+from dotenv import load_dotenv
+import requests
+import openai
+import time
+import os
+```
+
+Creamos la clase `ChatBotMaker` y en su constructor leemos las variables de entorno que hemos almacenado previamente en `keys.env`
+
+El la carpeta raiz de estre proyecto puedes ver un ejemplo de `keys.env`:
+
+```commandline
+OPENAI_API_KEY=tu_api_key_de_openai
+TELEGRAM_API_KEY=tu_api_key_de_telegram
+MODEL_ENGINE=el_nombre_de_tu_modelo_fine_tuned
+```
+
+Ahora asignemos cada una de las api keys correspondientes al código de python:
+```python
+class ChatBotMaker:
+    def __init__(self, env_file):
+        load_dotenv(env_file)
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        self.token = os.getenv("TELEGRAM_API_KEY")
+        self.model_engine = os.getenv("MODEL_ENGINE")
+```
+
+Ahora podemos construir el resto de métodos que teníamos pendientes, y los haremos en el mismo orden de aparición:
+Vemos como `get_updates` ya lo habíamos utilizado antes, y vemos como en realidad su única función es obtener los mensajes de
+telegram asignados a nuestro token.
+```python
+    def get_updates(self, offset: int):
+        """
+        Función para obtener los mensajes más recientes del Bot de telegram
+        :param offset: se utiliza para indicar el identificador del último mensaje recibido por el bot. Este parámetro
+        se usa junto con el método "getUpdates" para obtener solo los mensajes nuevos que han llegado desde el último
+        mensaje procesado por el bot.
+        :return:
+        """
+        url = f"https://api.telegram.org/bot{self.token}/getUpdates"
+        params = {"timeout": 100, "offset": offset}
+        response = requests.get(url, params=params)
+        return response.json()["result"]
+```
+Ahora vamos a construir la función que se conecta a nuestro `model_engine` fine tuned de OpenAI:
+```python
+    def get_openai_response(self, prompt: str):
+        """
+        Genera una respuesta a un prompt de entrada utilizando el modelo de ChatGPT fine-tuned
+        :param prompt: Mensaje de texto
+        :return:
+        """
+        
+        response = openai.Completion.create(
+            engine=self.model_engine,
+            prompt=prompt,
+            max_tokens=200,
+            n=1,
+            temperature=0.5
+        )
+        return response.choices[0].text.strip()
+```
+En la siguiente clase y última, veremos como lidiar con algunos de los errores más comunes que puede presentar esta API.
+
+Finalmente, vamos a terminar creando el último método necesario `send_messages`:
+
+```python
+    def send_messages(self, chat_id, text: str):
+        """
+        Envía un mensaje del BOT al Usuario de Telegram
+        :param chat_id: Id del chat al cual será enviado el mensaje
+        :param text: texto a enviar
+        :return:
+        """
+        url = f"https://api.telegram.org/bot{self.token}/sendMessage"
+        params = {"chat_id": chat_id, "text": text}
+        response = requests.post(url, params=params)
+        return response
+```
+Con esto ya hemos definido toda la estructura del proyecto. En la siguiente clase veremos como hacer manejo de errores
+utilizando `try` and `except` y veremos la estructura final del código.
 
 ## 3.6 Manejo de errores y excepciones de la API de OpenAI
 
+> ## Nota:
+> El código lo puedes encontrar en: [bot.py](scripts%2Ffinal_project%2Fcore%2Fbot.py)
+
+Dado que estamos utilizando un API de OpenAI es normal que se puedan presentar ciertos errores, algunos conocidos y otros no, 
+pero debemos identificar los más comunes y hacer un manejo de los mismos, en esta caso solo imprimiremos un mensaje de alerta,
+pero cada uno de ellos puede tener una consecuencia diferente:
+
+```python
+    def get_openai_response(self, prompt: str):
+        """
+        Genera una respuesta a un prompt de entrada utilizando el modelo de ChatGPT fine-tuned
+        :param prompt: Mensaje de texto
+        :return:
+        """
+        try:
+            response = openai.Completion.create(
+                engine=self.model_engine,
+                prompt=prompt,
+                max_tokens=200,
+                n=1,
+                temperature=0.5
+            )
+            return response.choices[0].text.strip()
+        except openai.error.APIError as e:
+            # Manejar error de API aquí, p. reintentar o iniciar sesión
+            print(f"La API de OpenAI devolvió un error de API: {e}")
+            pass  # Aprobar
+        except openai.error.APIConnectionError as e:
+            # Manejar error de conexión aquí
+            print(f"Error al conectarse a la API de OpenAI: {e}")
+            pass
+        except openai.error.RateLimitError as e:
+            # Manejar error de límite de tasa (recomendamos usar retroceso exponencial)
+            print(f"La solicitud de API de OpenAI excedió el límite de frecuencia: {e}")
+            pass
+
+        return "Ocurrió un Error :("
+```
+
+De esta simple manera hemos lidiado con los errores más comunes que se pueden presntar en el API de OpenAI.
+
+Si quieres conocer más sobre los errores típicos que estan disponibles directamente en el API de python puedes visitar:
+
+https://platform.openai.com/docs/guides/error-codes/api-errors
+
+Ahora vamos a la carpeta raiz de nuestro proyecto final: [final_project](scripts%2Ffinal_project)
+
+Y veremos la siguiente estructura de carpetas:
+
+```commandline
+/core/
+/----/bot.py
+/----/__init__.py
+keys.example.env
+main.py
+```
+La estructura es sumamente simple, creamos una carpeta `core` para almacenar nuestra clase `ChatBotMaker` y toda su lógica.
+Y en la carpeta raíz, vamos a poner nuestro punto de entrada `main.py` adicionalmente he dado un ejemplo `keys.example.env`
+el archivo real NO será compartido en este proyecto, pero se llama `keys.env` y luce exactamente igual al de ejemplo.
+
+Finalmente, en nuestro archivo `main.py`:
+
+```python
+from core.bot import ChatBotMaker
+
+
+if __name__ == '__main__':
+    my_bot = ChatBotMaker("keys.env")
+    my_bot.run()
+```
+
+Excelente, ya hemos terminado nuestro proyecto básico. Resultados finales:
+
+![11.png](ims%2F3%20%2F11.png)
+
 ## Quiz de integración de LLM a chat
+
+![7.png](ims%2F3%20%2F7.png)
+
+![8.png](ims%2F3%20%2F8.png)
+
+![9.png](ims%2F3%20%2F9.png)
 
 # 4 Conclusión
 
 ## 4.1 Recomendaciones finales y proyectos alternativos con el API de OpenAI
+
+A lo largo del curso vimos las diferentes formas de utilizar ChatGPT desde PlayGround y desde código. Vimos como utilizar
+diferentes modelos y conocimos sus parámetros, pero una de las ventajas más grandes es que aprendimos como hacer fine-tuning
+para lidiar con problemas específicos usando ChatGPT.
+
+Dentro de los beneficios más tangibles que fueron mencionados en el curso tenemos:
+
+- Resultados de mayor calidad que el diseño de prompts
+- Capacidad para entrenar en más ejemplos que los que caben en un prompt
+- Ahorro de tokens debido a prompts más cortos
+
+Sin embargo, me gustaría dejar una última comparación entre Fine tuning y Prompt Engineering para que uno pueda decidir que 
+herramienta utilizar bajo diferentes contextos.
+
+### Fine-tuning (Ajuste fino):
+
+Fine-tuning es una técnica que implica tomar un modelo de lenguaje preentrenado, como GPT-3, y luego ajustarlo a una tarea o dominio específico con datos adicionales. Por ejemplo, si deseas crear un modelo de chatbot especializado en el servicio al cliente de una empresa, podrías tomar un modelo de lenguaje general como GPT-3 y ajustarlo con datos de conversaciones de servicio al cliente.
+
+**Ventajas del Fine-tuning:**
+ 
+- a. Eficiencia de datos: El ajuste fino puede requerir menos datos de entrenamiento en comparación con entrenar un modelo de lenguaje desde cero, lo que es especialmente beneficioso en tareas específicas con conjuntos de datos limitados.
+- b. Rapidez de desarrollo: Al partir de un modelo preentrenado, se puede acelerar el tiempo de desarrollo y evitar la necesidad de entrenar un modelo completo desde cero.
+- c. Rendimiento mejorado: Fine-tuning permite adaptar el modelo a una tarea específica, lo que puede conducir a un rendimiento mejorado y resultados más precisos.
+
+### Prompt engineering (Ingeniería de indicaciones):
+El prompt engineering es una técnica que implica diseñar cuidadosamente las indicaciones o preguntas específicas que se le presentan al modelo para obtener la respuesta deseada. Es más comúnmente utilizado en modelos como ChatGPT para guiar la generación de texto hacia respuestas más coherentes y apropiadas.
+
+**Ventajas del Prompt engineering:**
+
+- a. Control del modelo: Permite tener un mayor control sobre las respuestas del modelo al proporcionar indicaciones específicas. Esto ayuda a evitar respuestas irrelevantes o indeseables.
+- b. Afinidad del dominio: Al utilizar indicaciones diseñadas para un dominio específico, se puede obtener un modelo de chatbot que se comporte de manera más coherente y útil en ese dominio.
+- c. Facilidad de uso: Es una técnica relativamente fácil de implementar en comparación con el ajuste fino, ya que no requiere una fase adicional de entrenamiento.
+
+> En resumen, el ajuste fino y el prompt engineering son dos técnicas útiles para mejorar los modelos de ChatGPT. El ajuste fino es más efectivo cuando se dispone de datos específicos y se busca un rendimiento mejorado en una tarea particular, mientras que el prompt engineering es útil para controlar las respuestas y adaptar el modelo a un dominio específico sin necesidad de entrenamiento adicional.
