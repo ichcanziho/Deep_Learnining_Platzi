@@ -444,9 +444,337 @@ En resumen, MobileSAM es más pequeño, más rápido y tiene un rendimiento mejo
 
 ## 1.2 Estructura y módulos de LangChain
 
+En esta clase vamos a abordar el tema de **¿Cómo está estructurado LangChain?**
+
+Podemos explicar su funcionamiento a partir de 3 claves principales:
+
+1: Conexión con modelos
+2: Conexión con datos
+3: Encadenamiento de procesos
+
+![5.png](ims%2F1%2F5.png)
+
+El flujo es bastante auto-explicativo. El mismo empieza con la recepción y transformación de datos a formato vectorial (embedding)
+estos a su vez son guardados en una base de datos. Una vez con esta información, podemos crear prompts con el cuál vamos a empezar
+a hacer preguntas. Las preguntas son recibidas por un LLM que genera una respuesta con base en la información almacenada en nuestra
+base de datos vectorial.
+ 
+Sin embargo, entre la recepción de datos y la transformación vectorial de los datos puede o no haber otro flujo de información parecido al siguiente:
+
+![6.png](ims%2F1%2F6.png)
+
+ Este flujo intermedio se parece al flujo que seguimos en nuestro ejemplo de programación. Dado que los modelos NO pueden 
+ vectorizar grandes conjuntos de texto, fue neceseario, primero, framgentar el texto en `chuncks` más pequeños para despues
+vectorizarlos.
+ 
+![7.png](ims%2F1%2F7.png)
+
+Estos flujos adicionales de información también pueden estar presentes en la llamada a los LLMs y en otras secciones de nuestro flujo principal.
+
+Una pregunta simple de hacerse sería: ¿Y dónde puedo encontrar información sobre cómo puedo utilizar LangChain?
+
+![8.png](ims%2F1%2F8.png)
+
+Debido a la naturaleza del proyecto que es tan reciente y que se actualiza rápidamente, lo más práctico es estar al pendiente
+de su repositorio en github: https://github.com/langchain-ai/langchain
+
+Esto nos permite tener información de funciones que quizá ni siquiera estén documentadas todavía. Sin embargo, eso no quita
+que éxista una documentación oficial que nos permite conocer los conceptos básicos de LangChain y ejemplos de implementación 
+en python: https://docs.langchain.com/docs/
+
+![9.png](ims%2F1%2F9.png)
+
+Algo sumamente interesante, es que cuenta con un buscador inteligente, que responde preguntas con lenguaje natural y ejemplos
+basados en la documentación:
+
+![10.png](ims%2F1%2F10.png)
+
+Algo sumamente interesante es conocer las `integraciones` que tiene `LangChain`. Las mismas se dividen en:
+
+- Document Loaders
+- Vector Stores
+- Embedding Models
+- Chat Models
+- LLMs
+- Callbacks
+- Tools
+- Toolkits
+- Message Histories
+
+https://integrations.langchain.com/
+
+![11.png](ims%2F1%2F11.png)
+
+De esta forma podemos acceder información de como entrar un LLM en concreto como lo sería ChatGPT de OpenAI y nos brindará
+información de cómo usarlo y ejemplos en código.
+
+
 ## 1.3 Uso de modelos Open Source de Hugging Face
 
+> ## Nota: 
+> En esta clase voy a compartir y explicar código, pero, la ejecución será dada por un NoteBook de Google Colab
+> el código de ejemplo completo esta en: [2_falcon_example.py](scripts%2F2_falcon_example.py)
+> 
+
+### 1. Integración de LLMs en LangChain
+
+En esta sección conocerás sobre los diferentes tipos de modelos que proporciona LangChain, sus ventajas y cómo utilizarlos para crear aplicaciones de IA potentes usando LLM.
+
+**¿Qué es un modelo?**
+
+Un modelo en LangChain es un modelo de aprendizaje automático pre-entrenado que se puede utilizar para realizar una tarea específica como generar texto, traducir idiomas o responder preguntas. Con LangChain puedes usar una variedad de modelos y utilizarlos para crear aplicaciones de IA sin tener que entrenar tus propios modelos desde cero.
+
+**Ventajas de usar modelos de LangChain**
+
+Hay varias ventajas de usar modelos de LangChain:
+
+* **Consistencia:** Los modelos de LangChain proporcionan una interfaz consistente, independientemente de si está utilizando OpenAI o Hugging Face. Esto hace que sea más fácil aprender y usar los modelos de LangChain, y cambiar entre diferentes modelos si es necesario.
+* **Eficiencia:** Los modelos de LangChain están pre-entrenados y alojados en la nube, lo que los hace mucho más rápidos de usar que entrenar sus propios modelos.
+* **Flexibilidad:** Los modelos de LangChain se pueden utilizar para una variedad de tareas, como la comprensión del lenguaje natural, la traducción automática y el análisis de sentimientos.
+
+**Ejemplos prácticos de uso de modelos de LangChain**
+
+* **Generación de texto:** Utiliza un LLM para generar texto, como poemas, código, guiones, piezas musicales, correo electrónico, cartas, etc.
+* **Traducción de idiomas:** Trauce un texto de un idioma a otro con modelos de lenguaje.
+* **Escritura de diferentes tipos de contenido creativo:** Usa un modelo de lenguaje para escribir diferentes tipos de contenido creativo, como poemas, código, guiones, piezas musicales, correo electrónico, cartas, etc.
+* **Respuesta a sus preguntas de forma informativa:** Utiliza un modelo de preguntas y respuestas para responder con información del modelo o que pueda consultar en otras fuentes, incluso si son abiertas, desafiantes o extrañas.
+
+![12.png](ims%2F1%2F12.png)
+
+LangChain tiene integraciones con varios modelos o plataformas de modelos, como el Hugging Face Hub. Con el tiempo, habrá disponibles más integraciones y modelos.
+
+LangChain Models Docs: https://docs.langchain.com/docs/components/models/
+
+### 1.1 Uso de modelos Open Source de Hugging Face
+
+Vamos a empezar instalando un par de biblitecas necesarias:
+
+```commandline
+pip install langchain
+pip install transformers
+pip install einops 
+pip install accelerate
+```
+
+Los modelos de Hugging Face requieren instalación de `einops`. Para utilizar `low_cpu_mem_usage=True` o `device_map` es necesario contar con `Accelerate` instalado: `pip install accelerate`.
+
+Los modelos de Hugging Face requieren instalación de `einops`. Para utilizar `low_cpu_mem_usage=True` o `device_map` es necesario contar con `Accelerate` instalado: `pip install accelerate`.
+
+Vamos a empezar descargando nuestro primer LLM opensource `Falcon-7b`:
+
+```python
+from transformers import AutoTokenizer, pipeline
+import torch
+
+# model = "tiiuae/falcon-40b-instruct"
+# model = "stabilityai/stablelm-tuned-alpha-3b"
+model = "tiiuae/falcon-7b-instruct"
+
+tokenizer = AutoTokenizer.from_pretrained(model)
+
+pipeline = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    torch_dtype=torch.bfloat16,
+    trust_remote_code=True,
+    device_map="auto"
+)
+```
+Respuesta esperada:
+```commandline
+
+```
+Vemos que en total hemos descargado más de 14G de información, y no la vamos a utilizar todo el tiempo, entonces es buena idea
+correr todo este código en COLAB. 
+
+Podemos enviar preguntas directamente al pipeline de Hugging Face para generar texto con nuestro modelo. Sin embargo, LangChain nos facilita la vida.
+
+```python
+print(type(pipeline))
+```
+Respuesta esperada:
+```commandline
+transformers.pipelines.text_generation.TextGenerationPipeline
+```
+
+Como ya tenemos el modelo descargado, vamos a hacer un pipeline que permita utilizar al mismo:
+
+```python
+from langchain import HuggingFacePipeline
+
+llm_falcon = HuggingFacePipeline(
+    pipeline = pipeline,
+    model_kwargs = {
+        'temperature': 0,
+        'max_length': 200,
+        'do_sample': True,
+        'top_k': 10,
+        'num_return_sequences':1,
+        'eos_token_id': tokenizer.eos_token_id
+    }
+)
+print(llm_falcon)
+```
+Respuesta esperada:
+```commandline
+HuggingFacePipeline(cache=None, verbose=False, callbacks=None, callback_manager=None, tags=None, metadata=None, 
+pipeline=<transformers.pipelines.text_generation.TextGenerationPipeline object at 0x7a7d4a5c0ca0>, model_id='gpt2', 
+model_kwargs={'temperature': 0, 'max_length': 200, 'do_sample': True, 'top_k': 10, 'num_return_sequences': 1, 'eos_token_id': 11}, 
+pipeline_kwargs=None)
+```
+Finalmente, podemos hacer uso del modelo que hemos instanciado:
+
+```python
+ans = llm_falcon("What is AI?")
+print(ans)
+```
+Respuesta esperada:
+```commandline
+/usr/local/lib/python3.10/dist-packages/transformers/generation/utils.py:1270: UserWarning: You have modified the pretrained model configuration to control generation. This is a deprecated strategy to control generation and will be removed soon, in a future version. Please use a generation configuration file (see https://huggingface.co/docs/transformers/main_classes/text_generation )
+  warnings.warn(
+Setting `pad_token_id` to `eos_token_id`:11 for open-end generation.
+/usr/local/lib/python3.10/dist-packages/transformers/generation/utils.py:1369: UserWarning: Using `max_length`'s default (20) to control the generation length. This behaviour is deprecated and will be removed from the config in v5 of Transformers -- we recommend using `max_new_tokens` to control the maximum length of the generation.
+  warnings.warn(
+\nAI stands for Artificial Intelligence. It is a branch of computer science that focuses
+```
+Podemos notar como específicamente `Falcon 7b` ha sido entrenado en el idioma inglés y utiliza como base un modelo `GPT2` entonces no podemos
+esperar que tenga resultados tan buenos como `ChatGPT 3.5 o 4 de OpenAI`.
+
+Los modelos de código abierto de Hugging Face son increíblemente poderosos. Sin embargo, al utilizarlos de esta manera, los descargamos y ejecutamos en nuestra propia máquina. Ahí es donde existen algunas complicaciones, ya que esto puede ser lento a menos que se cuente con el hardware adecuado.
+
+Ahora piensa en modelos que provienen de API y servicios de OpenAI, Cohere y otros proveedores de modelos remotos (que normalmente no son de código abierto). La magia de estos modelos es que funcionan en sus servidores, no en nuestra máquina.
+
+Es como si estuvieras invitado a una fiesta. Podrías hacer la fiesta en tu casa (como usar los modelos de Hugging Face en tu máquina), pero tendrías que hacer la limpieza antes y después, y preocuparte por la música, la comida, etc. En cambio, si la fiesta se celebra en un restaurante o salón dedicado a fiestas (como usar modelos de OpenAI o Cohere en sus servidores), solo tienes que llegar y disfrutar.
+
+Por esto, vamos a seguir utilizando los modelos de la [API de OpenAI](https://platzi.com/cursos/openai). Todo lo que vamos a hacer a partir de ahora también se puede aplicar a los modelos descargados de Hugging Face.
+
 ## 1.4 Uso de modelos de OpenAI API
+
+En este escenario vamos a ver un ejemplo de como utilizar los modelos de OpenAI a través de LangChain:
+
+> ## Nota:
+> El código de esta clase esta disponible en: [3_uso_modelos_openai.py](scripts%2F3_uso_modelos_openai.py)
+
+Es necesario configurar la API Key de tu cuenta de OpenAI.
+
+```python
+import os
+from dotenv import load_dotenv
+from pprint import pprint
+
+# leo el archivo keys.env y obtengo mi Api KEY de OpenAI
+load_dotenv("../secret/keys.env")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+```
+
+Para usar al máximo los LLM con LangChain, tenemos que ajustar unas cuantas configuraciones básicas:
+
+1. `model_name` - ¿Qué modelo vamos a usar?
+    Por ejemplo, "text-davinci-003" (que es el valor por defecto) o "text-ada-001". Estos nombres cambian según quién haya creado el modelo, así que necesitas revisar la documentación de la API del proveedor que estás utilizando para encontrar el nombre específico de tu modelo.
+
+2. `n` - La cantidad de respuestas distintas que vamos a generar para la pregunta dada (el número estándar es 1)
+
+3. `streaming` - ¿Queremos que los resultados se transmitan poco a poco? (por defecto es "Falso").
+    Esto es como decidir si preferimos escuchar una canción entera de una vez, o escucharla nota por nota. Esto es especialmente útil cuando estás armando una experiencia de chatbot y quieres que el texto aparezca línea por línea, en lugar de un solo bloque de respuesta.
+
+4. `temperature` - Aquí ajustamos la "temperatura de muestreo" en un rango de 0 a 1.
+    Imagina que la temperatura es como ajustar el nivel de improvisación de un solo de guitarra. Si la temperatura es 0, el LLM solo es "preciso" y siempre tocará las notas más probables. Siempre va a sonar igual para la misma canción. Pero si la temperatura es 1, el solo será "creativo" y va a tocar notas diferentes cada vez que lo escuches, a veces incluso notas que te sorprenden. El valor estándar es 0.7, lo que se considera lo suficientemente creativo pero no completamente aleatorio, como un solo de guitarra que sale un poco de los rieles, pero no tanto como para descarrilar la canción.
+
+```python
+from langchain.llms import OpenAI
+
+llm_gpt3_5 = OpenAI(
+    model_name="gpt-3.5-turbo",
+    n=1,
+    temperature=0.3
+)
+print(llm_gpt3_5)
+print("*"*64)
+```
+Respuesta esperada:
+```commandline
+Params: {'model_name': 'gpt-3.5-turbo', 'n': 1, 'temperature': 0.3}
+```
+
+Una vez que el modelo LLM está configurado, podemos interactuar con él de la misma manera que lo haríamos con ChatGPT.
+```python
+ans = llm_gpt3_5("Cómo puedo lograr una clase más interactiva para estudiantes virtuales?")
+print(ans)
+```
+Respuesta esperada:
+```commandline
+Aquí hay algunas sugerencias para lograr una clase más interactiva para estudiantes virtuales:
+
+1. Utiliza herramientas de videoconferencia interactivas: Utiliza plataformas de videoconferencia que permitan a los estudiantes participar activamente a través de funciones como chat, levantar la mano virtualmente, compartir pantalla, etc. Esto les dará la oportunidad de hacer preguntas, compartir ideas y participar en discusiones.
+
+2. Fomenta la participación activa: Anima a los estudiantes a participar activamente en la clase mediante preguntas, debates y actividades prácticas. Puedes asignar roles a los estudiantes, como líder de discusión o presentador, para que se sientan más involucrados en el proceso de aprendizaje.
+
+3. Utiliza herramientas de colaboración en línea: Utiliza herramientas de colaboración en línea, como Google Docs o Padlet, para que los estudiantes puedan trabajar juntos en proyectos, compartir ideas y colaborar en tiempo real.
+
+4. Incorpora actividades interactivas: Integra actividades interactivas en tu clase, como cuestionarios en línea, juegos educativos o simulaciones virtuales. Estas actividades ayudarán a mantener el interés de los estudiantes y les permitirán aplicar lo que están aprendiendo de manera práctica.
+
+5. Proporciona retroalimentación constante: Proporciona retroalimentación constante a los estudiantes para que se sientan involucrados y motivados. Puedes utilizar herramientas de retroalimentación en línea, como comentarios en documentos compartidos o evaluaciones en línea, para brindarles retroalimentación inmediata sobre su desempeño.
+
+6. Promueve la comunicación entre los estudiantes: Fomenta la comunicación entre los estudiantes mediante la creación de grupos de discusión en línea, foros de debate o chats grupales. Esto les permitirá interactuar entre ellos, compartir ideas y aprender de sus compañeros.
+
+7. Varía tus métodos de enseñanza: Utiliza una variedad de métodos de enseñanza, como videos, presentaciones interactivas, actividades prácticas y debates, para mantener el interés de los estudiantes y adaptarte a diferentes estilos de aprendizaje.
+
+Recuerda adaptar estas sugerencias a las necesidades y características específicas de tus estudiantes y materia de enseñanza.
+```
+
+Además, la función `generate` nos permite pasar una lista de entradas de prompts, lo cual produce una salida más detallada que incluye información como el uso de tokens. Esta información de uso de tokens puede ser útil para realizar un seguimiento de los tokens y estimar los costos.
+
+```python
+llm_davinci = OpenAI(
+    model_name="text-davinci-003",
+    n=2,
+    temperature=0.3
+    )
+
+generacion = llm_davinci.generate(
+    ["Dime un consejo de vida para alguien de 30 años", "Recomiendame libros similares a Hyperion Cantos"]
+    )
+
+pprint(generacion.generations)
+```
+Respuesta esperada:
+```python
+[[Generation(text='\n\nNo dejes que el pasado te detenga. Aprende de tus errores y sigue adelante. Vive el presente al máximo y construye tu futuro con esperanza y optimismo.', generation_info={'finish_reason': 'stop', 'logprobs': None}),
+  Generation(text='\n\nAprovecha al máximo tu tiempo y energía para hacer las cosas que te hacen feliz. No te preocupes por lo que otros piensan de ti, sigue tu propio camino y no te detengas por los obstáculos. Aprende a decir no a lo que no te hace feliz y sí a lo que te hace sentir realizado.', generation_info={'finish_reason': 'stop', 'logprobs': None})],
+ [Generation(text="\n\n1. The Fall of Hyperion de Dan Simmons\n2. Endymion de Dan Simmons\n3. Ilium de Dan Simmons\n4. Olympos de Dan Simmons\n5. Dune de Frank Herbert\n6. The Forever War de Joe Haldeman\n7. The Hitchhiker's Guide to the Galaxy de Douglas Adams\n8. The Foundation Trilogy de Isaac Asimov\n9. Snow Crash de Neal Stephenson\n10. The Culture Series de Iain M. Banks", generation_info={'finish_reason': 'stop', 'logprobs': None}),
+  Generation(text="\n\n1. The Fall of Hyperion de Dan Simmons\n2. Endymion de Dan Simmons\n3. Ilium de Dan Simmons\n4. Olympos de Dan Simmons\n5. Dune de Frank Herbert\n6. The Forever War de Joe Haldeman\n7. The Mote in God's Eye de Larry Niven y Jerry Pournelle\n8. The Hitchhiker's Guide to the Galaxy de Douglas Adams\n9. The Foundation Trilogy de Isaac Asimov\n10. The Culture Series de Iain M. Banks", generation_info={'finish_reason': 'stop', 'logprobs': None})]]
+```
+Ahora podemos acceder a la información de la cantidad de tokens utilizados en esta petición:
+```python
+pprint(generacion.llm_output)
+```
+Respuesta esperada
+```commandline
+{'model_name': 'text-davinci-003',
+ 'token_usage': {'completion_tokens': 374,
+                 'prompt_tokens': 32,
+                 'total_tokens': 406}}
+```
+
+Otra función útil proporcionada por la clase LLM es `get_num_tokens`, que estima el número de tokens y fragmentos de texto contenidos en una entrada. Esta información es valiosa cuando se necesita limitar el número total de tokens o cumplir con un presupuesto específico.
+
+```python
+n_tokens_preview = llm_gpt3_5.get_num_tokens("mis jefes se van a preocupar si gasto mucho en openai")
+print(n_tokens_preview)
+```
+Respuesta esperada:
+```commandline
+16
+```
+
+> ## Nota:
+> El uso de método get_num_tokens necesita una bibliteca adicional:
+>   > pip install tiktoken
+> Tiktoken es opensource y fue desarrollada directamente por OpenAI
+> 
+
 
 ## 1.5 Prompt templates de LangChain
 
