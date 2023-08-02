@@ -778,6 +778,96 @@ Respuesta esperada:
 
 ## 1.5 Prompt templates de LangChain
 
+Los prompt templates nos van a permitir ingresar la información que queremos que el modelo procese y luego nos dé un resultado.
+
+Un 'prompt' o 'indicación' es como una receta que le proporcionamos a nuestro modelo de inteligencia artificial (IA). Esta receta contiene los ingredientes y las instrucciones que la IA necesita para cocinar la respuesta que estamos buscando.
+
+1. **Instrucciones:** Esta es la parte donde le decimos a nuestro modelo de IA exactamente qué queremos que haga. Piensa en esto como cuando lees una receta de cocina. Por ejemplo, "corta las verduras", "sofríe los ingredientes", etc.
+
+2. **Información externa o contexto:** Este es el ingrediente que añadimos a nuestra receta. Podría ser información que obtenemos de una base de datos, un cálculo que hemos hecho, etc. Esto le da a nuestro modelo un poco de sabor adicional y contexto sobre lo que estamos buscando.
+
+3. **Entrada del usuario o consulta:** Este es el ingrediente principal de nuestra receta. Es el dato que el usuario introduce y en torno al cual queremos que nuestro modelo cocine la respuesta.
+
+4. **Indicador de salida:** Piensa en esto como el momento en el que sabes que tu receta está lista. Para un modelo que genera código Python, podría ser la palabra 'import', que suele ser el comienzo de muchos scripts de Python. Para un chatbot, podría ser la frase 'Chatbot:', indicando que es hora de que el chatbot hable.
+
+Por lo general, estos componentes se colocan en el orden en que los hemos descrito, igual que seguirías los pasos de una receta de cocina. Empezamos con las instrucciones, añadimos el contexto, luego la entrada del usuario, y finalmente, buscamos nuestro indicador de salida para saber que hemos terminado.
+
+Agregamos estas cuatro recetas en el siguiente prompt que habla con estilo argentino.
+
+```python
+prompt_argentino = """Respondé la pregunta basándote en el contexto de abajo. Si la
+pregunta no puede ser respondida usando la información proporcionada,
+respondé con "Ni idea, che".
+
+Contexto: Los Modelos de Lenguaje de Gran Escala (MLGEs) son lo último en modelos usados en el Procesamiento del Lenguaje Natural (NLP).
+Su desempeño superior a los modelos más chicos los hizo increíblemente
+útiles para los desarrolladores que arman aplicaciones con NLP. Estos modelos
+se pueden acceder vía la librería `transformers` de Hugging Face, vía OpenAI
+usando la librería `openai`, y vía Cohere usando la librería `cohere`.
+
+Pregunta: ¿Qué librerías están cerca de Buenos Aires?
+
+Respuesta (escribe como argentina informal): """
+
+print(llm_gpt3_5(prompt_argentino))
+```
+Respuesta esperada:
+```commandline
+Ni idea, che.
+```
+Normalmente, no tenemos ni idea de lo que los usuarios van a preguntar de antemano. Así que, en lugar de escribir la pregunta directamente en el código, creamos un `PromptTemplate` (una plantilla de indicación) que tiene una casilla reservada para la pregunta. Es como tener una receta de cocina, pero en lugar de especificar 'pollo', tenemos un espacio en blanco que dice 'ingrediente principal'. De esta manera, los usuarios pueden poner lo que quieran en ese espacio, y el sistema adaptará su respuesta de acuerdo con lo que ellos introduzcan.
+
+```python
+from langchain import PromptTemplate
+
+plantilla_colombiana = """Responde a la pregunta con base en el siguiente contexto, parce. Si la
+pregunta no puede ser respondida con la información proporcionada, responde
+con "No tengo ni idea, ome".
+
+Contexto: Los Modelos de Lenguaje Grandes (LLMs) son los últimos modelos utilizados en PNL.
+Su rendimiento superior sobre los modelos más pequeños los ha hecho increíblemente
+útiles para los desarrolladores que construyen aplicaciones habilitadas para PNL. Estos modelos
+pueden ser accedidos a través de la biblioteca `transformers` de Hugging Face, a través de OpenAI
+usando la biblioteca `openai`, y a través de Cohere usando la biblioteca `cohere`.
+
+Pregunta: {pregunta}
+
+Respuesta (escribe como colombiano informal): """
+
+prompt_plantilla_colombiana = PromptTemplate(
+    input_variables=["pregunta"],
+    template=plantilla_colombiana
+)
+```
+Crearemos una cadena, más adelante conocerás exactamente qué significa esto. Por ahora, lo relevante es que nos permite unir nuestro prompt con un modelo.
+```python
+from langchain import LLMChain
+
+llm_gpt3_5_chain = LLMChain(
+    prompt=prompt_plantilla_colombiana,
+    llm=llm_gpt3_5
+)
+
+pregunta = "Qué son los LLMs?"
+
+ans = llm_gpt3_5_chain.run(pregunta)
+print(ans)
+```
+Respuesta esperada:
+```commandline
+Los LLMs son los últimos modelos utilizados en PNL, parcero. Son más grandes y tienen un mejor rendimiento que los modelos más pequeños. Son muy útiles para los desarrolladores que construyen aplicaciones con PNL. Se pueden acceder a través de las bibliotecas `transformers` de Hugging Face, `openai` de OpenAI y `cohere` de Cohere.
+```
+```python
+pregunta = "Qué son las RAFGSERS?"
+
+ans = llm_gpt3_5_chain.run(pregunta)
+print(ans)
+```
+Respuesta esperada:
+```commandline
+No tengo ni idea, ome.
+```
+
 ## 1.6 Cadenas en LangChain
 
 ## 1.7 Utility Chains
