@@ -794,6 +794,9 @@ Por lo general, estos componentes se colocan en el orden en que los hemos descri
 
 Agregamos estas cuatro recetas en el siguiente prompt que habla con estilo argentino.
 
+> ## Nota:
+> El código lo puedes encontrar en: [4_prompt_templates.py](scripts%2F4_prompt_templates.py)
+
 ```python
 prompt_argentino = """Respondé la pregunta basándote en el contexto de abajo. Si la
 pregunta no puede ser respondida usando la información proporcionada,
@@ -870,11 +873,676 @@ No tengo ni idea, ome.
 
 ## 1.6 Cadenas en LangChain
 
+Una cadena conjunta información en un proceso, que es probable que culmine en un LLM respondiendo una pregunta. Por dar un ejemplo:
+Podemos tener al inicio de la cadena un proceso de limpieza de datos y en la segunda parte de la cadena se podría recibir un promt e información del usuario para responder una pregunta.
+
+Hay dos tipos de cadenas:
+
+- **Utility:** Son cadenas que ya tienen un propósito muy específico 
+  - Generar resúmenes a partir de texto
+  - responder preguntas
+  - Crear una conversación (con o sin) memoria
+
+> Nota: Las cadenas de `Utility` están creadas a partir de cadenas `Foundational`
+
+- **Foundational:** Estas están creadas a partir de cadenas fundacionales. 
+  - LLM: Podemos agregar un `prompt` + un `modelo de lenguaje`
+  - Transformation: Reciba un texto y lo limpie para insertarlo a otra cadena
+  - Sequential: Sirve para unir cadenas, es un envoltorio.
+
 ## 1.7 Utility Chains
+
+Las cadenas están en el corazon, y nombre de LangChain. Lo que hacemos es tener una secuencia de eslabones, en donde cada uno
+representa un proceso diferente. La entrada es un texto, pasa por una secuencia de funciones y a la salida puede generar otro texto
+que utilice un modelo de lenguaje. En este ejemplo vamos a enfocarnos en cadenas de `Utilidad` y `Funcional`.
+
+Una cadena está compuesta por diferentes elementos, denominados eslabones, que pueden ser primitivas o incluso otras cadenas. Las primitivas, a su vez, pueden ser prompts, LLMs, utilidades, u otras cadenas.
+
+Así que, en términos sencillos, una cadena no es más que una secuencia de operaciones que se llevan a cabo utilizando una mezcla específica de primitivas para procesar una entrada dada. Si lo visualizas de manera intuitiva, podrías pensar en una cadena como una especie de 'paso', que realiza un conjunto específico de operaciones en una entrada y produce un resultado. Estas operaciones pueden variar desde un prompt que pasa a través de un LLM, hasta la ejecución de una función de Python sobre un texto.
+
+Las cadenas se agrupan en tres categorías principales:
+- Cadenas de utilidad (Utility chain).
+- Cadenas fundacionales (Foundational chains).
+- Cadenas de combinación de documentos.
+
+En este segmento, nos concentraremos en las primeras dos categorías, ya que la tercera es muy específica.
+
+* Cadenas de utilidad (Utility chains): Este tipo de cadenas generalmente se emplean para extraer una respuesta específica de un LLM con un objetivo muy definido, y están listas para ser usadas sin modificaciones.
+
+* Cadenas fundacionales (Foundational chains): Estas cadenas se usan como base para construir otras cadenas, sin embargo, a diferencia de las Cadenas de utilidad, las Cadenas fundacionales no pueden ser usadas tal cual sin formar parte de una cadena más compleja.
+
+Importamos un texto para que trabajemos con él. En el módulo de índices aprenderemos más sobre lo que está ocurriendo.
+
+Empecemos instalando algunas dependencias:
+```bash
+pip install unstructured pypdf chromadb
+```
+
+> ## Nota:
+> El código completo esta en: [5_utility_chains.py](scripts%2F5_utility_chains.py)
+
+Antes de continuar vamos a marcar los `antecedentes` que son necesarios para explicar las cosas nuevas que vamos a ver en este
+código de ejemplo:
+En resumen, seteamos como variable de entorno el APIKEY de OpenAI y creamos dos LLMs un GPT3.5 y un DAVINCI.
+```python
+# Antecedentes 1: Cargar el API KEY de OpenAI como una variable de sistema.
+from dotenv import load_dotenv
+load_dotenv("../secret/keys.env")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+
+# Antecedentes 2: Instanciar dos LLMs de OpenAI un GPT3.5 y un Davinci
+from langchain.llms import OpenAI
+llm_gpt3_5 = OpenAI(
+    model_name="gpt-3.5-turbo",
+    n=1,
+    temperature=0.3
+)
+
+llm_davinci = OpenAI(
+    model_name="text-davinci-003",
+    n=2,
+    temperature=0.3
+    )
+```
+
+Ahora sí, vamos a empezar por descargar un documento PDF y empezar a cargarlo a través de `PyPDFLoader`:
+
+```python
+url = 'https://www.cs.virginia.edu/~evans/greatworks/diffie.pdf'
+filename = "public_key_cryptography.pdf"
+
+# Descargamos el archivo PDF del Url con un nombre `filename`
+if not os.path.exists(filename):
+    response = requests.get(url)
+    with open(filename, 'wb') as f:
+        f.write(response.content)
+    print(f'Descargado {filename}')
+else:
+    print(f'{filename} ya existe, cargando desde el disco.')
+
+# Convertimos el archivo PDF a un documento legible `Loader`
+loader = PyPDFLoader(filename)
+data = loader.load()
+
+# Creamos nuestro generador de `embeddings`(vectorizador de texto) utilizando OpenAi como modelo base.
+embeddings = OpenAIEmbeddings()
+# Chroma nos permitirá convertir los datos de texto que hay en `data` en una base de datos vectorial utilizando a
+# `embeddings" como método para conversión de texto a vector.
+vectorstore = Chroma.from_documents(data, embeddings)
+```
+Respuesta esperada:
+```commandline
+Descargado public_key_cryptography.pdf
+```
+Imagina que tienes un libro de 18 páginas delante de ti y alguien te pide un resumen. ¿Cómo lo haces? Seguramente no intentarías leer las 18 páginas de una sola vez y luego producir un resumen, ¿verdad? En su lugar, es probable que leyeras una página a la vez, escribieras un pequeño resumen, y luego lo harías para las siguientes páginas. Después de resumir todas las páginas de manera individual, podrías combinar esos resúmenes en uno más general.
+
+¡Exactamente eso es lo que hace **`load_summarize_chain`**!
+
+Esta cadena divide el texto en secciones más manejables (por ejemplo, por página) y luego llama al modelo de lenguaje para generar un resumen de cada sección. Una vez que todos los resúmenes individuales se han generado, los combina en un solo resumen. De esta manera, incluso un texto muy largo se puede resumir de manera efectiva.
+
+Por tanto, si estás trabajando con un documento de investigación de 18 páginas, puedes dividirlo en 18 documentos separados, uno por página, y luego usar **`load_summarize_chain`** para generar un resumen general. ¿No es fantástico?
+
+```python
+# Esto es la cantidad de paǵinas en el documento
+print("páginas:", len(data))
+```
+Respuesta esperada:
+```commandline
+páginas: 18
+```
+
+> Nota: hablaremos en un texto sobre los chain types.
+
+Ahora veamos como podemos hacer un resumen con `load_summarize_chain` y el `chain_type map_reduce`:
+
+```python
+from langchain.chains.summarize import load_summarize_chain
+
+# La cadena load_summarize busca crear resumenes, pero también utilizamos `map_reduce` para que cada página sea
+# resumida antes de hacer el resumen general del documento.
+cadena_que_resume_documentos = load_summarize_chain(
+    llm_davinci,
+    chain_type="map_reduce"
+)
+
+ans = cadena_que_resume_documentos.run(data)
+print("*"*64)
+print(ans)
+```
+Respuesta esperada:
+```commandline
+Public-key cryptography was discovered in 1975 and revolutionized communication security by allowing secure communication 
+networks with hundreds of thousands of subscribers. It solves two problems: key distribution and digital signatures. 
+Roger Needham of Cambridge University developed a system to protect computer passwords, which was then extended to public-key 
+cryptography. In 1976, Marty and the author published a paper on multi-user cryptographic techniques, and Diffie discussed 
+the difficulty of computing logarithms in a field. The RSA system is based on the difficulty of factoring large numbers and 
+is proven to be secure. In the early 1980s, public-key cryptography was met with criticism from the cryptographic establishment, 
+but this only added to the publicity of the discovery. In the mid-1980s, the NSA began feasibility studies for a new secure 
+phone system, the STU-III, which used public key. Several companies dedicated to developing public-key technology were formed 
+by academic cryptographers, and research in public-key cryptography has been motivated by application. Public-key cryptography 
+has become a mainstay of cryptographic technology and is soon to be implemented in hundreds of thousands of secure telephones.
+```
+
+Si usamos una `chain_type` stuff entonces podemos incluir nuestro propio prompt/plantilla. Sin embargo, le cabe solo el máximo de tokens permitidos por el modelo y no documentos largos.
+
+```python
+# Sin embargo, `map_reduce`no es la única chain type, vamos a probar ahora con `stuff` porque esta nos permite
+# integrar `prompts` a nuestras peticiones. Adicionalmente, nuestro `prompt` será enviado a partir de un
+# `Prompt template` para tener más control del mismo.
+
+from langchain import PromptTemplate
+plantilla = """Escribe un resumen bien chido del siguiente rollo:
+
+{text}
+
+RESUMEN CORTO CON SLANG MEXICANO:"""
+
+# Dada la plantilla definimos que solo tenemos una variable de entrada `text`
+prompt = PromptTemplate(
+    template=plantilla,
+    input_variables=["text"]
+)
+```
+Con el prompt definido, ahora vamos a concatenar el mismo a un LLM:
+```python
+# Concatenamos nuestra plantilla al LLM davinci
+cadena_que_resume_con_slang = load_summarize_chain(
+    llm=llm_davinci,
+    chain_type="stuff",
+    prompt=prompt,
+    verbose=True  # Esto nos dará información por terminal, pero en producción no es necesario.
+)
+# Vamos a observar la respuesta que nos da de resumen al utilizar solo las primeras 2 hojas de contenido
+ans = cadena_que_resume_con_slang.run(data[:2])
+print("*"*64)
+print(ans)
+```
+Respuesta esperada:
+```commandline
+> Entering new StuffDocumentsChain chain...
+
+
+> Entering new LLMChain chain...
+Prompt after formatting:
+Escribe un resumen bien chido del siguiente rollo:
+
+The First Ten Years of Public-Key 
+Cryptography 
+WH lTFl ELD DI FFlE 
+Invited Paper 
+Public-key cryptosystems separate the capacities for encryption 
+and decryption so that 7) many people can encrypt messages in 
+such a way that only one person can read them, or 2) one person 
+can encrypt messages in such a way that many people can read 
+them. This separation allows important improvements in the man- 
+agement of cryptographic keys and makes it possible to ‘sign’ a 
+purely digital message. 
+Public key cryptography was discovered in the Spring of 1975 
+and has followed a surprising course. Although diverse systems 
+were proposed early on, the ones that appear both practical and 
+secure today are all very closely related and the search for new and 
+different ones has met with little success. Despite this reliance on 
+a limited mathematical foundation public-key cryptography is rev- 
+olutionizing communication security by making possible secure 
+communication networks with hundreds of thousands of subscrib- 
+ers. 
+Equally important is the impact of public key cryptography on 
+the theoretical side of communication security. It has given cryp- 
+tographers a systematic means of addressing a broad range of 
+security objectives and pointed the way toward a more theoretical 
+approach that allows the development of cryptographic protocols 
+with proven security characteristics. 
+I. INITIAL DISCOVERIES 
+Public key cryptography was born in May 1975, the child 
+First came the problem of key distribution. If two peo- 
+ple who have never met before are to communicate 
+privately using conventional cryptographic means, 
+they must somehow agree in advance on a key that will 
+be known to themselves and to no one else. 
+The second problem, apparently unrelated to the first, 
+was the problem of signatures. Could a method be 
+devised that would provide the recipient of a purely 
+digital electronic message with a way of demonstrat- 
+ing to other people that it had come from a particular 
+person, just as awritten signature on a letter allows the 
+recipient to hold the author to its contents? 
+On the face of it, both problems seem to demand the 
+impossible. In the first case, if two people could somehow 
+communicate a secret key from one to the other without 
+ever having met, why could they not communicate their 
+Manuscript received January 19, 1988; revised March 25,1988. 
+The author is with Bell-Northern Research, Mountain View, CA 
+IEEE Log Number 8821645. of two problems and a misunderstanding. 
+94039, USA. message in secret? The second is no better. To be effective, 
+a signature must be hard to copy. How then can a digital 
+message, which can be copied perfectly, bear a signature? 
+The misunderstanding was mine and prevented me from 
+rediscovering the conventional key distri bution center. The 
+virtue of cryptography, I reasoned, was that, unlike any 
+other known security technology, it did not require trust 
+in any party not directly involved in the communication, 
+only trust in the cryptographic systems. What good would 
+it do to develop impenetrable cryptosystems, I reasoned, 
+if their users were forced to share their keys with a key dis- 
+tribution center that could be compromised by either bur- 
+glary or subpoena. 
+The discovery consisted not of a solution, but of the rec- 
+ognition that the two problems, each of which seemed 
+unsolvable by definition, could be solved at all and that the 
+solutions to both problems came in one package. 
+First to succumb was the signature problem. The con- 
+ventional use of cryptography to authenticate messages had 
+been joined in the 1950s by two new applications, whose 
+functions when combined constitute a signature. 
+Beginning in 1952, a group under the direction of Horst 
+Feistel at the Air Force Cambridge Research Center began 
+to apply cryptography to the military problem of distin- 
+guishing friendly from hostile aircraft. In traditional Iden- 
+tification Friend or Foe systems, a fire control radar deter- 
+mines the identity of an aircraft by challenging it, much as 
+a sentry challenges a soldier on foot. If the airplane returns 
+the correct identifying information, it is judged to be 
+friendly, otherwise it is thought to be hostile or at best neu- 
+tral. To allow the correct response to remain constant for 
+any significant period of time, however, is to invite oppo- 
+nents to record a legitimate friendly response and play it 
+back whenever they themselves are challenged. The 
+approach taken by Feistel’s group, and now used in the MK 
+XI1 IFF system, is to vary the exchange cryptographically 
+from encounter to encounter. The radar sends a randomly 
+selected challenge and judges the aircraft by whether it 
+receives a correctly encrypted response. Because the chal- 
+lenges are never repeated, previously recorded responses 
+will not be judged correct by a challenging radar. 
+Later in the decade, this novel authentication technique 
+was joined by another, which seems first to have been 
+560 001&9219/88/0500-0560$01.00 0 1988 IEEE 
+PROCEEDINGS OF THE IEEE, VOL. 76, NO. 5, MAY 1988 
+
+applied by Roger Needham of Cambridge University [112]. 
+This timethe problem was protectingcomputer passwords. 
+Access control systems often suffer from the extreme sen- 
+sitivity of their password tables. The tables gather all of the 
+passwards together in one place and anyone who gets 
+access to this information can impersonate any of the sys- 
+tem‘s users. To guard against this possibility, the password 
+table is filled not with the passwords themselves, but with 
+the images of the passwords under a one-way function. A 
+one-way function is easy to compute, but difficult to invert. 
+For any password, the correct table entry can be calculated 
+easily. Given an output from the one-way function, how- 
+ever, it is exceedingly difficult to find any input that will 
+produce it. This reduces the value of the password table to 
+an intruder tremendously, since its entries are not pass- 
+words and are not acceptable to the password verification 
+routine. 
+Challenge and response identification and one-wayfunc- 
+tions provide protection against two quite different sorts 
+of threats. Challengeand response identification resists the 
+efforts of an eavesdropper who can spy on the commu- 
+nication channel. Since the challengevaries randomlyfrom 
+event to event, the spy is unable to replay it and fool the 
+challenging radar. There is, however, no protection against 
+an opponent who captures the radar and learns its cryp- 
+tographic keys. This opponent can use what he has learned 
+to fool any other radar that is keyed the same. In contrast, 
+the one-way function defeats the efforts of an intruder who 
+captures the system password table (analogous to captur- 
+ing the radar) but scuccumbs to anyone who intercepts the 
+login message because the password does not change with 
+time. 
+I realized that the two goals might be achieved simul- 
+taneously if the challenger could pose questions that it was 
+unable to answer, but whose answers it could judge for cor- 
+rectness. I saw the solution as a generalization of the one- 
+way function: a trap-door one-way function that allowed 
+someone in possession of secret information to go back- 
+wards and compute the function’s inverse. The challenger 
+would issue a value in the range of the one-way function 
+and demand to know its inverse. Onlythe person who knew 
+the trapdoor would be able to find the corresponding ele- 
+ment in the domain, but the challenger, in possession of 
+an algorithm for computing the one-way function, could 
+readilychecktheanswer. In theapplicaticnsthat later came 
+toseem most important, the roleof thechallengewas played 
+by a message and the process took on the character of a 
+signature, a digital signature. 
+It did not take long to realize that the trap-door one-way 
+function could also be applied to the baffling problem of 
+key distribution. For someone in possession of the forward 
+form of the one-way function to send a secret message to 
+the person who knew the trapdoor, he had only to trans- 
+form the message with the one-way function. Only the 
+holder of the trap-door information would be able to invert 
+the operation and recover the message. Because knowing 
+the forward form of the function did not make it possible 
+to compute the inverse, the function could be made freely 
+available. It is this possibility that gave the field its name: 
+public-ke y cryptography. 
+The concept that emerges is that of a public-key cryp- 
+tosystem: a cryptosystem in which keys come in inverse 
+pairs [36] and each pair of keys has two properties. - Anything encrypted with one key can be decrypted 
+with the other. 
+Given one member of the pair, the public key, it is 
+infeasible to discover the other, the secret key. 
+This separation of encryption and decryption makes it 
+possible for the subscribers to a communication system to 
+list their public keys in a “telephone directory” along with 
+their names and addresses. This done, the solutions to the 
+original problems can be achieved by simple protocols. 
+One subscriber can send a private message to another 
+simply by looking up the addressee’s public key and 
+using it to encrypt the message. Only the holder of the 
+corresponding secret key can read such a message; 
+even the sender, should he lose the plaintext, is inca- 
+pable of extracting it from the ciphertext. 
+A subscriber can sign a message by encrypting it with 
+his own secret key. Anyone with access to the public 
+key can verify that it must have been encrypted with 
+the corresponding secret key, but this is of no help to 
+him in creating (forging) a message with this property. 
+The first aspect of public-key cryptography greatly sim- 
+plifies the management of keys, especially in large com- 
+munication networks. In order for a pair of subscribers to 
+communicate privately using conventional end-to-end 
+cryptography, they must both have copies of the same cryp- 
+tographic key and this key must be kept secret from anyone 
+they do not wish to take into their confidence. If a network 
+has only a few subscribers, each person simply stores one 
+key for every other subscriber against the day he will need 
+it, but for a large network, this is impractical. 
+In a network with n subscribers there are n(n - 1)/2 pairs, 
+each of which may require a key. This amounts to five thou- 
+sand keys in a network with only a hundred subscribers, 
+half a million in a network with one thousand, and twenty 
+million billion in a network the size of the North American 
+telephone system. It is unthinkable to distribute this many 
+keys in advance and undesirable to postpone secure com- 
+munication while they are carried from one party to the 
+other by courier. 
+The second aspect makes its possible to conduct a much 
+broader range of normal business practices over a tele- 
+communication network. Theavailabilityof asignature that 
+the receiver of a message cannot forge and the sender can- 
+not readily disavow makes it possible to trust the network 
+with negotiations and transactions of much higher value 
+than would otherwise be possible. 
+It must be noted that both problems can be solved with- 
+out public-key cryptography, but that conventional solu- 
+tions come at a great price. Centralized key distribution 
+centers can on request provide a subscriber with a key for 
+communicating with any other subscriber and protocols 
+for this purpose will be discussed later on. The function of 
+the signature can also beapproximated byacentral registry 
+that records all transactions and bears witness in cases of 
+dispute. Both mechanisms, however, encumber the net- 
+work with the intrusion of a third party into many conver- 
+sations, diminishing security and degrading performance. 
+At the time public-key cryptography was discovered, I 
+was working with Martin Hellman in the Electrical Engi- 
+neering Department at Stanford University. It was our 
+immediate reaction, and by no means ours alone, that the 
+DIFFIE: TEN YEARS OF PUBLIC-KEY CRYPTOGRAPHY 561 
+
+RESUMEN CORTO CON SLANG MEXICANO:
+
+> Finished chain.
+```
+```commandline
+Public-key cryptography fue descubierta en la primavera de 1975 y ha seguido un curso sorprendente. Esta criptografía separa 
+la capacidad de encriptación y desencriptación para que muchas personas puedan encriptar mensajes de tal manera que solo una 
+persona pueda leerlos, o una persona pueda encriptar mensajes de tal manera que muchas personas puedan leerlos. Esto permite 
+mejoras importantes en la gestión de las claves criptográficas y hace posible firmar un mensaje digital. Esta criptografía de 
+clave pública está revolucionando la seguridad de la comunicación al permitir redes de comunicación seguras con cientos de 
+miles de suscriptores. Esto también tiene un impacto en el lado teórico de la seguridad de la comunicación. ¡La criptografía 
+de clave pública
+```
 
 ## 1.8 RetrievalQA Chain
 
+
+> ## Nota:
+> El código completo esta en: [5_utility_chains.py](scripts%2F5_utility_chains.py)
+
+También podemos resolver preguntas con `RetrievalQA`
+```python
+# No siempre vamos a necesitar resúmenes del texto, que pasa si queremos responder alguna pregunta del texto?
+from langchain.chains import RetrievalQA
+# En ese sentido, NO vamos a usar un prompt template con el texto a analizar, sino que vamos a utilizar nuestra
+# base de datos vectorial, y le vamos a pasar toda la información al `retriever`
+cadena_que_resuelve_preguntas = RetrievalQA.from_chain_type(
+    llm=llm_gpt3_5,
+    chain_type="stuff",
+    retriever=vectorstore.as_retriever(search_kwargs={"k": 2})  # kwargs k son los parámetros de la busqueda de cuales son los
+  # fragmentos de texto relevantes para responder la pregunta, entre más fragmentos de texto mejor porque tiene más contexto el modelo,
+  # pero NO van a entrar todas en un prompt. Entre mayor sea el texto a analizar también lo será el precio.
+)
+# Ahora ya podemos hacer prompts con preguntas a resolver.
+ans = cadena_que_resuelve_preguntas.run("¿Cuál es la relevancia de la criptografía de llave pública?")
+print("*"*64)
+print(ans)
+```
+Respuesta esperada:
+```commandline
+The relevance of public-key cryptography is that it provides a secure method for key distribution and authentication in 
+communication systems. It allows for secure communication between parties without the need for a trusted third party or the 
+sharing of secret keys. Public-key cryptography has become a mainstay of cryptographic technology and is widely accepted 
+and used in various applications. It offers improved security compared to conventional cryptography and has the potential 
+to revolutionize data communications and electronic funds transfer technology. However, there are concerns about the narrow 
+technological base and vulnerability to breakthroughs in factoring or discrete logarithms. Despite these concerns, public-key 
+cryptography is considered a strong and indispensable tool in modern cryptography.
+```
+
 ## 1.9 Foundational Chains
+
+En esta clase veremos como funcionan las cadenas `Foundatinoal` y como podemos unir varias de ellas para llevar procesos 
+más complejos a través de cadenas secuenciales `SequentialChain`.
+
+Primero, vamos a construir una función personalizada para limpiar nuestros textos de URLs y emojis. Luego, utilizaremos esta función para crear una cadena en la que introduciremos nuestro texto y esperamos obtener un texto limpio como salida.
+
+Debemos tener en cuenta que la función que hemos creado recibe como entrada un diccionario. En este diccionario, vamos a indicar los elementos que serán procesados por la cadena que estamos creando. El resultado que obtendremos de la cadena será el texto limpio.
+
+Esto es el principio fundamental de las cadenas fundacionales, nos proporcionan un marco para llevar a cabo una serie de transformaciones de manera ordenada y estructurada.
+
+Partimos de los antecedentes que ya conocemos:
+```python
+# Antecedentes 1: Cargar el API KEY de OpenAI como una variable de sistema.
+import os
+from dotenv import load_dotenv
+
+load_dotenv("../secret/keys.env")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+
+# Antecedentes 2: Instanciar dos LLMs de OpenAI un GPT3.5 y un Davinci
+from langchain.llms import OpenAI
+
+llm_gpt3_5 = OpenAI(
+    model_name="gpt-3.5-turbo",
+    n=1,
+    temperature=0.3
+)
+```
+Vamos a empezar creando una función de limpieza de datos. La misma es una función que recibe un diccionario con una llave `texto`
+que contiene el texto a limpiar y devuelve otro diccionario con la llave `texto_limpio`, el texto ya normalizado.
+
+```python
+def limpiar_texto(entradas: dict) -> dict:
+    texto = entradas["texto"]
+
+    # Eliminamos los emojis utilizando un amplio rango unicode
+    # Ten en cuenta que esto podría potencialmente eliminar algunos caracteres válidos que no son en inglés
+    patron_emoji = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"  # emoticonos
+        "\U0001F300-\U0001F5FF"  # símbolos y pictogramas
+        "\U0001F680-\U0001F6FF"  # símbolos de transporte y mapas
+        "\U0001F1E0-\U0001F1FF"  # banderas (iOS)
+        "\U00002702-\U000027B0"
+        "\U000024C2-\U0001F251"
+        "]+", flags=re.UNICODE,
+    )
+    texto = patron_emoji.sub(r'', texto)
+
+    # Removemos las URLs
+    patron_url = re.compile(r'https?://\S+|www\.\S+')
+    texto = patron_url.sub(r'', texto)
+
+    return {"texto_limpio": texto}
+```
+Con base en esta función de python podemos crear nuestro primer bloque de Cadena utilizando `TransformChain`:
+
+```python
+from langchain.chains import TransformChain
+
+cadena_que_limpia = TransformChain(
+    input_variables=["texto"],
+    output_variables=["texto_limpio"],
+    transform=limpiar_texto
+)
+
+clean = cadena_que_limpia.run('Chequen está página https://twitter.com/home 🙈')
+print(clean)
+```
+Respuesta esperada:
+```commandline
+Chequen está página  
+```
+
+Ahora vamos a crear un par de cadenas más y finalmente las vamos a unir todas para un flujo de información completa.
+Empecemos con una cadena de parafraseo de texto:
+
+```python
+from langchain import PromptTemplate
+from langchain.chains import LLMChain
+
+# Empezamos creando nuestro prompt template que recibe como parámetro un 'texto_limpio' (salida de de la cadena de limpieza)
+# y lo parafrasea con un estilo informa de una persona (estilo).
+plantilla_parafrasea = """Parafrasea este texto:
+
+{texto_limpio}
+
+En el estilo de una persona informal de {estilo}.
+
+Parafraseado: """
+
+# Dado que nuestro Template tiene 2 variables, debemos indicarlas en el parámetro `input_variables
+prompt_parafraseo = PromptTemplate(
+    input_variables=["texto_limpio", "estilo"],
+    template=plantilla_parafrasea 
+)
+
+# Ahora solo falta crear la cadena que cambia estilo utilizando como LLM a GPT3.5, esta cadena terminará creando una variable
+# a la salida llamada `texto_final`
+cadena_que_cambia_estilo = LLMChain(
+    llm=llm_gpt3_5,
+    prompt=prompt_parafraseo,
+    output_key='texto_final'
+)
+```
+Ahora siguiendo la misma estructura lógica, vamos a crear una nueva `Chain` que se encargue de parafrasear un texto de entrada:
+
+```python
+# Texto_final es la variable de entrada, puesto que así la definimos en la cadena de parafraseo
+plantilla_resumen = """Resume este texto:
+
+{texto_final}
+
+Resumen: """
+
+prompt_resumen = PromptTemplate(
+    input_variables=["texto_final"],
+    template=plantilla_resumen
+)
+
+# Texto resumido será la variable final con la que termina nuestra secuencia de cadenas
+cadena_que_resume = LLMChain(
+    llm=llm_gpt3_5,
+    prompt=prompt_resumen,
+    output_key="texto_resumido"
+)
+```
+
+Finalmente, para concluir vamos a unir todas nuestras cadenas entre ellas utilizando `SequentialChain`:
+
+```python
+from langchain.chains import SequentialChain
+
+cadena_secuencial = SequentialChain(
+    chains=[cadena_que_limpia, cadena_que_cambia_estilo, cadena_que_resume],
+    input_variables=["texto", "estilo"],
+    output_variables=["texto_resumido"]
+)
+```
+> Nota: 
+> Esta estructura de pensamiento es MUY similar a como PyTorch Organiza las capas de un modelo de DL.
+
+Probemos entonces nuestra `SequentialChain`:
+
+```python
+texto_entrada = """
+¡Monterrey es una ciudad impresionante! 🏙️
+Es conocida por su impresionante paisaje de montañas ⛰️ y su vibrante cultura norteña.
+¡No olvides visitar el famoso Museo de Arte Contemporáneo (MARCO)!
+🖼️ Si eres fanático del fútbol, no puedes perderte un partido de los Rayados o de los Tigres. ⚽
+Aquí te dejo algunos enlaces para que puedas conocer más sobre esta maravillosa ciudad:
+https://visitamonterrey.com, https://museomarco.org, https://rayados.com, https://www.tigres.com.mx.
+¡Monterrey te espera con los brazos abiertos! 😃🇲🇽
+
+Monterrey es la capital y ciudad más poblada del estado mexicano de Nuevo León, además de la cabecera del 
+municipio del mismo nombre. Se encuentra en las faldas de la Sierra Madre Oriental en la región noreste de 
+México. La ciudad cuenta según datos del XIV Censo de Población y Vivienda del Instituto Nacional de 
+Estadística y Geografía de México (INEGI) en 2020 con una población de 3 142 952 habitantes, por lo cual 
+de manera individual es la 9.ª ciudad más poblada de México, mientras que la zona metropolitana de Monterrey 
+cuenta con una población de 5 341 175 habitantes, la cual la convierte en la 2.ª área metropolitana más 
+poblada de México, solo detrás de la Ciudad de México.8​
+
+La ciudad fue fundada el 20 de septiembre de 1596 por Diego de Montemayor y nombrada así en honor al castillo 
+de Monterrey en España. Considerada hoy en día una ciudad global, es el segundo centro de negocios y finanzas 
+del país, así como una de sus ciudades más desarrolladas, cosmopolitas y competitivas. Sirve como el 
+epicentro industrial, comercial y económico para el Norte de México.9​ Según un estudio de Mercer Human 
+Resource Consulting, en 2019, fue la ciudad con mejor calidad de vida en México y la 113.ª en el mundo.10​ 
+La ciudad de Monterrey alberga en su zona metropolitana la ciudad de San Pedro Garza García, la cual es el 
+área con más riqueza en México y América Latina.11​
+"""
+
+ans = cadena_secuencial({'texto': texto_entrada, 'estilo': 'ciudad de méxico'})
+print(ans)
+```
+Respuesta esperada:
+```commandline
+{'texto': 
+
+'\n¡Monterrey es una ciudad impresionante! 🏙️\nEs conocida por su impresionante paisaje de montañas ⛰️ y su vibrante 
+cultura norteña.\n¡No olvides visitar el famoso Museo de Arte Contemporáneo (MARCO)!\n🖼️ Si eres fanático del fútbol, no 
+puedes perderte un partido de los Rayados o de los Tigres. ⚽\nAquí te dejo algunos enlaces para que puedas conocer más 
+sobre esta maravillosa ciudad:\nhttps://visitamonterrey.com, https://museomarco.org, https://rayados.com, https://www.tigres.com.mx.
+¡Monterrey te espera con los brazos abiertos! 😃🇲🇽\n\nMonterrey es la capital y ciudad más poblada del estado mexicano de 
+Nuevo León, además de la cabecera del \nmunicipio del mismo nombre. Se encuentra en las faldas de la Sierra Madre Oriental en 
+la región noreste de \nMéxico. La ciudad cuenta según datos del XIV Censo de Población y Vivienda del Instituto Nacional de 
+\nEstadística y Geografía de México (INEGI) en 2020 con una población de 3 142 952 habitantes, por lo cual \nde manera 
+individual es la 9.ª ciudad más poblada de México, mientras que la zona metropolitana de Monterrey \ncuenta con una población 
+de 5 341 175 habitantes, la cual la convierte en la 2.ª área metropolitana más \npoblada de México, solo detrás de la Ciudad 
+de México.8\u200b\n\nLa ciudad fue fundada el 20 de septiembre de 1596 por Diego de Montemayor y nombrada así en honor al 
+castillo \nde Monterrey en España. Considerada hoy en día una ciudad global, es el segundo centro de negocios y finanzas 
+\ndel país, así como una de sus ciudades más desarrolladas, cosmopolitas y competitivas. Sirve como el \nepicentro industrial, 
+comercial y económico para el Norte de México.9\u200b Según un estudio de Mercer Human \nResource Consulting, en 2019, fue 
+la ciudad con mejor calidad de vida en México y la 113.ª en el mundo.10\u200b \nLa ciudad de Monterrey alberga en su zona 
+metropolitana la ciudad de San Pedro Garza García, la cual es el \nárea con más riqueza en México y América Latina.11\u200b\n', 
+
+'estilo': 
+'ciudad de méxico', 
+
+'texto_resumido': '
+Monterrey es una ciudad increíblemente hermosa y llena de vida, famosa por sus montañas y su cultura norteña. Es conocida 
+por su Museo de Arte Contemporáneo y por los equipos de fútbol Rayados y Tigres. Es la capital y la ciudad más grande del 
+estado de Nuevo León, con una población de más de 3 millones de habitantes. Es considerada una ciudad global y un importante 
+centro de negocios y finanzas en México. También es una de las ciudades más desarrolladas y con mejor calidad de vida en 
+el país. En resumen, Monterrey es una ciudad impresionante y llena de oportunidades.'}
+```
+Excelente, hemos podido aprender como unir varias cadenas entre ellas para crear un flujo de información efectivo a través
+de `SequentialChains`
 
 ## 1.10 Quizz Introducción a LangChain
 
