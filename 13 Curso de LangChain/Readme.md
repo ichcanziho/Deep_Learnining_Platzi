@@ -1733,7 +1733,201 @@ page_content='Textooooooooolargoooooo ejemplo' metadata={'fuente': 'platzi', 'cl
 ```
 ## 3.3 Document Loaders: PDF
 
+La primera etapa en la indexación de documentos en LangChain implica cargar los datos en "Documentos". Este es el nombre de la clase con la que trabajaremos, ubicada en el directorio de esquemas en el repositorio de LangChain. Simplificando, un "Documento" es básicamente un fragmento de texto. El propósito del cargador de documentos es simplificar este proceso de carga.
+
+### Document transformers
+
+Los transformadores de carga son utilidades que convierten los datos desde un formato específico al formato "Documento". Por ejemplo, existen transformadores para los formatos CSV y SQL. En su mayoría, estos cargadores obtienen datos de archivos, pero a veces también de URLs.
+
+Existen varios cargadores de documentos dependiendo de la fuente de nuestros datos. A continuación, se muestran algunos ejemplos (para más información, consulta la documentación):
+
+- Airtable
+- OpenAIWhisperParser
+- CoNLL-U
+- Copy Paste
+- CSV
+- Email
+- EPub
+- EverNote
+- Microsoft Excel
+- Facebook Chat
+- File Directory
+- HTML
+- Images
+- Jupyter Notebook
+- JSON
+- Markdown
+- Microsoft PowerPoint
+- Microsoft Word
+- Open Document Format (ODT)
+- Pandas DataFrame
+- PDF
+
+Al mismo tiempo, también puedes utilizar servicios como los datasets de Hugging Face, o incluso obtener datos de servicios como Slack, Snowflake, Spreedly, Stripe, 2Markdown, entre otros.
+
+Cada mes se añaden nuevas fuentes y tipos de conjuntos de datos que podemos utilizar. Te recomendamos revisar la documentación con regularidad para mantenerte actualizado.
+
+Vamos a utilizar el mismo documento que usamos en [Cadenas en langchin](#16-cadenas-en-langchain) ya lo hemos descargado en [public_key_cryptography.pdf](scripts%2Fpublic_key_cryptography.pdf)
+
+> ## Nota:
+> El código de esta sección está en [8_document_loaders.py](scripts%2F8_document_loaders.py)
+
+Quizás el Document Loader más relevante es el unstructured pues se encuentra como la base de otros Document Loaders. Sirve por ejemplo para documentos de texto como .txt o .pdf.
+
+```python
+from langchain.document_loaders import UnstructuredFileLoader
+
+loader = UnstructuredFileLoader("./public_key_cryptography.pdf")
+data = loader.load()
+
+print("tipo:", type(data), "tamaño:", len(data))
+print("Ejemplo Metadata")
+print(data[0].metadata)
+print("Ejemplo Content")
+print(data[0].page_content[:300])
+```
+Respuesta esperada:
+```commandline
+tipo: <class 'list'> tamaño: 1
+Ejemplo Metadata
+{'source': './public_key_cryptography.pdf'}
+Ejemplo Content
+The First Ten Years of Public-Key Cryptography
+
+WH lTFl ELD DI FFlE
+
+Invited Paper
+
+Public-key cryptosystems separate the capacities for encryption and decryption so that 7) many people can encrypt messages in such a way that only one person can read them, or 2) one person can encrypt messages in su
+```
+
+Podemos observar como este Document es una lista de un solo elemento, y contiene todas las páginas del PDF en un solo compendio. Sin embargo,
+también hay formas de que cada página sea un Document por sí mismo:
+
+```python
+from langchain.document_loaders import PyPDFLoader
+
+print("*"*64)
+loader = PyPDFLoader("./public_key_cryptography.pdf")
+data = loader.load()
+print("tipo:", type(data), "tamaño:", len(data))
+print("Ejemplo Metadata")
+print(data[0].metadata)
+print("Ejemplo Content")
+print(data[0].page_content[:300])
+```
+Respuesta esperada:
+```commandline
+tipo: <class 'list'> tamaño: 18
+Ejemplo Metadata
+{'source': './public_key_cryptography.pdf', 'page': 0}
+Ejemplo Content
+The First Ten Years of Public-Key 
+Cryptography 
+WH lTFl ELD DI FFlE 
+Invited Paper 
+Public-key cryptosystems separate the capacities for encryption 
+and decryption so that 7) many people can encrypt messages in 
+such a way that only one person can read them, or 2) one person 
+can encrypt messages i
+```
+Podemos observar como de igual manera es una lista, pero que contiene 18 elementos, en dónde cada elemento cuenta con su 
+propio source y como metadata tiene el número de página. Adicionalmente, vemos como ha conservado el formato de columna del 
+paper original.
+
+
 ## 3.4 Document Loaders: CSV con Pandas DataFrames
+
+Uno de los usos más frecuentes de la biblioteca Pandas es la lectura de datos a partir de archivos CSV o hojas de cálculo (como Excel). Muchas empresas almacenan sus datos en estos formatos. En esta clase aprenderás cómo leer un archivo CSV y convertirlo en un DataFrame de Pandas, para después convertirlo a un Document de LangChain.
+
+Para el seguimiento de la clase utiliza la Notebook 2 del curso en la sección CSV a Pandas DataFrame.
+
+> ## Nota:
+> El código completo está en: [9_csv_loader.py](scripts%2F9_csv_loader.py)
+
+### Instalación de paquetes:
+
+Primero, necesitaremos instalar la biblioteca de Pandas, si aún no está instalada en tu entorno. También vamos a instalar gdown para descargar docs de google drive:
+
+```bash
+pip install pandas
+pip install gdown
+```
+
+Una vez que tengas instalada la biblioteca Pandas, podemos empezar a leer archivos CSV. Para esto, utilizaremos el método read_csv() proporcionado por Pandas.
+Primero vamos a usar `gdown` para descargar el archivo csv:
+
+```python
+import gdown
+
+file_url = 'https://drive.google.com/uc?id=1kihb-PiE0jLnlJicZ42yDCIpTo_D40Zc'
+output_file = 'data/repos_cairo.csv'
+gdown.download(file_url, output_file, quiet=False)
+print(f"Archivo descargado como '{output_file}'")
+```
+Respuesta esperada:
+```commandline
+Downloading...
+From: https://drive.google.com/uc?id=1kihb-PiE0jLnlJicZ42yDCIpTo_D40Zc
+To: /home/ichcanziho/Documentos/programacion/Deep Learnining/13 Curso de LangChain/scripts/data/repos_cairo.csv
+100%|██████████| 2.22k/2.22k [00:00<00:00, 18.3MB/s]
+```
+
+Podemos leer el archivo de la siguiente manera:
+
+```python
+import pandas as pd
+
+df = pd.read_csv('data/repos_cairo.csv')
+print(df.head())
+```
+Respuesta esperada:
+```commandline
+                          repo_name  ... repo_forks
+0                 kkrt-labs/kakarot  ...         93
+1                 ZeroSync/ZeroSync  ...         29
+2   starknet-edu/starknet-cairo-101  ...        131
+3         shramee/starklings-cairo1  ...        101
+4  keep-starknet-strange/alexandria  ...         42
+
+[5 rows x 6 columns]
+```
+
+A continuación, vamos a utilizar la clase DataFrameLoader de LangChain para cargar los datos de nuestro DataFrame.
+
+```python
+from langchain.document_loaders import DataFrameLoader
+
+loader = DataFrameLoader(df, page_content_column="repo_name")
+data = loader.load()
+```
+Finalmente, vamos a imprimir el tipo y la longitud de nuestros datos cargados.
+```python
+print(f"El archivo es de tipo {type(data)} y tiene una longitud de {len(data)} debido a la cantidad de observaciones en el CSV.")
+```
+Respuesta esperada:
+```commandline
+El archivo es de tipo <class 'list'> y tiene una longitud de 25 debido a la cantidad de observaciones en el CSV.
+```
+
+Y vamos a imprimir las primeras 5 líneas de nuestros datos.
+
+```python
+from pprint import pprint
+
+pprint(data[:5])
+```
+Respuesta esperada:
+```commandline
+[Document(page_content='kkrt-labs/kakarot', metadata={'repo_owner': 'kkrt-labs', 'repo_updated_at': '2023-06-10T16:12:50Z', 'repo_created_at': '2022-10-04T14:33:18Z', 'repo_stargazers_count': 453, 'repo_forks': 93}),
+ Document(page_content='ZeroSync/ZeroSync', metadata={'repo_owner': 'ZeroSync', 'repo_updated_at': '2023-06-09T15:19:11Z', 'repo_created_at': '2022-07-08T14:56:27Z', 'repo_stargazers_count': 290, 'repo_forks': 29}),
+ Document(page_content='starknet-edu/starknet-cairo-101', metadata={'repo_owner': 'starknet-edu', 'repo_updated_at': '2023-06-07T23:08:37Z', 'repo_created_at': '2022-07-05T15:00:25Z', 'repo_stargazers_count': 259, 'repo_forks': 131}),
+ Document(page_content='shramee/starklings-cairo1', metadata={'repo_owner': 'shramee', 'repo_updated_at': '2023-06-09T13:06:27Z', 'repo_created_at': '2023-01-05T10:04:40Z', 'repo_stargazers_count': 249, 'repo_forks': 101}),
+ Document(page_content='keep-starknet-strange/alexandria', metadata={'repo_owner': 'keep-starknet-strange', 'repo_updated_at': '2023-06-09T09:17:59Z', 'repo_created_at': '2022-11-25T08:26:42Z', 'repo_stargazers_count': 115, 'repo_forks': 42})]
+```
+
+Como ves es bastante similar a cargar un PDF a LangChain. Te recuerdo que en la [documentación de Document Loaders de LangChain](https://python.langchain.com/docs/modules/data_connection/document_loaders/), puedes ver todas las integraciones para cargar diferentes tipos de archivos.
+
 
 ## 3.5 Document Loaders: JSONL
 
