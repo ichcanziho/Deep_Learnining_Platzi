@@ -1618,6 +1618,25 @@ Se necesita pensar en:
 
 ## 3.1 ¿Cómo manejar documentos con índices en LangChain?
 
+Los LLMs NO pueden generalizar sobre el mundo porque NO lo conocen, solo conocen los datos con los que fue entrenado.
+
+Cuando interactuamos con un modelo de lenguaje, puede recordar información de 2 maneras. **La primera forma es:** a partir de los
+datos con los que se entreno. Si los datos llegan hasta una fecha específica, o solo contiene información de un contexto
+específico, no van a conocer información actual o externa al contexto, por ejemplo la documentación de un API moderno
+o de tu empresa. **La segunda forma es:** `Indexes`, podemos hacer que un modelo recuerde información a partir de datos
+ingresados en el prompt. La clave está en la forma en la que se debe ingresar esta información para que el modelo generé
+la mejor respuesta a la pregunta del `user`. Los `Indexes` nos ayudarán a encontrar la información clave que necesitamos.
+
+El proceso para crear un índice es:
+
+- Acceder a información actual y propietaria y asi mismo recordar el contexto, son necesarios los `Indexes`
+- Conectar desde cualquier tipo de documento, csv, json, excel, txt, word, pdf, etc
+- Proceso de partir info, procesarla, transformar info, después ingresarlos con vector store, para buscar y poder contestar adecuadamente con relacion a la alimentacion de la info que le dimos. (fragmentos indexados)
+- Los modelos actúan en función de los datos con los cuales ha sido entrenado
+
+En las siguientes clases vamos a aprender a cargar diferentes tipos de documentos a LangChain a partir de los `Documents`.
+
+
 ## 3.2 La clase Document
 
 ## 3.3 Document Loaders: PDF
