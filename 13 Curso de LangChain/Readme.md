@@ -1639,6 +1639,98 @@ En las siguientes clases vamos a aprender a cargar diferentes tipos de documento
 
 ## 3.2 La clase Document
 
+Los `indexes` de LangChain nos permiten estructurar nuestra base de datos o nuestros documentos. Supongamos una novela de
+muchas páginas, 300 por ejemplo, encontrar justamente un `quote` es muy complejo entre tanto texto. Sin embargo, si el libro
+está divido en Capítulos, sub capítulos etc. es más factible encontrar información. Esta es la manera conceptual en la que
+funcionan los `indexes` en LangChain. 
+
+De esta manera cuando hagamos una pregunta, va a buscar qué pedazos de la gran base de datos son relevantes para resolver la
+pregunta. Debajo de cada pedazo está la clase `Document`.
+
+Los índices se refieren a las formas de estructurar documentos para que los Modelos de Lenguaje de Masivos (LLMs) puedan interactuar con ellos de la mejor manera posible. Esta es una tarea esencial para optimizar la eficiencia y velocidad de las operaciones de búsqueda y recuperación de información en sistemas de procesamiento de lenguaje natural.
+
+Puedes pensar en los índices como en el índice de un libro. En un libro el índice te ayuda a localizar rápidamente un capítulo o sección específica sin tener que hojear todas las páginas. De manera similar, los índices en LangChain permiten a los LLMs encontrar rápidamente documentos o información relevantes sin tener que procesar todos los documentos disponibles.
+
+### Índices y recuperación
+
+El uso más común de los índices en las cadenas de procesamiento de datos es en un paso denominado **"recuperación"**. Este paso se refiere a tomar la consulta de un usuario y devolver los documentos más relevantes. Sin embargo, es importante hacer una distinción aquí porque:
+
+1. Un índice puede utilizarse para otras cosas además de la recuperación.
+2. La recuperación puede utilizar otras lógicas además de un índice para encontrar documentos relevantes.
+
+La mayoría de las veces, cuando hablamos de índices y recuperación, nos referimos a la indexación y recuperación de datos no estructurados, como documentos de texto. En este contexto, "no estructurado" significa que los datos no siguen un formato fijo o predecible, como lo hace, por ejemplo, una tabla de base de datos. En cambio, los documentos de texto pueden variar ampliamente en términos de longitud, estilo, contenido, etc.
+
+### Retriever en LangChain
+
+El **Retriever** es un componente fundamental en el ecosistema de LangChain. Su responsabilidad principal es localizar y devolver documentos relevantes según una consulta específica. Imagínate un bibliotecario diligente que sabe exactamente dónde encontrar el libro que necesitas en una gran biblioteca; eso es lo que hace el Retriever en LangChain.
+
+Para realizar esta tarea, el Retriever debe implementar el método `get_relevant_documents`. Aunque este método puede ser implementado de la forma que el usuario considere más conveniente, en LangChain se ha diseñado una estrategia para recuperar documentos lo más eficientemente posible. Esta estrategia se basa en el concepto de **Vectorstore**, por lo que vamos a centrarnos en el Retriever tipo Vectorstore en el resto de esta guía.
+
+### Vectorstore y Vectorstore Retriever
+
+Para entender qué es un **Retriever** tipo **Vectorstore**, primero debemos entender qué es un Vectorstore. Un Vectorstore es un tipo de base de datos especialmente diseñada para gestionar y manipular vectores de alta dimensionalidad, comúnmente utilizados para representar datos en aprendizaje automático y otras aplicaciones de inteligencia artificial.
+
+En la analogía de la biblioteca mencionada anteriormente, si el Retriever es el bibliotecario, entonces el Vectorstore sería el sistema de clasificación y organización de la biblioteca que permite al bibliotecario encontrar exactamente lo que busca.
+
+En LangChain, el sistema Vectorstore predeterminado que se utiliza es Chroma. Chroma se utiliza para indexar y buscar embeddings (vectores que representan documentos en el espacio multidimensional). Estos embeddings son una forma de condensar y representar la información de un documento para que pueda ser fácilmente comparable con otros documentos.
+
+El Retriever tipo Vectorstore, por lo tanto, es un tipo de Retriever que utiliza una base de datos Vectorstore (como Chroma) para localizar documentos relevantes para una consulta específica. Primero transforma la consulta en un vector (a través de un proceso de incrustación (embedding)), luego busca en la base de datos Vectorstore los documentos cuyos vectores son más cercanos (en términos de distancia coseno u otras métricas de similitud) a la consulta vectorizada.
+
+
+Vamos a empezar por instalar y observar qué versión de LangChain tenemos disponible:
+
+```bash
+pip install langchain
+pip show langchain
+```
+Respuesta esperada:
+```commandline
+Name: langchain
+Version: 0.0.245
+Summary: Building applications with LLMs through composability
+Home-page: https://www.github.com/hwchase17/langchain
+Author: 
+Author-email: 
+License: MIT
+Location: /home/ichcanziho/Documentos/programacion/Deep Learnining/venv/lib/python3.10/site-packages
+Requires: aiohttp, async-timeout, dataclasses-json, langsmith, numexpr, numpy, openapi-schema-pydantic, pydantic, PyYAML, requests, SQLAlchemy, tenacity
+Required-by: 
+```
+
+### 1. La clase Document
+
+Esta clase es la base de cuando carguemos nuestros documentos. En LangChain se les llama schemas a estas clases base y se encuentran en langchain.schema. Así es el schema para Document:
+
+```
+class Document(Serializable):
+    """Interface for interacting with a document."""
+
+    page_content: str
+    metadata: dict = Field(default_factory=dict)
+```
+
+> ## Nota:
+> El código esta en: [7_clase_document.py](scripts%2F7_clase_document.py)
+
+Los metadatos son información adicional que puede acompañar al texto. Puede ser el nombre del autor, fecha de publicación, lenguaje etc.
+```python
+from langchain.schema import Document
+
+page_content = "Textooooooooolargoooooo ejemplo"
+metadata = {'fuente': 'platzi', 'clase': 'langchain'}
+
+doc = Document(
+    page_content=page_content, metadata=metadata
+)
+
+print(doc.page_content)
+print(doc)
+```
+Respuesta esperada:
+```commandline
+Textooooooooolargoooooo ejemplo
+page_content='Textooooooooolargoooooo ejemplo' metadata={'fuente': 'platzi', 'clase': 'langchain'}
+```
 ## 3.3 Document Loaders: PDF
 
 ## 3.4 Document Loaders: CSV con Pandas DataFrames
