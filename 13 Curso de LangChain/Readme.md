@@ -2307,6 +2307,16 @@ Por otro lado el código de `loader = DocsJSONLLoader(file_path)` ya lo hemos ex
 
 ## 3.9 Quiz manejo de documentación con índices
 
+![1.png](ims%2Fq2%2F1.png)
+
+![2.png](ims%2Fq2%2F2.png)
+
+![3.png](ims%2Fq2%2F3.png)
+
+![4.png](ims%2Fq2%2F4.png)
+
+![5.png](ims%2Fq2%2F5.png)
+
 # 4 Embeddings y bases de datos vectoriales
 
 ## 4.1 Uso de embeddings y bases de datos vectoriales con LangChain
