@@ -2128,6 +2128,62 @@ purely digital message.
 
 ## 3.7 Proyecto de ChatBot: configuración de entorno para LangChain y obtención de datos
 
+De ahora en adelante, las clases estarán enfocadas a llevar adelante la creación de un ChatBot que nos permita responder
+preguntas sobre la documentación de algunas bibliotecas de HuggingFace. Dentro de la información que vamos a obtener se encuentran
+los siguiente respositorios:
+
+
+- https://github.com/huggingface/blog
+- https://github.com/huggingface/transformers/tree/main/docs/source/en
+- https://github.com/huggingface/peft/tree/main/docs/source
+- https://github.com/huggingface/accelerate/tree/main/docs/source
+
+El objetivo será obtener toda la documentación de los repositorios, descargando sus archivos de `readme` en formato 
+`md` o `mdx`.
+
+Vamos a empezar clonando el repositorio principal del proyecto: https://github.com/platzi/curso-langchain.git
+
+```bash
+mkdir proyecto
+cd proyecto
+git clone https://github.com/platzi/curso-langchain.git
+cd curso-langchain
+```
+
+Ahora creamos un entorno virtual: `asegurate de tener python 3.9 instalado`
+
+```bash
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt install python3.9
+python3.9 -V
+```
+
+```bash
+python3.9 -m venv hashira_env
+source hashira_env/bin/activate
+```
+
+Actualizamos nuestra versión de PIP:
+
+```bash
+pip install --upgrade pip
+```
+
+Y finalmente, instalamos las dependencias que serán utilizadas en este proyecto: [requirements.txt](proyecto%2Fcurso-langchain%2Frequirements.txt)
+
+```bash
+pip install -r requirements.txt
+```
+
+Es importante tener en menta los scripts: [utils.py](proyecto%2Fcurso-langchain%2Fhashira%2Futils.py)
+
+Y tambien: [text_extractor.py](proyecto%2Fcurso-langchain%2Fhashira%2Ftext_extractor.py) que al ejectuarlo nos ha descargado
+y creado el documento: [docs_en_2023_06_29.jsonl](proyecto%2Fcurso-langchain%2Fdata%2Fdocs_en_2023_06_29.jsonl)
+
+Que es con el que estaremos trabajando y contiene la documentación de HuggingFace en formato `JSONL`
+
 ## 3.8 Proyecto de Chatbot: creación de documentos de Hugging Face
 
 ## 3.9 Quiz manejo de documentación con índices
