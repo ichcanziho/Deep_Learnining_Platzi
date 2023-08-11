@@ -2319,6 +2319,16 @@ Por otro lado el código de `loader = DocsJSONLLoader(file_path)` ya lo hemos ex
 
 # 4 Embeddings y bases de datos vectoriales
 
+En general el objetivo es transformar los documents a embedddings almacenarlos en chroma y utilizar una función de similitud
+entre el embedding de la pregunta del usuario y cada embedding del document de chroma. Es más probable que la respuesta 
+se encuentre donde hay mayor similitud entre la pregunta del usuario y el texto del documento.
+
+- El objetivo de los índices es proporcionar la información más adecuada para resolver una pregunta.
+- Los embeddings son una forma de representar el texto como números.
+- Los embeddings se pueden utilizar para encontrar la información más relevante para una pregunta.
+- Las bases de datos vectoriales son una forma de almacenar los embeddings.
+- Los embeddings y las bases de datos vectoriales se pueden utilizar para crear índices que pueden resolver preguntas de manera más eficiente.
+
 ## 4.1 Uso de embeddings y bases de datos vectoriales con LangChain
 
 ## 4.2 ¿Cómo usar embeddings de OpenAI en LangChain?
