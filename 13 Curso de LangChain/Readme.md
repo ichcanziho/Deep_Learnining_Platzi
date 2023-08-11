@@ -2177,14 +2177,133 @@ Y finalmente, instalamos las dependencias que serán utilizadas en este proyecto
 pip install -r requirements.txt
 ```
 
-Es importante tener en menta los scripts: [utils.py](proyecto%2Fcurso-langchain%2Fhashira%2Futils.py)
+Es importante tener en menta los scripts: [utils.py](chatbot%2Fhashira%2Futils.py)
 
-Y tambien: [text_extractor.py](proyecto%2Fcurso-langchain%2Fhashira%2Ftext_extractor.py) que al ejectuarlo nos ha descargado
-y creado el documento: [docs_en_2023_06_29.jsonl](proyecto%2Fcurso-langchain%2Fdata%2Fdocs_en_2023_06_29.jsonl)
+Y tambien: [text_extractor.py](chatbot%2Fhashira%2Ftext_extractor.py) que al ejectuarlo nos ha descargado
+y creado el documento: [docs_en_2023_06_29.jsonl](chatbot%2Fdata%2Fdocs_en_2023_06_29.jsonl)
 
 Que es con el que estaremos trabajando y contiene la documentación de HuggingFace en formato `JSONL`
 
 ## 3.8 Proyecto de Chatbot: creación de documentos de Hugging Face
+
+Para este punto del proyecto el documento [conversation.py](chatbot%2Fconversation.py) tiene la siguiente información:
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from hashira.utils import DocsJSONLLoader, get_file_path
+
+
+def load_documents(file_path: str):
+    loader = DocsJSONLLoader(file_path)
+    data = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1600, length_function=len, chunk_overlap=160
+    )
+
+    return text_splitter.split_documents(data)
+
+
+def main():
+
+    ans = get_file_path()
+    print(ans)
+    documents = load_documents(ans)
+    print(len(documents))
+    print(documents[0])
+
+
+if __name__ == '__main__':
+    main()
+
+```
+
+Respuesta esperada:
+```commandline
+/home/ichcanziho/Documentos/programacion/Deep Learnining/13 Curso de LangChain/chatbot/hashira/../data/docs_en_2023_06_29.jsonl
+4235
+page_content='--- title: "Train a Sentence Embedding  Model with 1B Training Pairs" authors: - user: asi guest: true --- # 
+Train a Sentence Embedding Model with 1 Billion Training Pairs **Sentence embedding** is a method that maps sentences to vectors 
+of real numbers. Ideally, these vectors would capture the semantic of a sentence and be highly generic. Such representations 
+could then be used for many downstream applications such as clustering, text mining, or question answering. We developed 
+state-of-the-art sentence embedding models as part of the project ["Train the Best Sentence Embedding Model Ever with 1B T
+raining Pairs"]( This project took place during the [Community week using JAX/Flax for NLP & CV]( organized by Hugging Face. 
+We benefited from efficient hardware infrastructure to run the project: 7 TPUs v3-8, as well as guidance from Google’s Flax, 
+JAX, and Cloud team members about efficient deep learning frameworks! ## Training methodology ### Model Unlike words, we can 
+not define a finite set of sentences. Sentence embedding methods, therefore, compose inner words to compute the final representation. 
+For example, SentenceBert model ([Reimers and Gurevych, 2019]( uses Transformer, the cornerstone of many NLP applications, 
+followed by a pooling operation over the contextualized word vectors. (c.f. Figure below.) 
+![snippet](assets/32_1b_sentence_embeddings/model.png) ### Multiple Negative Ranking Loss The parameters from the composition 
+module are usually learned using a self-supervised objective. For the project, we used a contrastive training method illustrated 
+in the figure' metadata={'title': '1b-sentence-embeddings.md', 'repo_owner': 'huggingface', 'repo_name': 'blog'}
+```
+
+Información interesante, el proyecto cuenta con el siguiente archivo: [config.yaml](chatbot%2Fhashira%2Fconfig.yaml)
+Que contiene configuración relevante del mismo:
+```yaml
+# =================================================
+# Configuración para text_extractor.py
+# =================================================
+
+github:
+  repos:
+    - owner: huggingface
+      repo: blog
+      path: /
+
+    - owner: huggingface
+      repo: transformers
+      path: docs/source/en
+
+    - owner: huggingface
+      repo: peft
+      path: docs/source
+
+    - owner: huggingface
+      repo: accelerate
+      path: docs/source
+
+jsonl_database_path: data/docs_en_2023_06_29.jsonl
+
+```
+Quizá lo más interesante es: `jsonl_database_path: data/docs_en_2023_06_29.jsonl`
+
+Por eso vemos que la función:
+
+```python
+def get_file_path():
+    """
+    Obtiene la ruta al archivo de base de datos JSONL especificado en la configuración de la aplicación.
+
+    Returns:
+        La ruta al archivo de base de datos JSONL.
+    """
+    config = load_config()
+
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.join(root_dir, "..")
+
+    return os.path.join(parent_dir, config["jsonl_database_path"])
+
+def load_config():
+    """
+    Carga la configuración de la aplicación desde el archivo 'config.yaml'.
+
+    Returns:
+        Un diccionario con la configuración de la aplicación.
+    """
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(root_dir, "config.yaml")) as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+```
+Carga la configuración y automáticamente obtiene el directorio de donde se encuentra el archivo `JSONL`
+```commandline
+/home/ichcanziho/Documentos/programacion/Deep Learnining/13 Curso de LangChain/chatbot/hashira/../data/docs_en_2023_06_29.jsonl
+```
+Por otro lado el código de `loader = DocsJSONLLoader(file_path)` ya lo hemos explorado en clases anteriores.
 
 ## 3.9 Quiz manejo de documentación con índices
 
