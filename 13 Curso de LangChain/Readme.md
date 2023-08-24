@@ -2621,6 +2621,284 @@ print(embedding_instruct.client, embeddings_st.client)
 
 ## 4.4 Chroma vector store en LangChain
 
+### Bases de datos vectoriales
+
+Imagina que eres un bibliotecario, pero tu biblioteca consta de vectores de alta dimensión en lugar de libros, y tus usuarios son agentes de IA en lugar de humanos. Por futurista que parezca, esta es la realidad de una base de datos de vectores: un banco de memoria para la IA, diseñado para almacenar y recuperar datos vectoriales de alta dimensión con eficiencia y precisión. Al igual que un bibliotecario organizaría y buscaría libros, una base de datos de vectores proporciona un método para gestionar y encontrar vectores en un espacio de alta dimensión.
+
+En este capítulo, profundizaremos en las complejidades de las bases de datos de vectores. Desentrañaremos su creciente importancia, entenderemos qué implica la data vectorial y exploraremos los aspectos prácticos de las bases de datos de vectores.
+
+#### El ascenso y la significancia de las bases de datos vectoriales
+
+Las bases de datos de vectores están ganando prominencia en la industria tecnológica, evidenciado por las significativas inversiones en tecnologías de bases de datos de vectores en los últimos años. Algunos ejemplos incluyen la inversión de $28M de Pinecone, la ronda semilla de $10M de LangChain y la ronda semilla de $18M de Chroma. El flujo de dinero habla mucho sobre el futuro y el potencial de las bases de datos de vectores en la IA.
+
+La evolución de las tecnologías de gestión de datos puede asemejarse a un río: siempre fluyendo, adaptándose continuamente al paisaje. Desde esquemas rígidos y estructurados en bases de datos relacionales hasta el manejo flexible de datos no estructurados o semi-estructurados en bases de datos NoSQL, la gestión de datos es un dominio en flujo, evolucionando para satisfacer nuestras crecientes necesidades de datos.
+
+La aparición de las bases de datos de vectores es el último desarrollo en este viaje. Estas bases de datos abordan los desafíos de gestionar y consultar datos vectoriales de alta dimensión, también conocidos como "incrustaciones de vectores".
+
+#### El rol de las bases de datos vectoriales
+
+Las bases de datos de vectores, también conocidas como bases de datos de búsqueda de similitud o bases de datos de búsqueda del vecino más cercano, están especialmente diseñadas para almacenar y recuperar incrustaciones de vectores. Estas bases de datos pueden realizar operaciones como encontrar elementos similares a un vector dado o buscar elementos que cumplan con ciertos criterios de similitud. Imagina poder preguntarle a tu base de datos, "encuéntrame más palabras como 'alegre'" y obtener respuestas como 'contento', 'feliz' y 'jubiloso'. Las bases de datos tradicionales no están diseñadas para este tipo de consultas, donde las bases de datos de vectores destacan.
+
+Con los conceptos básicos cubiertos, ahora estamos preparados para adentrarnos más en el mundo de la gestión de datos vectoriales. En las siguientes secciones, exploraremos cómo integrar las bases de datos de vectores usando Python y compararemos algunas de las plataformas líderes como Pinecone, Chroma y LangChain.
+
+Las bases de datos tienen una rica historia, evolucionando desde simples registros hasta estructuras complejas capaces de capturar, consultar y analizar información a lo largo del tiempo. Nos encontramos en un momento crucial, ya que el auge de la IA generativa se entrelaza con nuestras herramientas de gestión de datos, creando nuevos potenciales y desafíos.
+
+Los vectores representan 'objetos' de datos, llevando información sobre el tiempo, el lugar, los atributos y más, permitiéndonos enriquecer nuestros datos. Ayudan a rastrear tendencias temporales, permitiéndonos
+
+#### Chroma
+
+Chroma es un proyecto de código abierto que provee una base de datos específicamente diseñada para guardar y consultar incrustaciones, en conjunción con sus respectivos metadatos. Fue diseñada para trabajar con Modelos Grandes de Lenguaje (LLM).
+
+> ## Nota:
+> 
+> El código de esta clase esta en: [14_chroma_vector_store.py](scripts%2F14_chroma_vector_store.py)
+
+> ## Nota:
+> Para este código vamos a utilizar bastante conocimiento aprendido a lo largo del curso y no se van a explicar conocimientos
+> previcamente explicados en clases pasadas, se explicará únicamente información nueva. El objetivo es descargar un documento
+> PDF, almacenarlo en un Vector Store y poder hacer consultas basadas en similaridad.
+
+### Primer paso:
+Instalar bibliotecas necesarias en caso de no tenerlas:
+```bash
+pip install langchain
+pip install pypdf
+pip install InstructorEmbedding 
+pip instal sentence_transformers
+pip install chromadb
+```
+
+### Segundo paso:
+Vamos a crear funciones auxiliares que nos permitan crear un flujo de información para descargar el documento PDF, y tener un
+embedding model listo para ser utilizado:
+
+```python
+import requests
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import HuggingFaceInstructEmbeddings
+
+def download_pdf_file():
+    url = 'https://www.cs.virginia.edu/~evans/greatworks/diffie.pdf'
+    response = requests.get(url)
+
+    with open('public_key_cryptography.pdf', 'wb') as f:
+        f.write(response.content)
+    print("documento descargado")
+
+
+def load_pdf_file():
+    loader = PyPDFLoader("./public_key_cryptography.pdf")
+    data = loader.load()
+    print("documento cargado")
+    return data
+
+
+def generate_document(data, chunk_size, overlap, function):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=overlap,
+        length_function=function,
+    )
+    documents = text_splitter.split_documents(data)
+    print(documents[0].page_content)
+    return documents
+
+
+def instantiate_embedding_model(model, device):
+    # A junio de 2023 no hay modelos Instruct para español
+    embedding_instruct = HuggingFaceInstructEmbeddings(
+        model_name=model,
+        model_kwargs={"device": device}
+    )
+    print("Tipo de Embedding:")
+    print(type(embedding_instruct))
+    return embedding_instruct
+```
+### Cuarto paso:
+Empezamos a definir el flujo de información:
+Descarga de pdf
+```python
+    # Primer paso: Descargar el documento PDF que queremos analizar
+    download_pdf_file()
+```
+Respuesta esperada:
+```commandline
+documento descargado
+```
+Carga de archivo PDF
+```python
+    # Ahora lo cargamos con un Loader que se adapte al tipo de archivo
+    data = load_pdf_file()
+```
+Respuesta esperada:
+```commandline
+Documento cargado
+```
+Creación del documento
+```python
+    # Generamos un Document con una partición de 500 carácteres y un overlap del 10%
+    documents = generate_document(data, chunk_size=500, overlap=50, function=len)
+```
+Respuesta esperada:
+```commandline
+The First Ten Years of Public-Key 
+Cryptography 
+WH lTFl ELD DI FFlE 
+Invited Paper 
+Public-key cryptosystems separate the capacities for encryption 
+and decryption so that 7) many people can encrypt messages in 
+such a way that only one person can read them, or 2) one person 
+can encrypt messages in such a way that many people can read 
+them. This separation allows important improvements in the man- 
+agement of cryptographic keys and makes it possible to ‘sign’ a 
+purely digital message.
+```
+Descarga e instancia del modelo de embedding:
+```python
+    # Si es la primera vez que se instancia el modelo entonces este se va a descargar y se va a cargar en el device CUDA
+    embedding_model = instantiate_embedding_model(model="hkunlp/instructor-large", device="cuda")
+```
+Respuesta esperada:
+```commandline
+Downloading (…)c7233/.gitattributes: 100%
+1.48k/1.48k [00:00<00:00, 94.4kB/s]
+Downloading (…)_Pooling/config.json: 100%
+270/270 [00:00<00:00, 16.7kB/s]
+Downloading (…)/2_Dense/config.json: 100%
+116/116 [00:00<00:00, 6.86kB/s]
+Downloading pytorch_model.bin: 100%
+3.15M/3.15M [00:00<00:00, 28.8MB/s]
+Downloading (…)9fb15c7233/README.md: 100%
+66.3k/66.3k [00:00<00:00, 4.50MB/s]
+Downloading (…)b15c7233/config.json: 100%
+1.53k/1.53k [00:00<00:00, 106kB/s]
+Downloading (…)ce_transformers.json: 100%
+122/122 [00:00<00:00, 7.88kB/s]
+Downloading pytorch_model.bin: 100%
+1.34G/1.34G [00:15<00:00, 112MB/s]
+Downloading (…)nce_bert_config.json: 100%
+53.0/53.0 [00:00<00:00, 3.11kB/s]
+Downloading (…)cial_tokens_map.json: 100%
+2.20k/2.20k [00:00<00:00, 158kB/s]
+Downloading spiece.model: 100%
+792k/792k [00:00<00:00, 43.9MB/s]
+Downloading (…)c7233/tokenizer.json: 100%
+2.42M/2.42M [00:00<00:00, 18.1MB/s]
+Downloading (…)okenizer_config.json: 100%
+2.41k/2.41k [00:00<00:00, 158kB/s]
+Downloading (…)15c7233/modules.json: 100%
+461/461 [00:00<00:00, 32.3kB/s]
+load INSTRUCTOR_Transformer
+max_seq_length  512
+Tipo de Embedding:
+<class 'langchain.embeddings.huggingface.HuggingFaceInstructEmbeddings'>
+```
+
+### Quinto paso:
+
+Vamos a crear nuestro `Vector Store` utilizando `Chroma`:
+
+```python
+from langchain.vectorstores import Chroma
+
+def generate_vectorstore(documents, embedding_instruct, vectorstore_name):
+    vectorstore_chroma = Chroma.from_documents(
+        documents=documents,
+        embedding=embedding_instruct,
+        persist_directory=vectorstore_name
+    )
+    print("Vector Store generado")
+    return vectorstore_chroma
+
+
+def save_vectorstore(vectorstore):
+    vectorstore.persist()
+    print("Vector store almacenado con éxito")
+
+
+def load_vectorstore(vectorstore_name, embedding_instruct):
+    vectorstore_chroma = Chroma(
+        persist_directory=vectorstore_name,
+        embedding_function=embedding_instruct
+    )
+    print("Vector Store cargado")
+    return vectorstore_chroma
+
+```
+
+Continuemos con el flujo de información:
+
+```python
+    # Ya teniendo el modelo de embedding entonces podemos generar el Vector Store, le asignamos el siguiente nombre:
+    vectorstore_name = "instruct-embeddings-public-crypto"
+    # Y lo vamos a generar con la información de `Documents` utilizando el modelo `embedding_model` y nombre
+    # `vectorstore_name`
+    vectorstore = generate_vectorstore(documents, embedding_model, vectorstore_name)
+```
+Respuesta esperada:
+```commandline
+Vector Store generado
+```
+Ahora que se ha generado, lo vamos a guardar en local:
+```python
+    # Guardamos el modelo en disco
+    save_vectorstore(vectorstore)
+```
+Respuesta esperada:
+```commandline
+Vector store almacenado con éxito
+```
+Cargamos el modelo:
+```python
+    # Cargamos el modelo para trabajar con él
+    vectorstore_loaded = load_vectorstore(vectorstore_name, embedding_model)
+```
+Respuesta esperada:
+```commandline
+Vector Store cargado
+```
+
+### Sexto paso:
+
+Primero conozcamos el flujo completo de información hasta el momento:
+
+```python
+if __name__ == '__main__':
+    # Primer paso: Descargar el documento PDF que queremos analizar
+    download_pdf_file()
+    # Ahora lo cargamos con un Loader que se adapte al tipo de archivo
+    data = load_pdf_file()
+    # Generamos un Document con una partición de 500 carácteres y un overlap del 10%
+    documents = generate_document(data, chunk_size=500, overlap=50, function=len)
+    # Si es la primera vez que se instancia el modelo entonces este se va a descargar y se va a cargar en el device CUDA
+    embedding_model = instantiate_embedding_model(model="hkunlp/instructor-large", device="cuda")
+    # Ya teniendo el modelo de embedding entonces podemos generar el Vector Store, le asignamos el siguiente nombre:
+    vectorstore_name = "instruct-embeddings-public-crypto"
+    # Y lo vamos a generar con la información de `Documents` utilizando el modelo `embedding_model` y nombre
+    # `vectorstore_name`
+    vectorstore = generate_vectorstore(documents, embedding_model, vectorstore_name)
+    # Guardamos el modelo en disco
+    save_vectorstore(vectorstore)
+    # Cargamos el modelo para trabajar con él
+    vectorstore_loaded = load_vectorstore(vectorstore_name, embedding_model)
+```
+Ahora ya podemos hacer busquedas de similitud entre una query y un Chunk:
+```python
+    # Vamos a hacer una petición que dada la siguiente pregunta obtenga 5 Chunks con información similar
+    query = "What is public key cryptography?"
+    docs = vectorstore_loaded.similarity_search_with_score(query, k=5)
+    # Veamos cuantos documentos generó y un ejemplo del mismo
+    print(len(docs))
+    print(docs[3])
+```
+Respuesta esperada:
+```commandline
+5
+(Document(page_content='The First Ten Years of Public-Key \nCryptography \nWH lTFl ELD DI FFlE \nInvited Paper \nPublic-key cryptosystems separate the capacities for encryption \nand decryption so that 7) many people can encrypt messages in \nsuch a way that only one person can read them, or 2) one person \ncan encrypt messages in such a way that many people can read \nthem. This separation allows important improvements in the man- \nagement of cryptographic keys and makes it possible to ‘sign’ a \npurely digital message.', metadata={'page': 0, 'source': './public_key_cryptography.pdf'}),
+ 0.18773773312568665)
+```
+
 ## 4.5 Proyecto de ChatBot: ingesta de documentos en Chroma
 
 ## 4.6 RetrievalQA: cadena para preguntar
