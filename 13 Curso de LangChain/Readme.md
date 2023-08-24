@@ -2901,6 +2901,142 @@ Respuesta esperada:
 
 ## 4.5 Proyecto de ChatBot: ingesta de documentos en Chroma
 
+Vamos a retomar lo que dejamos pendiente en la clase [3.8 Proyecto de Chatbot](#38-proyecto-de-chatbot-creación-de-documentos-de-hugging-face)
+
+Recordemos que teníamos el archivo: [conversation.py](chatbot%2Fconversation.py)
+Que para ese momento solo tenía el siguiente contenido:
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from hashira.utils import DocsJSONLLoader, get_file_path
+
+
+def load_documents(file_path: str):
+    loader = DocsJSONLLoader(file_path)
+    data = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1600, length_function=len, chunk_overlap=160
+    )
+
+    return text_splitter.split_documents(data)
+
+
+def main():
+
+    ans = get_file_path()
+    print(ans)
+    documents = load_documents(ans)
+    print(len(documents))
+    print(documents[0])
+
+
+if __name__ == '__main__':
+    main()
+
+```
+Modificamos el contenido de: [docs_en_2023_06_29.jsonl](chatbot%2Fdata%2Fdocs_en_2023_06_29.jsonl) para que tenga menos datos
+para efectos prácticos NO nos interesa tener todo el contenido del ChatBot solo aprender la metodología del mismo.
+
+Entonces ahora el objetivo de esta clase será utilizar los `embeddings` de OpenAi y crear una `vector store` que los aloje:
+
+Bastante similar a lo que fue el ejemplo anterior vamos a definir un par de funciones nuevas y a importar nuevas bibliotecas:
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from hashira.utils import DocsJSONLLoader, get_file_path, get_openai_api_key  # verifica que éxista el api key como variable de entorno
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from rich.console import Console  # sirve para poner colores a la consola
+```
+
+Actualmente ya tenemos un `loader` de documentos en formato `JSONL`:
+
+```python
+def load_documents(file_path: str):
+    loader = DocsJSONLLoader(file_path)
+    data = loader.load()
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1600, length_function=len, chunk_overlap=160
+    )
+
+    return text_splitter.split_documents(data)
+
+```
+El `chunk size` esta en 1600 porque los embeddings de `open ai` permiten mucho más context:
+
+Vamos a crear nuestro modelo de `embeddings` con `OpenAIEmbeddings`:
+
+```python
+def main():
+
+    documents = load_documents(get_file_path())
+    get_openai_api_key()
+    embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+```
+Respuesta esperada:
+```commandline
+Por favor crea una variable de ambiente OPENAI_API_KEY.
+```
+Esto se debe a que aún no hemos guardado nuestra apikey como variable de entorno eso lo podemos hacer de la siguiente manera:
+```bash
+export OPENAI_API_KEY=sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+habiendo hecho eso podemos continuar con la creación de nuestra función de `get_chroma_db`:
+
+```python
+recreate_chroma_db = True   # Variable Global. Si está en True crea pro primera vez la vectorstore, si está en False, 
+                            # entonces solo la carga
+
+
+def get_chroma_db(embeddings, documents, path):
+
+    if recreate_chroma_db:
+        console.print("RECREANDO CHROMA DB")
+        return Chroma.from_documents(
+            documents=documents, embedding=embeddings, persist_directory=path
+        )
+    else:
+        console.print("CARGANDO CHROMA EXISTENTE")
+        return Chroma(persist_directory=path, embedding_function=embeddings)
+```
+
+Vamos a empezar con: `recreate_chroma_db` en `True` porque es la primera vez que vamos a hacer la `vectorstore`
+```python
+recreate_chroma_db = True
+def main():
+    documents = load_documents(get_file_path())
+    get_openai_api_key()
+    embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+    vectorstore_chroma = get_chroma_db(embeddings, documents, "chroma_docs")
+    console.print(f"[green]Documentos {len(documents)} cargados.[/green]")
+```
+Respuesta esperada:
+```commandline
+RECREANDO CHROMA DB
+Documentos 486 cargados.
+```
+Ahora como ya se ha creado la carpeta [chroma_docs](chatbot%2Fchroma_docs) podemos poner en `False` nuestra variable global 
+y volver a correr el código para ver su comportamiento:
+
+```python
+recreate_chroma_db = False
+def main():
+    documents = load_documents(get_file_path())
+    get_openai_api_key()
+    embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+    vectorstore_chroma = get_chroma_db(embeddings, documents, "chroma_docs")
+    console.print(f"[green]Documentos {len(documents)} cargados.[/green]")
+```
+Respuesta esperada:
+```commandline
+CARGANDO CHROMA EXISTENTE
+Documentos 486 cargados.
+```
+Excelente, la cantidad de documentos cargados es la misma, pero ya NO hemos tenido que volver a crear los `embeddings` ya 
+solamente los cargo desde local.
+
 ## 4.6 RetrievalQA: cadena para preguntar
 
 ## 4.7 Proyecto de ChatBot: RetrievalQA chain
