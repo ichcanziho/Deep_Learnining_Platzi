@@ -2381,6 +2381,8 @@ LangChain integra una variedad de proveedores de modelos de incrustaciones de te
 
 Estos proveedores ofrecen una gran variedad de opciones, permitiéndote elegir el modelo de incrustaciones que mejor se adapte a tus necesidades. En futuras secciones, profundizaremos en cómo usar estos proveedores de modelos de incrustaciones para mejorar el procesamiento de texto en LangChain.
 
+## 4.2 ¿Cómo usar embeddings de OpenAI en LangChain?
+
 > ## Nota:
 > El código de esta clase está en: [12_openai_embeddings.py](scripts%2F12_openai_embeddings.py)
 > 
@@ -2439,9 +2441,183 @@ Respuesta esperada:
 ```
 Justo lo que esperábamos un Vector de 1536 elementos.
 
-## 4.2 ¿Cómo usar embeddings de OpenAI en LangChain?
-
 ## 4.3 ¿Cómo usar embeddings de Hugging Face en LangChain?
+
+En esta clase veremos un par de alternativas en lugar de usar Embeddings de OpenAi, veremos como usar recursos OpenSource
+de Hugging Face para crear estos embeddings:
+
+> ## Nota:
+> El código de esta clase lo puedes encontrar en: [13_hugging_face_embeddings.py](scripts%2F13_hugging_face_embeddings.py)
+> 
+
+Vamos a empezar instalando un par de bibliotecas:
+
+```bash
+pip install sentence_transformers
+pip install InstructorEmbedding sentence_transformers
+```
+
+Tras haber instalado las bibliotecas anteriores podemos empezar con un modelo simple de `sentence-transformers`:
+
+Podemos empezar por descargar un modelo del Hub de Hugging face, podemos conocer más modelos en: https://huggingface.co/sentence-transformers
+```python
+from langchain.embeddings import SentenceTransformerEmbeddings
+
+embeddings_st = SentenceTransformerEmbeddings(
+    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+)
+
+# Otro modelo en español que podríamos usar es "symanto/sn-xlm-roberta-base-snli-mnli-anli-xnli"
+
+```
+Respuesta esperada:
+```commandline
+Downloading (…)0fe39/.gitattributes: 100%
+968/968 [00:00<00:00, 38.8kB/s]
+Downloading (…)_Pooling/config.json: 100%
+190/190 [00:00<00:00, 6.63kB/s]
+Downloading (…)83e900fe39/README.md: 100%
+3.79k/3.79k [00:00<00:00, 182kB/s]
+Downloading (…)e900fe39/config.json: 100%
+645/645 [00:00<00:00, 34.9kB/s]
+Downloading (…)ce_transformers.json: 100%
+122/122 [00:00<00:00, 4.80kB/s]
+Downloading pytorch_model.bin: 100%
+471M/471M [00:01<00:00, 333MB/s]
+Downloading (…)nce_bert_config.json: 100%
+53.0/53.0 [00:00<00:00, 3.82kB/s]
+Downloading (…)tencepiece.bpe.model: 100%
+5.07M/5.07M [00:00<00:00, 120MB/s]
+Downloading (…)cial_tokens_map.json: 100%
+239/239 [00:00<00:00, 17.6kB/s]
+Downloading tokenizer.json: 100%
+9.08M/9.08M [00:00<00:00, 199MB/s]
+Downloading (…)okenizer_config.json: 100%
+480/480 [00:00<00:00, 30.4kB/s]
+Downloading unigram.json: 100%
+14.8M/14.8M [00:00<00:00, 239MB/s]
+Downloading (…)900fe39/modules.json: 100%
+229/229 [00:00<00:00, 13.7kB/s]
+```
+
+Partamos de los mismos `documentos a incrustar` de la clase pasada:
+```python
+documentos_a_incrustar = [
+    "¡Hola parce!",
+    "¡Uy, hola!",
+    "¿Cómo te llamas?",
+    "Mis parceros me dicen Omar",
+    "¡Hola Mundo!"
+]
+```
+Y veamos que podemos usar los métodos `embed_documents` para vectorizar una lista o `embed_query` para vectorizar un texto:
+
+```python
+incrustaciones = embeddings_st.embed_documents(documentos_a_incrustar)
+print(len(incrustaciones))
+
+incrustacion = embeddings_st.embed_query(documentos_a_incrustar[0])
+print(len(incrustacion))
+```
+Respuesta esperada:
+```commandline
+5
+384
+```
+Vemos como nuestro pequeño modelo de incrustación puede transformar el texto en una representación de 384 números.
+
+Ahora usemos un modelo un poco más robusto utilizando `HuggingFaceInsturctEmbeddings`:
+
+```python
+from langchain.embeddings import HuggingFaceInstructEmbeddings
+
+# A junio de 2023 no hay modelos Instruct para español
+embedding_instruct = HuggingFaceInstructEmbeddings(
+    model_name="hkunlp/instructor-large",
+    model_kwargs={"device": "cuda"}
+)
+
+# El device podría ser cpu
+```
+Respuesta esperada:
+```commandline
+Downloading (…)c7233/.gitattributes: 100%
+1.48k/1.48k [00:00<00:00, 60.3kB/s]
+Downloading (…)_Pooling/config.json: 100%
+270/270 [00:00<00:00, 16.7kB/s]
+Downloading (…)/2_Dense/config.json: 100%
+116/116 [00:00<00:00, 6.58kB/s]
+Downloading pytorch_model.bin: 100%
+3.15M/3.15M [00:00<00:00, 104MB/s]
+Downloading (…)9fb15c7233/README.md: 100%
+66.3k/66.3k [00:00<00:00, 252kB/s]
+Downloading (…)b15c7233/config.json: 100%
+1.53k/1.53k [00:00<00:00, 51.7kB/s]
+Downloading (…)ce_transformers.json: 100%
+122/122 [00:00<00:00, 3.72kB/s]
+Downloading pytorch_model.bin: 100%
+1.34G/1.34G [00:20<00:00, 151MB/s]
+Downloading (…)nce_bert_config.json: 100%
+53.0/53.0 [00:00<00:00, 3.51kB/s]
+Downloading (…)cial_tokens_map.json: 100%
+2.20k/2.20k [00:00<00:00, 121kB/s]
+Downloading spiece.model: 100%
+792k/792k [00:00<00:00, 39.6MB/s]
+Downloading (…)c7233/tokenizer.json: 100%
+2.42M/2.42M [00:00<00:00, 3.35MB/s]
+Downloading (…)okenizer_config.json: 100%
+2.41k/2.41k [00:00<00:00, 79.5kB/s]
+Downloading (…)15c7233/modules.json: 100%
+461/461 [00:00<00:00, 19.0kB/s]
+load INSTRUCTOR_Transformer
+max_seq_length  512
+```
+Ahora hagamos embeddings de las oraciones que hemos venido trabajado:
+```python
+incrustaciones = embedding_instruct.embed_documents(documentos_a_incrustar)
+print(len(incrustaciones[4]))
+
+incrustacion = embedding_instruct.embed_query(documentos_a_incrustar[0])
+print(len(incrustacion))
+```
+Respuesta esperada:
+```python
+768
+768
+```
+
+### La importancia del tamaño de los embeddings
+
+Los modelos de incrustaciones de texto (embeddings) son un recurso crucial en el procesamiento del lenguaje natural. Sin embargo, es importante tener en cuenta que estos modelos tienen una capacidad limitada en términos de la cantidad de tokens que pueden manejar antes de truncar los textos.
+
+Cada proveedor de modelos de incrustaciones puede tener un límite de tokens diferente y estos límites pueden variar con el tiempo. Es recomendable que consultes la documentación actualizada del proveedor para obtener información precisa. Esta guía se creó a medidados de 2023 y, por lo tanto, los límites específicos pueden haber cambiado.
+
+Para los modelos de OpenAI, por ejemplo, las actualizaciones a menudo se anuncian en blogs o en su página de modelos. Para los modelos del Hub de Hugging Face, puedes usar el método `.client` para conocer el límite de tokens. Para los modelos de Cohere, aunque no está especificado claramente, se recomienda mantener los textos menores a 512 tokens.
+
+#### Recomendaciones generales de tamaño de incrustaciones
+
+Para todos los modelos de incrustaciones que manejamos, una regla general sería mantener los textos menores a 512 tokens. Esta restricción de tamaño ayuda a garantizar que los modelos puedan procesar eficientemente el texto sin truncarlo.
+
+Existe una gran posibilidad de que los modelos de incrustaciones futuras puedan manejar contextos más grandes (es decir, más tokens) sin perder capacidad de procesamiento. Sin embargo, al menos hasta junio de 2023 y probablemente durante todo el año 2023, la recomendación seguirá siendo mantener los textos dentro del límite de 512 tokens.
+
+Aunque los modelos de incrustaciones de OpenAI pueden mencionar la capacidad de manejar hasta 8192 tokens, es importante recordar que el rendimiento óptimo del modelo puede no alcanzarse con textos de este tamaño. Por lo tanto, se recomienda la cautela y el cumplimiento de la recomendación general de 512 tokens.
+
+```python
+print(embedding_instruct.client, embeddings_st.client)
+```
+
+```commandline
+(INSTRUCTOR(
+   (0): Transformer({'max_seq_length': 512, 'do_lower_case': False}) with Transformer model: T5EncoderModel 
+   (1): Pooling({'word_embedding_dimension': 768, 'pooling_mode_cls_token': False, 'pooling_mode_mean_tokens': True, 'pooling_mode_max_tokens': False, 'pooling_mode_mean_sqrt_len_tokens': False, 'pooling_mode_weightedmean_tokens': False, 'pooling_mode_lasttoken': False})
+   (2): Dense({'in_features': 1024, 'out_features': 768, 'bias': False, 'activation_function': 'torch.nn.modules.linear.Identity'})
+   (3): Normalize()
+ ),
+ SentenceTransformer(
+   (0): Transformer({'max_seq_length': 128, 'do_lower_case': False}) with Transformer model: BertModel 
+   (1): Pooling({'word_embedding_dimension': 384, 'pooling_mode_cls_token': False, 'pooling_mode_mean_tokens': True, 'pooling_mode_max_tokens': False, 'pooling_mode_mean_sqrt_len_tokens': False})
+ ))
+```
 
 ## 4.4 Chroma vector store en LangChain
 

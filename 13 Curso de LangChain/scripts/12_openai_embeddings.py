@@ -11,6 +11,7 @@ embedding_openai = OpenAIEmbeddings(model="text-embedding-ada-002")
 print(embedding_openai)
 
 documentos_a_incrustar = [
+    "Quiero que me expliques qué es el paracetamol",
     "¡Hola parce!",
     "¡Uy, hola!",
     "¿Cómo te llamas?",
